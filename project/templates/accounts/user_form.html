@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Glamour{% endblock %}
+
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] max-w-2xl mx-auto">
+    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">{{ title }}</h2>
+    
+    <form method="post" class="space-y-stack-md">
+        {% csrf_token %}
+        
+        {% if not user_obj %}
+        <div class="form-group">
+            <label class="block font-label-md text-secondary mb-stack-sm">اسم المستخدم *</label>
+            {{ form.username }}
+        </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label class="block font-label-md text-secondary mb-stack-sm">الدور *</label>
+            {{ form.role }}
+        </div>
+        
+        {% if not user_obj %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="block font-label-md text-secondary mb-stack-sm">كلمة المرور *</label>
+                {{ form.password1 }}
+            </div>
+            <div class="form-group">
+                <label class="block font-label-md text-secondary mb-stack-sm">تأكيد كلمة المرور *</label>
+                {{ form.password2 }}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if user_obj %}
+        <div class="form-group flex items-center gap-3">
+            {{ form.is_active }}
+            <label class="font-label-md text-secondary">نشط</label>
+        </div>
+        {% endif %}
+        
+        {% if form.errors %}
+        <div class="bg-error/10 text-error p-4 rounded-xl border border-error/20">
+            {% for field in form %}
+                {% for error in field.errors %}
+                <p class="font-body-md">{{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+            <p class="font-body-md">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="flex flex-col sm:flex-row gap-stack-md pt-stack-md">
+            <button type="submit" class="bg-primary text-on-primary px-8 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md">
+                حفظ
+            </button>
+            <a href="{% url 'users_list' %}" class="border border-secondary-container px-8 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md text-center">
+                إلغاء
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-group input:not([type="checkbox"]),
+    .form-group select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #d3e4fe;
+        border-radius: 12px;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.3s;
+        background: #f8f9ff;
+        color: #0b1c30;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #af006b;
+        box-shadow: 0 0 0 4px rgba(175,0,107,0.08);
+        background: #ffffff;
+    }
+    .form-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #af006b;
+    }
+</style>
+{% endblock %}

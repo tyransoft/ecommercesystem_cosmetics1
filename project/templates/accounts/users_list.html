@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}المستخدمون - Glamour{% endblock %}
+
+{% block content %}
+<div class="space-y-stack-lg">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-gutter">
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-[24px]">group</span>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">إجمالي المستخدمين</p>
+                    <p class="font-headline-md text-headline-md text-on-background">{{ users.count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center text-success">
+                    <span class="material-symbols-outlined text-[24px]">check_circle</span>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">المستخدمين النشطين</p>
+                    <p class="font-headline-md text-headline-md text-on-background">{{ users|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-[24px]">admin_panel_settings</span>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">المشرفين</p>
+                    <p class="font-headline-md text-headline-md text-on-background">{{ users|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+            <div class="flex items-center gap-3">
+                <h2 class="font-headline-md text-headline-md text-on-background">قائمة المستخدمين</h2>
+                <span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm">{{ users.count }}</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <div class="relative flex-1 sm:flex-none">
+                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary text-[20px]">search</span>
+                    <input type="text" id="userSearch" placeholder="بحث عن مستخدم..." class="w-full sm:w-64 pr-10 px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 font-body-md">
+                </div>
+                <a href="{% url 'user_create' %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md text-center whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[18px] align-middle">add</span>
+                    مستخدم جديد
+                </a>
+            </div>
+        </div>
+        
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-secondary-container">
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المستخدم</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الدور</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الحالة</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    {% for u in users %}
+                    <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200" data-username="{{ u.username|lower }}" data-role="{{ u.role }}">
+                        <td class="py-3 px-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                    {{ u.username|first|upper }}
+                                </div>
+                                <span class="font-body-md">{{ u.username }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="px-3 py-1 rounded-lg text-xs bg-primary/10 text-primary font-label-sm">
+                                {{ u.get_role_display }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4">
+                            {% if u.is_active %}
+                            <span class="flex items-center gap-2 text-success font-body-md">
+                                <span class="w-2 h-2 rounded-full bg-success"></span>
+                                نشط
+                            </span>
+                            {% else %}
+                            <span class="flex items-center gap-2 text-error font-body-md">
+                                <span class="w-2 h-2 rounded-full bg-error"></span>
+                                معطل
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="flex gap-2">
+                                <a href="{% url 'user_edit' u.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200" title="تعديل">
+                                    <span class="material-symbols-outlined text-[20px]">edit</span>
+                                </a>
+                                {% if u != request.user %}
+                                <a href="{% url 'user_delete' u.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" title="حذف" onclick="return confirm('هل أنت متأكد من حذف هذا المستخدم؟')">
+                                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-8 text-secondary font-body-lg">لا يوجد مستخدمون</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="md:hidden space-y-stack-md" id="mobileUsersView">
+            {% for u in users %}
+            <div class="bg-background rounded-xl p-4 border border-secondary-container/50" data-username="{{ u.username|lower }}" data-role="{{ u.role }}">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                            {{ u.username|first|upper }}
+                        </div>
+                        <div>
+                            <p class="font-headline-md text-headline-md text-on-background">{{ u.username }}</p>
+                            <span class="px-2 py-1 rounded-lg text-xs bg-primary/10 text-primary font-label-sm">
+                                {{ u.get_role_display }}
+                            </span>
+                        </div>
+                    </div>
+                    {% if u.is_active %}
+                    <span class="w-3 h-3 rounded-full bg-success"></span>
+                    {% else %}
+                    <span class="w-3 h-3 rounded-full bg-error"></span>
+                    {% endif %}
+                </div>
+                <div class="flex gap-2 pt-3 border-t border-secondary-container/30">
+                    <a href="{% url 'user_edit' u.pk %}" class="flex-1 text-center border border-primary text-primary px-4 py-2 rounded-xl hover:bg-primary/10 transition-all duration-200 font-label-md text-sm">
+                        تعديل
+                    </a>
+                    {% if u != request.user %}
+                    <a href="{% url 'user_delete' u.pk %}" class="flex-1 text-center border border-error text-error px-4 py-2 rounded-xl hover:bg-error/10 transition-all duration-200 font-label-md text-sm" onclick="return confirm('هل أنت متأكد من حذف هذا المستخدم؟')">
+                        حذف
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-8 text-secondary font-body-lg">لا يوجد مستخدمون</div>
+            {% endfor %}
+        </div>
+
+        {% if users.has_other_pages %}
+        <div class="flex justify-center gap-2 mt-stack-lg">
+            {% if users.has_previous %}
+            <a href="?page={{ users.previous_page_number }}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200 font-label-md">السابق</a>
+            {% endif %}
+            <span class="px-4 py-2 rounded-xl bg-primary text-on-primary font-label-md">{{ users.number }}</span>
+            {% if users.has_next %}
+            <a href="?page={{ users.next_page_number }}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200 font-label-md">التالي</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('userSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            
+            document.querySelectorAll('#usersTableBody tr').forEach(row => {
+                const username = row.getAttribute('data-username') || '';
+                const role = row.getAttribute('data-role') || '';
+                row.style.display = username.includes(query) || role.includes(query) ? '' : 'none';
+            });
+            
+            document.querySelectorAll('#mobileUsersView > div').forEach(card => {
+                const username = card.getAttribute('data-username') || '';
+                const role = card.getAttribute('data-role') || '';
+                card.style.display = username.includes(query) || role.includes(query) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

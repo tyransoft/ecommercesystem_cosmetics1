@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}حذف طلبية - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] max-w-md mx-auto text-center">
+    <div class="w-20 h-20 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-stack-md">
+        <span class="material-symbols-outlined text-[40px] text-error">warning</span>
+    </div>
+    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-sm">تأكيد الحذف</h2>
+    <p class="font-body-lg text-secondary mb-stack-lg">هل أنت متأكد من حذف الطلبية رقم "{{ order.order_number }}"؟</p>
+    <div class="bg-background rounded-xl p-4 mb-stack-lg text-right">
+        <p class="font-label-sm text-secondary">العميل</p>
+        <p class="font-body-md">{{ order.customer.full_name|default:"-" }}</p>
+        <p class="font-label-sm text-secondary mt-2">الإجمالي</p>
+        <p class="font-body-md text-primary">{{ order.sales_total }}</p>
+        <p class="font-label-sm text-secondary mt-2">الحالة</p>
+        <p class="font-body-md">{{ order.get_status_display }}</p>
+    </div>
+    <form method="post" class="flex flex-col sm:flex-row gap-stack-md justify-center">
+        {% csrf_token %}
+        <button type="submit" class="bg-error text-on-error px-6 py-2 rounded-xl hover:bg-error/90 transition-all duration-200 font-label-md">نعم، حذف</button>
+        <a href="{% url 'internal_order_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">إلغاء</a>
+    </form>
+</div>
+{% endblock %}

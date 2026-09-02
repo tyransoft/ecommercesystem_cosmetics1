@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}تفاصيل الطلبية - {{ order.order_number }}{% endblock %}
+{% block content %}
+<div class="space-y-stack-lg">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+            <div>
+                <h2 class="font-headline-md text-headline-md text-on-background">طلبية {{ order.order_number }}</h2>
+                <p class="font-body-md text-secondary">{{ order.created_at|date:"Y-m-d H:i" }}</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <span class="px-4 py-2 rounded-xl text-center {% if order.status == 'received' %}bg-success/10 text-success{% elif order.status == 'confirmed' %}bg-primary/10 text-primary{% elif order.status == 'indelivery' %}bg-warning/10 text-warning{% elif order.status == 'draft' %}bg-secondary/10 text-secondary{% else %}bg-error/10 text-error{% endif %} font-label-md">
+                    {{ order.get_status_display }}
+                </span>
+                {% if order.status == 'draft' or order.status == 'cancelled' %}
+                <a href="{% url 'internal_order_edit' order.pk %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md text-center">
+                    تعديل
+                </a>
+                <a href="{% url 'internal_order_confirm' order.pk %}" class="bg-success text-on-primary px-6 py-2 rounded-xl hover:bg-success/90 transition-all duration-200 font-label-md text-center" onclick="return confirm('هل أنت متأكد من تأكيد هذه الطلبية؟')">
+                    تأكيد
+                </a>
+                {% elif order.status == 'confirmed' %}
+                <a href="{% url 'internal_order_deliver' order.pk %}" class="bg-warning text-on-primary px-6 py-2 rounded-xl hover:bg-warning/90 transition-all duration-200 font-label-md text-center" onclick="return confirm('هل أنت متأكد من تحويل هذه الطلبية إلى قيد التوصيل؟')">
+                    شحن
+                </a>
+                <a href="{% url 'internal_order_cancel' order.pk %}" class="bg-error text-on-error px-6 py-2 rounded-xl hover:bg-error/90 transition-all duration-200 font-label-md text-center" onclick="return confirm('هل أنت متأكد من إلغاء هذه الطلبية؟')">
+                    إلغاء
+                </a>
+                {% elif order.status == 'indelivery' %}
+                <a href="{% url 'internal_order_receive' order.pk %}" class="bg-success text-on-primary px-6 py-2 rounded-xl hover:bg-success/90 transition-all duration-200 font-label-md text-center" onclick="return confirm('هل أنت متأكد من تسليم هذه الطلبية؟')">
+                    تسليم
+                </a>
+                <a href="{% url 'internal_order_cancel' order.pk %}" class="bg-error text-on-error px-6 py-2 rounded-xl hover:bg-error/90 transition-all duration-200 font-label-md text-center" onclick="return confirm('هل أنت متأكد من إلغاء هذه الطلبية؟')">
+                    إلغاء
+                </a>
+                {% endif %}
+                <a href="{% url 'internal_order_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md text-center">
+                    العودة
+                </a>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter mb-stack-lg">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">العميل</p>
+                <p class="font-body-md text-primary">{{ order.customer.full_name|default:"-" }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">الإجمالي</p>
+                <p class="font-headline-md text-headline-md text-on-background">{{ order.sales_total }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">المدفوع</p>
+                <p class="font-headline-md text-headline-md text-success">{{ order.paid_amount }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">المتبقي</p>
+                <p class="font-headline-md text-headline-md {% if order.debt_amount > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ order.debt_amount }}
+                </p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">إجمالي الربح</p>
+                <p class="font-headline-md text-headline-md {% if order.total_profit > 0 %}text-success{% else %}text-error{% endif %}">
+                    {{ order.total_profit }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">عنوان التوصيل</p>
+                <p class="font-body-md">{{ order.delivery_address|default:"-" }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">الخصم</p>
+                <p class="font-body-md">{{ order.discount }}</p>
+            </div>
+        </div>
+        
+        {% if order.notes %}
+        <div class="bg-background rounded-xl p-4 mt-stack-lg">
+            <p class="font-label-sm text-secondary">ملاحظات</p>
+            <p class="font-body-md">{{ order.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">المنتجات</h3>
+        
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-secondary-container">
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المنتج</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الكمية</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">سعر الوحدة</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">خصم الوحدة</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجمالي</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">ربح الوحدة</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">إجمالي الربح</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                    <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                        <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.product.name }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.quantity }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.unit_price }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.unit_discount }}</td>
+                        <td class="py-3 px-4 font-body-md text-primary">{{ item.total_price }}</td>
+                        <td class="py-3 px-4 font-body-md {% if item.unit_profit > 0 %}text-success{% else %}text-error{% endif %}">
+                            {{ item.unit_profit }}
+                        </td>
+                        <td class="py-3 px-4 font-body-md {% if item.total_profit > 0 %}text-success{% else %}text-error{% endif %}">
+                            {{ item.total_profit }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-secondary font-body-lg">لا توجد منتجات</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="md:hidden space-y-stack-md">
+            {% for item in order.items.all %}
+            <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="font-headline-md text-headline-md text-on-background">{{ item.product.name }}</span>
+                    <span class="text-primary font-headline-md">{{ item.total_price }}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <p class="font-label-sm text-secondary">الكمية</p>
+                        <p class="font-body-md">{{ item.quantity }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">سعر الوحدة</p>
+                        <p class="font-body-md">{{ item.unit_price }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">خصم الوحدة</p>
+                        <p class="font-body-md">{{ item.unit_discount }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">ربح الوحدة</p>
+                        <p class="font-body-md {% if item.unit_profit > 0 %}text-success{% else %}text-error{% endif %}">{{ item.unit_profit }}</p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="font-label-sm text-secondary">إجمالي الربح</p>
+                        <p class="font-body-md {% if item.total_profit > 0 %}text-success{% else %}text-error{% endif %}">{{ item.total_profit }}</p>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-8 text-secondary font-body-lg">لا توجد منتجات</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

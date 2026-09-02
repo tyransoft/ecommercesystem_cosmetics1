@@ -1,0 +1,245 @@
+<!-- templates/orders/external_order_edit.html -->
+{% extends 'base.html' %}
+{% block title %}تعديل طلبية خارجية - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">تعديل طلبية خارجية - {{ order.order_number }}</h2>
+    
+    <form method="post" id="orderForm" class="space-y-stack-lg" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">العميل</label>
+                <select name="customer" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="">اختر العميل</option>
+                    {% for customer in customers %}
+                    <option value="{{ customer.id }}" {% if order.customer.id == customer.id %}selected{% endif %}>{{ customer.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">المورد</label>
+                <select name="supply" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="">اختر المورد</option>
+                    <option value="alibaba" {% if order.supply == 'alibaba' %}selected{% endif %}>علي بابا</option>
+                    <option value="amazon" {% if order.supply == 'amazon' %}selected{% endif %}>أمازون</option>
+                    <option value="noon" {% if order.supply == 'noon' %}selected{% endif %}>نون</option>
+                    <option value="shein" {% if order.supply == 'shein' %}selected{% endif %}>شي إن</option>
+                    <option value="1168" {% if order.supply == '1168' %}selected{% endif %}>1168</option>
+                    <option value="others" {% if order.supply == 'others' %}selected{% endif %}>أخرى</option>
+                </select>
+            </div>
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">سعر الصرف</label>
+                <input type="number" name="exchange_rate" step="0.01" value="{{ order.exchange_rate }}" id="exchangeRate" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
+            </div>
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">الحالة</label>
+                <select name="status" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="draft" {% if order.status == 'draft' %}selected{% endif %}>مسودة</option>
+                    <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>تأكيد مباشر</option>
+                </select>
+            </div>
+        </div>
+        
+        <div>
+            <label class="block font-label-md text-secondary mb-stack-sm">عنوان التوصيل</label>
+            <input type="text" name="delivery_address" value="{{ order.delivery_address }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+        </div>
+        
+        <div class="border-t border-secondary-container pt-stack-lg">
+            <div class="flex justify-between items-center mb-stack-md">
+                <h3 class="font-headline-md text-headline-md text-on-background">المنتجات</h3>
+                <button type="button" onclick="addProductRow()" class="bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md">
+                    <span class="material-symbols-outlined text-[18px] align-middle">add</span> إضافة منتج
+                </button>
+            </div>
+            
+            <div id="productRows" class="space-y-stack-md">
+                {% for item in order.items.all %}
+                <div class="product-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end bg-background rounded-xl p-4">
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">اسم المنتج</label>
+                        <input type="text" name="product_names[]" required value="{{ item.product_name }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">الكمية</label>
+                        <input type="number" name="quantities[]" min="1" required value="{{ item.quantity }}" class="quantity-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">سعر الوحدة ($)</label>
+                        <input type="number" name="unit_prices_usd[]" step="0.01" required value="{{ item.usd_unit_price }}" class="unit-price-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">خصم للوحدة ($)</label>
+                        <input type="number" name="unit_discounts_usd[]" step="0.01" value="{{ item.usd_unit_discount }}" class="discount-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">رابط المنتج</label>
+                        <input type="url" name="product_links[]" value="{{ item.product_link }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <div class="flex-1">
+                            <label class="block font-label-sm text-secondary mb-1">الإجمالي ($)</label>
+                            <input type="text" class="item-total-usd w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-primary" value="{{ item.usd_total_price }}" readonly>
+                        </div>
+                        <button type="button" onclick="removeRow(this)" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="border-t border-secondary-container pt-stack-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الخصم ($)</label>
+                    <input type="number" name="discount_usd" step="0.01" value="{{ order.discount }}" id="discount" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">تكلفة الشحن ($)</label>
+                    <input type="number" name="shipping_cost_usd" step="0.01" value="{{ order.usd_shipping_cost }}" id="shippingCostUsd" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">تكلفة الشحن (دينار)</label>
+                    <input type="text" id="shippingCostLyd" readonly value="{{ order.lyd_shipping_cost }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">المبلغ المدفوع (دينار)</label>
+                    <input type="number" name="paid_amount_lyd" step="0.01" value="{{ order.lyd_paid_amount }}" id="paidAmount" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-secondary-container pt-stack-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي ($)</label>
+                    <input type="text" name="subtotal_usd" id="subtotalUsd" readonly value="{{ order.subtotal }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي (دينار)</label>
+                    <input type="text" id="subtotalLyd" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي بعد الخصم (دينار)</label>
+                    <input type="text" name="sales_total" id="salesTotal" readonly value="{{ order.lyd_sales_total }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background font-bold text-primary">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">المتبقي (دينار)</label>
+                    <input type="text" name="debt_amount" id="debtAmount" readonly value="{{ order.lyd_debt_amount }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">نسبة العمولة</label>
+                    <input type="text" id="commissionPercentage" readonly value="{{ order.commission_percentage }}%" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">قيمة العمولة (دينار)</label>
+                    <input type="text" id="commissionAmount" readonly value="{{ order.lyd_commission_amount }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-success">
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full sm:w-auto">
+                    تحديث الطلبية
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function addProductRow() {
+    const row = document.querySelector('.product-row').cloneNode(true);
+    row.querySelectorAll('input').forEach(el => {
+        if (el.type !== 'button') {
+            el.value = '';
+        }
+    });
+    row.querySelectorAll('.discount-input').forEach(el => el.value = '0');
+    row.querySelectorAll('.item-total-usd').forEach(el => el.value = '');
+    document.getElementById('productRows').appendChild(row);
+    calculateTotals();
+}
+
+function removeRow(btn) {
+    const rows = document.querySelectorAll('.product-row');
+    if (rows.length > 1) {
+        btn.closest('.product-row').remove();
+        calculateTotals();
+    }
+}
+
+function calculateTotals() {
+    let subtotalUsd = 0;
+    const rows = document.querySelectorAll('.product-row');
+    const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
+    
+    rows.forEach(row => {
+        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price-input').value) || 0;
+        const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        const itemTotalUsd = row.querySelector('.item-total-usd');
+        
+        const total = (unitPrice - discount) * quantity;
+        subtotalUsd += total;
+        itemTotalUsd.value = total.toFixed(2);
+    });
+    
+    const discountUsd = parseFloat(document.getElementById('discount').value) || 0;
+    const shippingCostUsd = parseFloat(document.getElementById('shippingCostUsd').value) || 0;
+    const shippingCostLyd = shippingCostUsd * exchangeRate;
+    const paidAmountLyd = parseFloat(document.getElementById('paidAmount').value) || 0;
+    
+    const salesTotalUsd = subtotalUsd - discountUsd + shippingCostUsd;
+    const salesTotalLyd = salesTotalUsd * exchangeRate;
+    const debtAmountLyd = salesTotalLyd - paidAmountLyd;
+    
+    document.getElementById('shippingCostLyd').value = shippingCostLyd.toFixed(2);
+    document.getElementById('subtotalUsd').value = subtotalUsd.toFixed(2);
+    document.getElementById('subtotalLyd').value = (subtotalUsd * exchangeRate).toFixed(2);
+    document.getElementById('salesTotal').value = salesTotalLyd.toFixed(2);
+    document.getElementById('debtAmount').value = debtAmountLyd.toFixed(2);
+    
+    const debtEl = document.getElementById('debtAmount');
+    if (debtAmountLyd > 0) {
+        debtEl.classList.add('text-error');
+        debtEl.classList.remove('text-success');
+    } else {
+        debtEl.classList.remove('text-error');
+        debtEl.classList.add('text-success');
+    }
+    
+    calculateCommission(salesTotalUsd, exchangeRate);
+}
+
+function calculateCommission(amountUsd, exchangeRate) {
+    if (!amountUsd) {
+        amountUsd = parseFloat(document.getElementById('subtotalUsd').value) || 0;
+        const discountUsd = parseFloat(document.getElementById('discount').value) || 0;
+        const shippingCostUsd = parseFloat(document.getElementById('shippingCostUsd').value) || 0;
+        amountUsd = amountUsd - discountUsd + shippingCostUsd;
+    }
+    
+    if (!exchangeRate) {
+        exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
+    }
+    
+    fetch(`get-commission-rule/?amount=${amountUsd}&exchange_rate=${exchangeRate}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('commissionPercentage').value = data.percentage > 0 ? data.percentage + '%' : '0%';
+            document.getElementById('commissionAmount').value = data.commission_lyd.toFixed(2);
+        });
+}
+
+document.addEventListener('input', calculateTotals);
+document.addEventListener('change', calculateTotals);
+</script>
+{% endblock %}

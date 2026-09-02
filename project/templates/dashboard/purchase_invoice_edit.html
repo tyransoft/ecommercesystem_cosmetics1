@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}تعديل فاتورة مشتريات - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">تعديل فاتورة مشتريات - {{ invoice.invoice_number }}</h2>
+    
+    <form method="post" id="invoiceForm" class="space-y-stack-lg">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">المورد</label>
+                <select name="supplier" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="">اختر المورد</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}" {% if invoice.supplier.id == supplier.id %}selected{% endif %}>{{ supplier.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">سعر الصرف</label>
+                <input type="number" name="exchange_rate" step="0.01" value="{{ invoice.exchange_rate }}" id="exchangeRate" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">تاريخ الوصول</label>
+                <input type="datetime-local" name="receive_date" value="{{ invoice.receive_date|date:'Y-m-d\TH:i' }}" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">الحالة</label>
+                <select name="status" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="draft" {% if invoice.status == 'draft' %}selected{% endif %}>مسودة</option>
+                    <option value="confirmed" {% if invoice.status == 'confirmed' %}selected{% endif %}>تأكيد مباشر</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="border-t border-secondary-container pt-stack-lg">
+            <div class="flex justify-between items-center mb-stack-md">
+                <h3 class="font-headline-md text-headline-md text-on-background">المنتجات</h3>
+                <button type="button" onclick="addProductRow()" class="bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md">
+                    <span class="material-symbols-outlined text-[18px] align-middle">add</span> إضافة منتج
+                </button>
+            </div>
+            
+            <div id="productRows" class="space-y-stack-md">
+                {% for item in invoice.items.all %}
+                <div class="product-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end bg-background rounded-xl p-4">
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">المنتج</label>
+                        <select name="product_ids[]" required class="product-select w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                            <option value="">اختر المنتج</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}" {% if item.product.id == product.id %}selected{% endif %}>{{ product.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">الكمية</label>
+                        <input type="number" name="quantities[]" min="1" required value="{{ item.quantity }}" class="quantity-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">سعر الشراء (دولار)</label>
+                        <input type="number" name="unit_usd_prices[]" step="0.01" value="{{ item.unit_usd }}" class="unit-usd-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" oninput="convertCurrency(this, 'usd')">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">سعر الشراء (دينار)</label>
+                        <input type="number" name="unit_lyd_prices[]" step="0.01" value="{{ item.unit_lyd }}" class="unit-lyd-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" oninput="convertCurrency(this, 'lyd')">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">شحن للقطعة (دولار)</label>
+                        <input type="text" class="shipping-usd-display w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-secondary" value="{{ item.unit_shipping_cost_usd }}" readonly>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <div class="flex-1">
+                            <label class="block font-label-sm text-secondary mb-1">الإجمالي (دينار)</label>
+                            <input type="text" class="item-total-lyd w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-primary" value="{{ item.total_lyd_price }}" readonly>
+                        </div>
+                        <button type="button" onclick="removeRow(this)" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="border-t border-secondary-container pt-stack-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الخصم (دولار)</label>
+                    <input type="number" name="discount" step="0.01" value="{{ invoice.discount }}" id="discount" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">تكلفة الشحن (دولار)</label>
+                    <input type="number" name="shipping_cost" step="0.01" value="{{ invoice.shipping_cost }}" id="shippingCost" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">المدفوع (دولار)</label>
+                    <input type="number" name="paid_amount" step="0.01" value="{{ invoice.paid_amount }}" id="paidAmount" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">المدفوع (دينار)</label>
+                    <input type="text" id="paidAmountLyd" readonly value="{{ invoice.paid_amount|floatformat:2 }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-secondary-container pt-stack-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">إجمالي المنتجات (دولار)</label>
+                    <input type="text" id="subtotalUsd" readonly value="{{ invoice.subtotal|floatformat:2 }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">إجمالي المنتجات (دينار)</label>
+                    <input type="text" name="subtotal" id="subtotalLyd" readonly value="{{ invoice.subtotal|floatformat:2 }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">إجمالي الشحن (دولار)</label>
+                    <input type="text" id="shippingTotalUsd" readonly value="{{ invoice.shipping_cost|floatformat:2 }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">إجمالي الشحن (دينار)</label>
+                    <input type="text" id="shippingTotalLyd" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي الكلي (دولار)</label>
+                    <input type="text" id="totalUsd" readonly value="{{ invoice.total|floatformat:2 }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background font-bold text-primary">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي الكلي (دينار)</label>
+                    <input type="text" name="total" id="totalLyd" readonly value="{{ invoice.total|floatformat:2 }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background font-bold text-primary">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">المتبقي (دينار)</label>
+                    <input type="text" name="debt_amount" id="debtAmount" readonly value="{{ invoice.debt_amount|floatformat:2 }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">المتبقي (دولار)</label>
+                    <input type="text" id="debtAmountUsd" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full">
+                        تحديث الفاتورة
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div>
+            <label class="block font-label-md text-secondary mb-stack-sm">ملاحظات عامة</label>
+            <textarea name="notes" rows="3" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">{{ invoice.notes }}</textarea>
+        </div>
+    </form>
+</div>
+
+<script>
+function convertCurrency(input, type) {
+    const row = input.closest('.product-row');
+    const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
+    const usdInput = row.querySelector('.unit-usd-input');
+    const lydInput = row.querySelector('.unit-lyd-input');
+    
+    if (type === 'usd') {
+        const usdValue = parseFloat(usdInput.value) || 0;
+        lydInput.value = (usdValue * exchangeRate).toFixed(2);
+    } else if (type === 'lyd') {
+        const lydValue = parseFloat(lydInput.value) || 0;
+        usdInput.value = exchangeRate > 0 ? (lydValue / exchangeRate).toFixed(2) : 0;
+    }
+    calculateTotals();
+}
+
+function addProductRow() {
+    const row = document.querySelector('.product-row').cloneNode(true);
+    row.querySelectorAll('input, select').forEach(el => {
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else if (el.type !== 'button') {
+            el.value = '';
+        }
+    });
+    row.querySelectorAll('.shipping-usd-display, .item-total-lyd').forEach(el => el.value = '');
+    document.getElementById('productRows').appendChild(row);
+    calculateTotals();
+}
+
+function removeRow(btn) {
+    const rows = document.querySelectorAll('.product-row');
+    if (rows.length > 1) {
+        btn.closest('.product-row').remove();
+        calculateTotals();
+    }
+}
+
+function calculateTotals() {
+    let subtotalUsd = 0;
+    let subtotalLyd = 0;
+    let totalShippingUsd = 0;
+    let totalShippingLyd = 0;
+    const rows = document.querySelectorAll('.product-row');
+    const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
+    const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+    let totalQuantity = 0;
+    
+    rows.forEach(row => {
+        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        totalQuantity += quantity;
+    });
+    
+    const shippingPerUnitUsd = totalQuantity > 0 ? shippingCost / totalQuantity : 0;
+    const shippingPerUnitLyd = shippingPerUnitUsd * exchangeRate;
+    
+    rows.forEach(row => {
+        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const unitUsd = parseFloat(row.querySelector('.unit-usd-input').value) || 0;
+        const unitLyd = parseFloat(row.querySelector('.unit-lyd-input').value) || 0;
+        const shippingDisplay = row.querySelector('.shipping-usd-display');
+        const itemTotalLyd = row.querySelector('.item-total-lyd');
+        
+        shippingDisplay.value = shippingPerUnitUsd.toFixed(2);
+        
+        const totalLyd = (unitLyd * quantity) + (shippingPerUnitLyd * quantity);
+        
+        subtotalUsd += unitUsd * quantity;
+        subtotalLyd += unitLyd * quantity;
+        totalShippingUsd += shippingPerUnitUsd * quantity;
+        totalShippingLyd += shippingPerUnitLyd * quantity;
+        
+        itemTotalLyd.value = totalLyd.toFixed(2);
+    });
+    
+    const discountUsd = parseFloat(document.getElementById('discount').value) || 0;
+    const discountLyd = discountUsd * exchangeRate;
+    const paidAmountUsd = parseFloat(document.getElementById('paidAmount').value) || 0;
+    const paidAmountLyd = paidAmountUsd * exchangeRate;
+    
+    const totalUsd = subtotalUsd - discountUsd + shippingCost;
+    const totalLyd = subtotalLyd - discountLyd + totalShippingLyd;
+    const debtAmountLyd = totalLyd - paidAmountLyd;
+    const debtAmountUsd = totalUsd - paidAmountUsd;
+    
+    document.getElementById('subtotalUsd').value = subtotalUsd.toFixed(2);
+    document.getElementById('subtotalLyd').value = subtotalLyd.toFixed(2);
+    document.getElementById('shippingTotalUsd').value = totalShippingUsd.toFixed(2);
+    document.getElementById('shippingTotalLyd').value = totalShippingLyd.toFixed(2);
+    document.getElementById('totalUsd').value = totalUsd.toFixed(2);
+    document.getElementById('totalLyd').value = totalLyd.toFixed(2);
+    document.getElementById('paidAmountLyd').value = paidAmountLyd.toFixed(2);
+    document.getElementById('debtAmount').value = debtAmountLyd.toFixed(2);
+    document.getElementById('debtAmountUsd').value = debtAmountUsd.toFixed(2);
+    
+    const debtEl = document.getElementById('debtAmount');
+    if (debtAmountLyd > 0) {
+        debtEl.classList.add('text-error');
+        debtEl.classList.remove('text-success');
+    } else {
+        debtEl.classList.remove('text-error');
+        debtEl.classList.add('text-success');
+    }
+}
+
+document.addEventListener('input', calculateTotals);
+document.addEventListener('change', calculateTotals);
+</script>
+{% endblock %}

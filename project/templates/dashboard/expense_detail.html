@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}{{ expense.title }} - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] max-w-2xl mx-auto">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+        <h2 class="font-headline-md text-headline-md text-on-background">{{ expense.title }}</h2>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <a href="{% url 'expense_edit' expense.pk %}" class="border border-primary text-primary px-6 py-2 rounded-xl hover:bg-primary/10 transition-all duration-200 font-label-md text-center">
+                تعديل
+            </a>
+            <a href="{% url 'expense_delete' expense.pk %}" class="border border-error text-error px-6 py-2 rounded-xl hover:bg-error/10 transition-all duration-200 font-label-md text-center">
+                حذف
+            </a>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-gutter">
+        <div class="bg-background rounded-xl p-4">
+            <p class="font-label-sm text-secondary">المبلغ</p>
+            <p class="font-headline-md text-headline-md text-error">{{ expense.amount }}</p>
+        </div>
+        <div class="bg-background rounded-xl p-4">
+            <p class="font-label-sm text-secondary">الفئة</p>
+            <p class="font-headline-md text-headline-md text-on-background">{{ expense.category.name|default:"-" }}</p>
+        </div>
+        <div class="bg-background rounded-xl p-4">
+            <p class="font-label-sm text-secondary">طريقة الدفع</p>
+            <p class="font-headline-md text-headline-md text-on-background">{{ expense.get_payment_method_display }}</p>
+        </div>
+        <div class="bg-background rounded-xl p-4">
+            <p class="font-label-sm text-secondary">تاريخ الإضافة</p>
+            <p class="font-headline-md text-headline-md text-on-background">{{ expense.created_at|date:"Y-m-d H:i" }}</p>
+        </div>
+        <div class="bg-background rounded-xl p-4">
+            <p class="font-label-sm text-secondary">أضيف بواسطة</p>
+            <p class="font-headline-md text-headline-md text-on-background">{{ expense.created_by.get_full_name|default:expense.created_by.username|default:"-" }}</p>
+        </div>
+        {% if expense.description %}
+        <div class="bg-background rounded-xl p-4 col-span-1 sm:col-span-2">
+            <p class="font-label-sm text-secondary">الوصف</p>
+            <p class="font-body-md text-on-background">{{ expense.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="mt-stack-lg">
+        <a href="{% url 'expense_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md inline-block">
+            العودة إلى القائمة
+        </a>
+    </div>
+</div>
+{% endblock %}

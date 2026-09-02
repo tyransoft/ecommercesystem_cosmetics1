@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}عمولات الطلبات الخارجية - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+        <h2 class="font-headline-md text-headline-md text-on-background">عمولات الطلبات الخارجية</h2>
+        <a href="{% url 'external_commission_add' %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full sm:w-auto text-center">
+            إضافة عمولة
+        </a>
+    </div>
+    
+    <div class="hidden md:block overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-secondary-container">
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">اسم العمولة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">من قيمة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">إلى قيمة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">النسبة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">القيمة الثابتة</th>
+
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for commission in page_obj %}
+                <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                    <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ commission.name }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ commission.min_amount }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ commission.max_amount|default:"ما فوق" }}</td>
+                    <td class="py-3 px-4 font-body-md text-primary">{{ commission.percentage }}%</td>
+                    <td class="py-3 px-4 font-body-md">{{ commission.fixed_amount_lyd  }}</td>
+
+                    <td class="py-3 px-4">
+                        <div class="flex gap-2">
+                            <a href="{% url 'external_commission_edit' commission.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
+                                <span class="material-symbols-outlined text-[20px]">edit</span>
+                            </a>
+                            <a href="{% url 'external_commission_delete' commission.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-8 text-secondary font-body-lg">لا توجد عمولات</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="md:hidden space-y-stack-md">
+        {% for commission in page_obj %}
+        <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
+            <div class="flex justify-between items-start mb-2">
+                <span class="font-headline-md text-headline-md text-on-background">{{ commission.name }}</span>
+                <div class="flex gap-1">
+                    <a href="{% url 'external_commission_edit' commission.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
+                        <span class="material-symbols-outlined text-[20px]">edit</span>
+                    </a>
+                    <a href="{% url 'external_commission_delete' commission.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                    </a>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <p class="font-label-sm text-secondary">من قيمة</p>
+                    <p class="font-body-md">{{ commission.min_amount }}</p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">إلى قيمة</p>
+                    <p class="font-body-md">{{ commission.max_amount|default:"ما فوق" }}</p>
+                </div>
+                <div class="col-span-2">
+                    <p class="font-label-sm text-secondary">النسبة</p>
+                    <p class="font-body-md text-primary">{{ commission.percentage }}%</p>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-8 text-secondary font-body-lg">لا توجد عمولات</div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="flex justify-center gap-2 mt-stack-lg">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">السابق</a>
+        {% endif %}
+        <span class="px-4 py-2 rounded-xl bg-primary text-on-primary">{{ page_obj.number }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">التالي</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

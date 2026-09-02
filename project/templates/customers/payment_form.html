@@ -1,0 +1,99 @@
+<!-- templates/customers/payment_form.html -->
+{% extends 'base.html' %}
+{% block title %}{{ title }} - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] max-w-2xl mx-auto">
+    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">{{ title }}</h2>
+    
+    <div class="bg-background rounded-xl p-4 mb-stack-lg">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="font-label-sm text-secondary">العميل</p>
+                <p class="font-body-md text-primary font-bold">{{ customer.full_name }}</p>
+            </div>
+            <div>
+                <p class="font-label-sm text-secondary">إجمالي المتبقي على الطلبات</p>
+                <p class="font-body-md {% if total_debt > 0 %}text-error{% else %}text-success{% endif %} font-bold">
+                    {{ total_debt|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-2">
+            <div>
+                <p class="font-label-sm text-secondary">الطلبات الداخلية</p>
+                <p class="font-body-md {% if internal_debt > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ internal_debt|floatformat:2 }}
+                </p>
+            </div>
+            <div>
+                <p class="font-label-sm text-secondary">الطلبات الخارجية</p>
+                <p class="font-body-md {% if external_debt > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ external_debt|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+        <div class="mt-2">
+            <p class="font-label-sm text-secondary">رصيد الدين الحالي</p>
+            <p class="font-body-md {% if customer.debt_balance > 0 %}text-error{% else %}text-success{% endif %} font-bold">
+                {{ customer.debt_balance|floatformat:2 }}
+            </p>
+        </div>
+    </div>
+
+    {% if total_debt <= 0 %}
+    <div class="bg-success/10 text-success p-4 rounded-xl border border-success/20 mb-stack-lg">
+        <p class="font-body-md">لا توجد طلبات مستحقة لهذا العميل</p>
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-stack-md">
+        {% csrf_token %}
+        
+        {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}" class="block font-label-md text-secondary mb-stack-sm">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+            <p class="font-label-sm text-secondary mt-1">{{ field.help_text }}</p>
+            {% endif %}
+            {% if field.errors %}
+            <p class="text-error font-label-sm mt-1">{{ field.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
+            <p class="font-label-sm text-secondary mb-2">سيتم توزيع المبلغ على الطلبات التالية :</p>
+            <ul class="space-y-1">
+                {% for order in customer.internalorder_set.all %}
+                    {% if order.status in 'confirmed,indelivery' and order.debt_amount > 0 %}
+                    <li class="flex justify-between text-sm">
+                        <span>داخلي: {{ order.order_number }}</span>
+                        <span class="{% if order.debt_amount > 0 %}text-error{% endif %}">{{ order.debt_amount|floatformat:2 }}</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                {% for order in customer.externalorder_set.all %}
+                    {% if order.status in 'confirmed,indeliver' and order.lyd_debt_amount > 0 %}
+                    <li class="flex justify-between text-sm">
+                        <span>خارجي: {{ order.order_number }}</span>
+                        <span class="{% if order.lyd_debt_amount > 0 %}text-error{% endif %}">{{ order.lyd_debt_amount|floatformat:2 }}</span>
+                    </li>
+                    {% endif %}
+                {% empty %}
+                <li class="text-secondary text-sm">لا توجد طلبات معلقة</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row gap-stack-md pt-stack-md">
+            <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md" {% if total_debt <= 0 %}disabled{% endif %}>
+                تسجيل الدفعة
+            </button>
+            <a href="{% url 'customer_detail' customer.pk %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md text-center">
+                إلغاء
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

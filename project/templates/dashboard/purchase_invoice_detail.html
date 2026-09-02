@@ -1,0 +1,275 @@
+<!-- templates/dashboard/purchase_invoice_detail.html -->
+{% extends 'base.html' %}
+{% block title %}تفاصيل الفاتورة - {{ invoice.invoice_number }}{% endblock %}
+{% block content %}
+{% load mathfilters %}
+
+<div class="space-y-stack-lg">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+            <div>
+                <h2 class="font-headline-md text-headline-md text-on-background">فاتورة {{ invoice.invoice_number }}</h2>
+                <p class="font-body-md text-secondary">{{ invoice.created_at|date:"Y-m-d H:i" }}</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <span class="px-4 py-2 rounded-xl text-center {% if invoice.status == 'confirmed' %}bg-success/10 text-success{% elif invoice.status == 'draft' %}bg-warning/10 text-warning{% else %}bg-error/10 text-error{% endif %} font-label-md">
+                    {{ invoice.get_status_display }}
+                </span>
+                {% if invoice.status == 'draft' %}
+                <a href="{% url 'purchase_invoice_edit' invoice.pk %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md text-center">
+                    تعديل
+                </a>
+                <a href="{% url 'purchase_invoice_confirm' invoice.pk %}" class="bg-success text-on-primary px-6 py-2 rounded-xl hover:bg-success/90 transition-all duration-200 font-label-md text-center" onclick="return confirm('هل أنت متأكد من تأكيد هذه الفاتورة؟')">
+                    تأكيد
+                </a>
+                {% elif invoice.status == 'confirmed' %}
+                <a href="{% url 'purchase_invoice_cancel' invoice.pk %}" class="bg-error text-on-error px-6 py-2 rounded-xl hover:bg-error/90 transition-all duration-200 font-label-md text-center" onclick="return confirm('هل أنت متأكد من إلغاء هذه الفاتورة؟')">
+                    إلغاء
+                </a>
+                {% endif %}
+                <a href="{% url 'purchase_invoice_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md text-center">
+                    العودة
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter mb-stack-lg">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">المورد</p>
+                <p class="font-body-md text-primary">{{ invoice.supplier.name|default:"-" }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">الإجمالي (دينار)</p>
+                <p class="font-headline-md text-headline-md text-on-background">{{ invoice.total|floatformat:2 }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">الإجمالي (دولار)</p>
+                <p class="font-headline-md text-headline-md text-on-background">{{ invoice.total|div:invoice.exchange_rate|floatformat:2 }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">سعر الصرف</p>
+                <p class="font-body-md">{{ invoice.exchange_rate }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">المدفوع (دينار)</p>
+                <p class="font-headline-md text-headline-md text-success">{{ invoice.paid_amount|floatformat:2 }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">المدفوع (دولار)</p>
+                <p class="font-headline-md text-headline-md text-success">{{ invoice.paid_amount|div:invoice.exchange_rate|floatformat:2 }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">المتبقي (دينار)</p>
+                <p class="font-headline-md text-headline-md {% if invoice.debt_amount > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ invoice.debt_amount|floatformat:2 }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">المتبقي (دولار)</p>
+                <p class="font-headline-md text-headline-md {% if invoice.debt_amount > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ invoice.debt_amount|div:invoice.exchange_rate|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-stack-lg">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">تكلفة الشحن (دينار)</p>
+                <p class="font-body-md">{{ invoice.shipping_cost|floatformat:2 }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">تكلفة الشحن (دولار)</p>
+                <p class="font-body-md">{{ invoice.shipping_cost|div:invoice.exchange_rate|floatformat:2 }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-stack-lg">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">تاريخ الوصول</p>
+                <p class="font-body-md">{{ invoice.receive_date|date:"Y-m-d H:i" }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">رصيد دين المورد</p>
+                <p class="font-body-md {% if invoice.supplier.debt_balance > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ invoice.supplier.debt_balance|default:"0.00" }}
+                </p>
+            </div>
+        </div>
+
+        {% if invoice.notes %}
+        <div class="bg-background rounded-xl p-4 mt-stack-lg">
+            <p class="font-label-sm text-secondary">ملاحظات</p>
+            <p class="font-body-md">{{ invoice.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">المنتجات</h3>
+
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-secondary-container">
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المنتج</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الكمية</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">سعر الوحدة (دولار)</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">شحن الوحدة (دولار)</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">سعر الوحدة (دينار)</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجمالي (دولار)</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجمالي (دينار)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in invoice.items.all %}
+                    <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                        <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.product.name }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.quantity }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.unit_usd|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.unit_shipping_cost_usd|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.unit_lyd|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ item.total_usd_price|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md text-primary">{{ item.total_lyd_price|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-secondary font-body-lg">لا توجد منتجات</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="border-t-2 border-primary/20 font-bold">
+                        <td colspan="6" class="text-left py-3 px-4 text-secondary">الإجمالي</td>
+                        <td class="py-3 px-4 text-primary">{{ invoice.subtotal|div:invoice.exchange_rate|floatformat:2 }}</td>
+                        <td class="py-3 px-4 text-primary">{{ invoice.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="border-t border-secondary-container/50">
+                        <td colspan="6" class="text-left py-3 px-4 text-secondary">الخصم</td>
+                        <td class="py-3 px-4">-{{ invoice.discount|div:invoice.exchange_rate|floatformat:2 }}</td>
+                        <td class="py-3 px-4">-{{ invoice.discount|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="border-t border-secondary-container/50">
+                        <td colspan="6" class="text-left py-3 px-4 text-secondary">تكلفة الشحن</td>
+                        <td class="py-3 px-4">{{ invoice.shipping_cost|div:invoice.exchange_rate|floatformat:2 }}</td>
+                        <td class="py-3 px-4">{{ invoice.shipping_cost|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="border-t-2 border-primary font-bold">
+                        <td colspan="6" class="text-left py-3 px-4 text-secondary">الإجمالي الكلي</td>
+                        <td class="py-3 px-4 text-primary text-lg">{{ invoice.total|div:invoice.exchange_rate|floatformat:2 }}</td>
+                        <td class="py-3 px-4 text-primary text-lg">{{ invoice.total|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="border-t border-secondary-container/50">
+                        <td colspan="6" class="text-left py-3 px-4 text-secondary">المدفوع</td>
+                        <td class="py-3 px-4 text-success">{{ invoice.paid_amount|div:invoice.exchange_rate|floatformat:2 }}</td>
+                        <td class="py-3 px-4 text-success">{{ invoice.paid_amount|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="border-t-2 border-secondary-container">
+                        <td colspan="6" class="text-left py-3 px-4 text-secondary font-bold">المتبقي (دين للمورد)</td>
+                        <td class="py-3 px-4 font-bold {% if invoice.debt_amount > 0 %}text-error{% else %}text-success{% endif %}">
+                            {{ invoice.debt_amount|div:invoice.exchange_rate|floatformat:2 }}
+                        </td>
+                        <td class="py-3 px-4 font-bold {% if invoice.debt_amount > 0 %}text-error{% else %}text-success{% endif %}">
+                            {{ invoice.debt_amount|floatformat:2 }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="md:hidden space-y-stack-md">
+            {% for item in invoice.items.all %}
+            <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="font-headline-md text-headline-md text-on-background">{{ item.product.name }}</span>
+                    <span class="text-primary font-headline-md">{{ item.total_lyd_price|floatformat:2 }} د.ل</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <p class="font-label-sm text-secondary">الكمية</p>
+                        <p class="font-body-md">{{ item.quantity }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">سعر الوحدة (دولار)</p>
+                        <p class="font-body-md">{{ item.unit_usd|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">شحن الوحدة (دولار)</p>
+                        <p class="font-body-md">{{ item.unit_shipping_cost_usd|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">سعر الوحدة (دينار)</p>
+                        <p class="font-body-md">{{ item.unit_lyd|floatformat:2 }}</p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="font-label-sm text-secondary">الإجمالي (دولار)</p>
+                        <p class="font-body-md">{{ item.total_usd_price|floatformat:2 }} $</p>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-8 text-secondary font-body-lg">لا توجد منتجات</div>
+            {% endfor %}
+
+            <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <p class="font-label-sm text-secondary">الإجمالي (دينار)</p>
+                        <p class="font-body-md text-primary">{{ invoice.total|floatformat:2 }} د.ل</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">الإجمالي (دولار)</p>
+                        <p class="font-body-md text-primary">{{ invoice.total|div:invoice.exchange_rate|floatformat:2 }} $</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">الخصم (دينار)</p>
+                        <p class="font-body-md">-{{ invoice.discount|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">الخصم (دولار)</p>
+                        <p class="font-body-md">-{{ invoice.discount|div:invoice.exchange_rate|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">الشحن (دينار)</p>
+                        <p class="font-body-md">{{ invoice.shipping_cost|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">الشحن (دولار)</p>
+                        <p class="font-body-md">{{ invoice.shipping_cost|div:invoice.exchange_rate|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">المدفوع (دينار)</p>
+                        <p class="font-body-md text-success">{{ invoice.paid_amount|floatformat:2 }} د.ل</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">المدفوع (دولار)</p>
+                        <p class="font-body-md text-success">{{ invoice.paid_amount|div:invoice.exchange_rate|floatformat:2 }} $</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">المتبقي (دينار)</p>
+                        <p class="font-body-md {% if invoice.debt_amount > 0 %}text-error{% else %}text-success{% endif %}">
+                            {{ invoice.debt_amount|floatformat:2 }} د.ل
+                        </p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">المتبقي (دولار)</p>
+                        <p class="font-body-md {% if invoice.debt_amount > 0 %}text-error{% else %}text-success{% endif %}">
+                            {{ invoice.debt_amount|div:invoice.exchange_rate|floatformat:2 }} $
+                        </p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="font-label-sm text-secondary">رصيد دين المورد</p>
+                        <p class="font-body-md {% if invoice.supplier.debt_balance > 0 %}text-error{% else %}text-success{% endif %}">
+                            {{ invoice.supplier.debt_balance|default:"0.00" }} د.ل
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}سجل مدفوعات الموردين - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">سجل مدفوعات الموردين</h2>
+    
+    <div class="bg-background rounded-xl p-4 mb-stack-lg">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">المورد</label>
+                <select name="supplier" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="">جميع الموردين</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}" {% if selected_supplier == supplier.id|stringformat:"s" %}selected{% endif %}>{{ supplier.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">طريقة الدفع</label>
+                <select name="payment_method" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="">جميع الطرق</option>
+                    {% for method_code, method_name in payment_methods %}
+                    <option value="{{ method_code }}" {% if selected_method == method_code %}selected{% endif %}>{{ method_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">من تاريخ</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">إلى تاريخ</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <div class="sm:col-span-2 lg:col-span-4 flex items-end gap-2">
+                <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">
+                    بحث
+                </button>
+                <a href="{% url 'supplier_payment_list' %}" class="bg-secondary/10 text-secondary px-4 py-2 rounded-xl hover:bg-secondary/20 transition-all duration-200 font-label-md">
+                    إعادة تعيين
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="hidden md:block overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-secondary-container">
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">المورد</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">المبلغ</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">التاريخ</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">طريقة الدفع</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">تم بواسطة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in page_obj %}
+                <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                    <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                    <td class="py-3 px-4 font-body-md">
+                        <a href="{% url 'supplier_detail' payment.supplier.pk %}" class="text-primary hover:underline">
+                            {{ payment.supplier.name }}
+                        </a>
+                    </td>
+                    <td class="py-3 px-4 font-body-md text-success">{{ payment.amount }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ payment.payment_date|date:"Y-m-d" }}</td>
+                    <td class="py-3 px-4 font-body-md">
+                        <span class="px-2 py-1 rounded-lg text-xs bg-primary/10 text-primary">
+                            {{ payment.get_payment_method_display }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-body-md">{{ payment.created_by.get_full_name|default:payment.created_by.username }}</td>
+                    <td class="py-3 px-4">
+                        <a href="{% url 'supplier_payment_delete' payment.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من حذف هذه الدفعة؟')">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-8 text-secondary font-body-lg">لا توجد مدفوعات</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="md:hidden space-y-stack-md">
+        {% for payment in page_obj %}
+        <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
+            <div class="flex justify-between items-start mb-2">
+                <a href="{% url 'supplier_detail' payment.supplier.pk %}" class="font-headline-md text-headline-md text-primary hover:underline">
+                    {{ payment.supplier.name }}
+                </a>
+                <a href="{% url 'supplier_payment_delete' payment.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من حذف هذه الدفعة؟')">
+                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                </a>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <p class="font-label-sm text-secondary">المبلغ</p>
+                    <p class="font-body-md text-success">{{ payment.amount }}</p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">التاريخ</p>
+                    <p class="font-body-md">{{ payment.payment_date|date:"Y-m-d" }}</p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">طريقة الدفع</p>
+                    <p class="font-body-md">
+                        <span class="px-2 py-1 rounded-lg text-xs bg-primary/10 text-primary">
+                            {{ payment.get_payment_method_display }}
+                        </span>
+                    </p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">تم بواسطة</p>
+                    <p class="font-body-md">{{ payment.created_by.get_full_name|default:payment.created_by.username }}</p>
+                </div>
+                {% if payment.reference_number %}
+                <div class="col-span-2">
+                    <p class="font-label-sm text-secondary">رقم المرجع</p>
+                    <p class="font-body-md">{{ payment.reference_number }}</p>
+                </div>
+                {% endif %}
+                {% if payment.notes %}
+                <div class="col-span-2">
+                    <p class="font-label-sm text-secondary">ملاحظات</p>
+                    <p class="font-body-md">{{ payment.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-8 text-secondary font-body-lg">لا توجد مدفوعات</div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="flex justify-center gap-2 mt-stack-lg">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if selected_supplier %}&supplier={{ selected_supplier }}{% endif %}{% if selected_method %}&payment_method={{ selected_method }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">السابق</a>
+        {% endif %}
+        <span class="px-4 py-2 rounded-xl bg-primary text-on-primary">{{ page_obj.number }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if selected_supplier %}&supplier={{ selected_supplier }}{% endif %}{% if selected_method %}&payment_method={{ selected_method }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">التالي</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

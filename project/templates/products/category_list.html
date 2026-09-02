@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}الفئات - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+    <div class="flex justify-between items-center mb-stack-lg">
+        <h2 class="font-headline-md text-headline-md text-on-background">الفئات</h2>
+        <a href="{% url 'category_add' %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md">
+            إضافة فئة
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-secondary-container">
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">اسم الفئة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">تاريخ الإضافة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in page_obj %}
+                <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                    <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ category.name }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ category.created_at|date:"Y-m-d" }}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex gap-2">
+                            <a href="{% url 'category_edit' category.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
+                                <span class="material-symbols-outlined text-[20px]">edit</span>
+                            </a>
+                            <a href="{% url 'category_delete' category.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-8 text-secondary font-body-lg">لا توجد فئات</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="flex justify-center gap-2 mt-stack-lg">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">السابق</a>
+        {% endif %}
+        <span class="px-4 py-2 rounded-xl bg-primary text-on-primary">{{ page_obj.number }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">التالي</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

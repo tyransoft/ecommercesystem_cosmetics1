@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}{{ supplier.name }} - Glamour{% endblock %}
+{% block content %}
+<div class="space-y-stack-lg">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+            <h2 class="font-headline-md text-headline-md text-on-background">{{ supplier.name }}</h2>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <a href="{% url 'supplier_payment_add' supplier.pk %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md text-center">
+                    تسديد
+                </a>
+                <a href="{% url 'supplier_edit' supplier.pk %}" class="border border-primary text-primary px-6 py-2 rounded-xl hover:bg-primary/10 transition-all duration-200 font-label-md text-center">
+                    تعديل
+                </a>
+                <a href="{% url 'supplier_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md text-center">
+                    العودة
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gutter mb-stack-lg">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">رصيد الدين الكلي</p>
+                <p class="font-headline-md text-headline-md {% if supplier.debt_balance > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ supplier.debt_balance|floatformat:2 }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">عدد الفواتير المعلقة</p>
+                <p class="font-headline-md text-headline-md text-on-background">{{ supplier.get_pending_invoices|length }}</p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">تاريخ الإضافة</p>
+                <p class="font-headline-md text-headline-md text-on-background">{{ supplier.created_at|date:"Y-m-d" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- الفواتير المعلقة -->
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">الفواتير المعلقة </h3>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-secondary-container">
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">رقم الفاتورة</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجمالي</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المدفوع</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المتبقي</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in supplier.get_pending_invoices %}
+                    <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                        <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-body-md">
+                            <a href="{% url 'purchase_invoice_detail' invoice.pk %}" class="text-primary hover:underline">
+                                {{ invoice.invoice_number }}
+                            </a>
+                        </td>
+                        <td class="py-3 px-4 font-body-md">{{ invoice.total|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md text-success">{{ invoice.paid_amount|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md text-error">{{ invoice.debt_amount|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ invoice.created_at|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-secondary font-body-lg">لا توجد فواتير معلقة</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- سجل المدفوعات -->
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">سجل المدفوعات</h3>
+        
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-secondary-container">
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المبلغ</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">التاريخ</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">طريقة الدفع</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">رقم المرجع</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in supplier.payments.all %}
+                    <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                        <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-body-md text-success">{{ payment.amount|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ payment.payment_date|date:"Y-m-d" }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ payment.get_payment_method_display }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ payment.reference_number|default:"-" }}</td>
+                        <td class="py-3 px-4">
+                            <a href="{% url 'supplier_payment_delete' payment.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من حذف هذه الدفعة؟')">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-secondary font-body-lg">لا توجد مدفوعات</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

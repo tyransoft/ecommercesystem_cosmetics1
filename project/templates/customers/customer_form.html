@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] max-w-2xl mx-auto">
+    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">{{ title }}</h2>
+    <form method="post" class="space-y-stack-md">
+        {% csrf_token %}
+        {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}" class="block font-label-md text-secondary mb-stack-sm">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <p class="text-error font-label-sm mt-1">{{ field.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div class="flex gap-stack-md pt-stack-md">
+            <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">حفظ</button>
+            <a href="{% url 'customer_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

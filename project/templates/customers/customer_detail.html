@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% block title %}{{ customer.full_name }} - Glamour{% endblock %}
+{% block content %}
+<div class="space-y-stack-lg">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+            <div>
+                <h2 class="font-headline-md text-headline-md text-on-background">{{ customer.full_name }}</h2>
+                <p class="font-body-md text-secondary">{{ customer.phone|default:"لا يوجد هاتف" }}</p>
+                <p class="font-body-md text-secondary text-sm">{{ customer.city|default:"لا توجد مدينة" }}</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <a href="{% url 'payment_add' customer.pk %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md text-center">
+                    تسديد دين
+                </a>
+                <a href="{% url 'customer_edit' customer.pk %}" class="border border-primary text-primary px-6 py-2 rounded-xl hover:bg-primary/10 transition-all duration-200 font-label-md text-center">
+                    تعديل
+                </a>
+                <a href="{% url 'customer_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md text-center">
+                    العودة
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-gutter mb-stack-lg">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">إجمالي الدين</p>
+                <p class="font-headline-md text-headline-md {% if customer.debt_balance > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ customer.debt_balance|floatformat:2 }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">عدد الطلبات</p>
+                <p class="font-headline-md text-headline-md text-on-background">
+                    {{ customer.get_total_orders_count }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">الطلبات المستلمة</p>
+                <p class="font-headline-md text-headline-md text-success">
+                    {{ customer.get_received_orders_count }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">نسبة الاستلام</p>
+                <p class="font-headline-md text-headline-md text-on-background">
+                    {{ customer.get_completion_rate }}%
+                </p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-gutter">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">أول طلب</p>
+                <p class="font-body-md text-on-background">
+                    {% with first_date=customer.get_first_order_date %}
+                        {% if first_date %}
+                            {{ first_date|date:"Y-m-d" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    {% endwith %}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">آخر طلب</p>
+                <p class="font-body-md text-on-background">
+                    {% with last_date=customer.get_last_order_date %}
+                        {% if last_date %}
+                            {{ last_date|date:"Y-m-d" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    {% endwith %}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">إجمالي الإنفاق</p>
+                <p class="font-headline-md text-headline-md text-primary">
+                    {{ customer.get_total_spent|floatformat:2 }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">إجمالي الربح</p>
+                <p class="font-headline-md text-headline-md {% if customer.get_total_profit > 0 %}text-success{% else %}text-error{% endif %}">
+                    {{ customer.get_total_profit|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- الطلبات المعلقة -->
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">الطلبات المعلقة</h3>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-secondary-container">
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">رقم الطلبية</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">النوع</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجمالي</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المدفوع</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المتبقي</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in customer.internalorder_set.all %}
+                        {% if order.status in 'confirmed,indelivery' and order.debt_amount > 0 %}
+                        <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                            <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                            <td class="py-3 px-4 font-body-md">
+                                <a href="{% url 'internal_order_detail' order.pk %}" class="text-primary hover:underline">
+                                    {{ order.order_number }}
+                                </a>
+                            </td>
+                            <td class="py-3 px-4 font-body-md">
+                                <span class="px-2 py-1 rounded-lg text-xs bg-primary/10 text-primary">داخلي</span>
+                            </td>
+                            <td class="py-3 px-4 font-body-md">{{ order.sales_total|floatformat:2 }}</td>
+                            <td class="py-3 px-4 font-body-md text-success">{{ order.paid_amount|floatformat:2 }}</td>
+                            <td class="py-3 px-4 font-body-md text-error">{{ order.debt_amount|floatformat:2 }}</td>
+                            <td class="py-3 px-4 font-body-md">{{ order.created_at|date:"Y-m-d" }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {% for order in customer.externalorder_set.all %}
+                        {% if order.status in 'confirmed,indeliver' and order.lyd_debt_amount > 0 %}
+                        <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                            <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                            <td class="py-3 px-4 font-body-md">
+                                <a href="{% url 'external_order_detail' order.pk %}" class="text-primary hover:underline">
+                                    {{ order.order_number }}
+                                </a>
+                            </td>
+                            <td class="py-3 px-4 font-body-md">
+                                <span class="px-2 py-1 rounded-lg text-xs bg-warning/10 text-warning">خارجي</span>
+                            </td>
+                            <td class="py-3 px-4 font-body-md">{{ order.lyd_sales_total|floatformat:2 }}</td>
+                            <td class="py-3 px-4 font-body-md text-success">{{ order.lyd_paid_amount|floatformat:2 }}</td>
+                            <td class="py-3 px-4 font-body-md text-error">{{ order.lyd_debt_amount|floatformat:2 }}</td>
+                            <td class="py-3 px-4 font-body-md">{{ order.created_at|date:"Y-m-d" }}</td>
+                        </tr>
+                        {% endif %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-secondary font-body-lg">لا توجد طلبات معلقة</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- سجل المدفوعات -->
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">سجل المدفوعات</h3>
+        
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-secondary-container">
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المبلغ</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">التاريخ</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">رقم الإيصال</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">ملاحظات</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in customer.payments.all %}
+                    <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                        <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-body-md text-success">{{ payment.amount|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ payment.payment_date|date:"Y-m-d H:i" }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ payment.receipt_number }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ payment.notes|default:"-"|truncatechars:20 }}</td>
+                        <td class="py-3 px-4">
+                            <a href="{% url 'payment_delete' payment.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من حذف هذه الدفعة؟')">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-secondary font-body-lg">لا توجد دفعات</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="md:hidden space-y-stack-md">
+            {% for payment in customer.payments.all %}
+            <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="font-headline-md text-headline-md text-success">{{ payment.amount|floatformat:2 }}</span>
+                    <a href="{% url 'payment_delete' payment.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <p class="font-label-sm text-secondary">التاريخ</p>
+                        <p class="font-body-md">{{ payment.payment_date|date:"Y-m-d H:i" }}</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-secondary">رقم الإيصال</p>
+                        <p class="font-body-md">{{ payment.receipt_number }}</p>
+                    </div>
+                    {% if payment.notes %}
+                    <div class="col-span-2">
+                        <p class="font-label-sm text-secondary">ملاحظات</p>
+                        <p class="font-body-md">{{ payment.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-8 text-secondary font-body-lg">لا توجد دفعات</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

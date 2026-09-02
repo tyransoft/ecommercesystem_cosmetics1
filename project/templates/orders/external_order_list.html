@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% block title %}الطلبات الخارجية - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+     
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'external_commission_list' %}" class="bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md text-sm whitespace-nowrap">
+                العمولات
+            </a>
+            <a href="{% url 'external_commission_add' %}" class="bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md text-sm whitespace-nowrap">
+                إضافة عمولة
+            </a>
+            <a href="{% url 'external_order_add' %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full sm:w-auto text-center">
+                إضافة طلبية
+            </a>   
+        </div>
+    </div>
+
+    <div class="bg-background rounded-xl p-4 mb-stack-lg">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">بحث</label>
+                <input type="text" name="search" value="{{ search_query }}" placeholder="رقم الطلبية أو اسم العميل" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">الحالة</label>
+                <select name="status" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="">جميع الحالات</option>
+                    {% for status_code, status_label in status_choices %}
+                    <option value="{{ status_code }}" {% if selected_status == status_code %}selected{% endif %}>{{ status_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">المورد</label>
+                <select name="supply" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="">جميع الموردين</option>
+                    {% for supply_code, supply_label in supply_choices %}
+                    <option value="{{ supply_code }}" {% if selected_supply == supply_code %}selected{% endif %}>{{ supply_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">
+                    بحث
+                </button>
+                <a href="{% url 'external_order_list' %}" class="bg-secondary/10 text-secondary px-4 py-2 rounded-xl hover:bg-secondary/20 transition-all duration-200 font-label-md">
+                    إعادة تعيين
+                </a>
+            </div>
+        </form>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-secondary-container/30">
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">من تاريخ</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">إلى تاريخ</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+        </div>
+    </div>
+
+    <div class="hidden md:block overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-secondary-container">
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">رقم الطلبية</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">العميل</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">المورد</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجمالي ($)</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجمالي (د.ل)</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">العمولة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الحالة</th>
+                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in page_obj %}
+                <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                    <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                    <td class="py-3 px-4 font-body-md">
+                        <a href="{% url 'external_order_detail' order.pk %}" class="text-primary hover:underline">
+                            {{ order.order_number }}
+                        </a>
+                    </td>
+                    <td class="py-3 px-4 font-body-md">{{ order.customer.full_name|default:"-" }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ order.get_supply_display }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ order.usd_sales_total|floatformat:2 }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ order.lyd_sales_total|floatformat:2 }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ order.lyd_commission_amount|floatformat:2 }}</td>
+                    
+                    <td class="py-3 px-4 font-body-md">
+                        <span class="px-2 py-1 rounded-lg text-xs 
+                            {% if order.status == 'received' %}bg-success/10 text-success
+                            {% elif order.status == 'confirmed' %}bg-primary/10 text-primary
+                            {% elif order.status == 'indeliver' %}bg-warning/10 text-warning
+                            {% elif order.status == 'draft' %}bg-secondary/10 text-secondary
+                            {% elif order.status == 'cancelled' %}bg-error/10 text-error
+                            {% else %}bg-secondary/10 text-secondary{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex gap-2 flex-wrap">
+                            <a href="{% url 'external_order_detail' order.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
+                                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                            </a>
+                            {% if order.status == 'draft' or order.status == 'cancelled' %}
+                            <a href="{% url 'external_order_edit' order.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
+                                <span class="material-symbols-outlined text-[20px]">edit</span>
+                            </a>
+                            <a href="{% url 'external_order_confirm' order.pk %}" class="text-success hover:bg-success/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من تأكيد هذه الطلبية؟')">
+                                <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                            </a>
+                            <a href="{% url 'external_order_delete' order.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </a>
+                            {% elif order.status == 'confirmed' %}
+                            <a href="{% url 'external_order_deliver' order.pk %}" class="text-warning hover:bg-warning/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من شحن هذه الطلبية؟')">
+                                <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+                            </a>
+                            <a href="{% url 'external_order_cancel' order.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من إلغاء هذه الطلبية؟')">
+                                <span class="material-symbols-outlined text-[20px]">cancel</span>
+                            </a>
+                            {% elif order.status == 'indeliver' %}
+                            <a href="{% url 'external_order_receive' order.pk %}" class="text-success hover:bg-success/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من تسليم هذه الطلبية؟')">
+                                <span class="material-symbols-outlined text-[20px]">check</span>
+                            </a>
+                            <a href="{% url 'external_order_cancel' order.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من إلغاء هذه الطلبية؟')">
+                                <span class="material-symbols-outlined text-[20px]">cancel</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="text-center py-8 text-secondary font-body-lg">لا توجد طلبات خارجية</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="md:hidden space-y-stack-md">
+        {% for order in page_obj %}
+        <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
+            <div class="flex justify-between items-start mb-2">
+                <a href="{% url 'external_order_detail' order.pk %}" class="font-headline-md text-headline-md text-primary hover:underline">
+                    {{ order.order_number }}
+                </a>
+                <span class="px-2 py-1 rounded-lg text-xs 
+                    {% if order.status == 'received' %}bg-success/10 text-success
+                    {% elif order.status == 'confirmed' %}bg-primary/10 text-primary
+                    {% elif order.status == 'indeliver' %}bg-warning/10 text-warning
+                    {% elif order.status == 'draft' %}bg-secondary/10 text-secondary
+                    {% elif order.status == 'cancelled' %}bg-error/10 text-error
+                    {% else %}bg-secondary/10 text-secondary{% endif %}">
+                    {{ order.get_status_display }}
+                </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <p class="font-label-sm text-secondary">العميل</p>
+                    <p class="font-body-md">{{ order.customer.full_name|default:"-" }}</p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">المورد</p>
+                    <p class="font-body-md">{{ order.get_supply_display }}</p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">الإجمالي ($)</p>
+                    <p class="font-body-md">{{ order.usd_sales_total|floatformat:2 }}</p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">الإجمالي (د.ل)</p>
+                    <p class="font-body-md">{{ order.lyd_sales_total|floatformat:2 }}</p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">الربح</p>
+                    <p class="font-body-md {% if order.total_profit > 0 %}text-success{% else %}text-error{% endif %}">{{ order.total_profit|floatformat:2 }}</p>
+                </div>
+                <div>
+                    <p class="font-label-sm text-secondary">الحالة</p>
+                    <p class="font-body-md">{{ order.get_status_display }}</p>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-2 flex-wrap">
+                <a href="{% url 'external_order_detail' order.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
+                    <span class="material-symbols-outlined text-[20px]">visibility</span>
+                </a>
+                {% if order.status == 'draft' or order.status == 'cancelled' %}
+                <a href="{% url 'external_order_edit' order.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
+                    <span class="material-symbols-outlined text-[20px]">edit</span>
+                </a>
+                <a href="{% url 'external_order_confirm' order.pk %}" class="text-success hover:bg-success/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من تأكيد هذه الطلبية؟')">
+                    <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                </a>
+                <a href="{% url 'external_order_delete' order.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                </a>
+                {% elif order.status == 'confirmed' %}
+                <a href="{% url 'external_order_deliver' order.pk %}" class="text-warning hover:bg-warning/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من شحن هذه الطلبية؟')">
+                    <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+                </a>
+                <a href="{% url 'external_order_cancel' order.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من إلغاء هذه الطلبية؟')">
+                    <span class="material-symbols-outlined text-[20px]">cancel</span>
+                </a>
+                {% elif order.status == 'indeliver' %}
+                <a href="{% url 'external_order_receive' order.pk %}" class="text-success hover:bg-success/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من تسليم هذه الطلبية؟')">
+                    <span class="material-symbols-outlined text-[20px]">check</span>
+                </a>
+                <a href="{% url 'external_order_cancel' order.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200" onclick="return confirm('هل أنت متأكد من إلغاء هذه الطلبية؟')">
+                    <span class="material-symbols-outlined text-[20px]">cancel</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-8 text-secondary font-body-lg">لا توجد طلبات خارجية</div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="flex justify-center gap-2 mt-stack-lg">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_supply %}&supply={{ selected_supply }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">السابق</a>
+        {% endif %}
+        <span class="px-4 py-2 rounded-xl bg-primary text-on-primary">{{ page_obj.number }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_supply %}&supply={{ selected_supply }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">التالي</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

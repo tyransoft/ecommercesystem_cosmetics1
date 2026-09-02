@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% block title %}إضافة طلبية - Glamour{% endblock %}
+{% block content %}
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">إضافة طلبية جديدة</h2>
+    
+    <form method="post" id="orderForm" class="space-y-stack-lg">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">العميل</label>
+                <select name="customer" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="">اختر العميل</option>
+                    {% for customer in customers %}
+                    <option value="{{ customer.id }}">{{ customer.full_name }} - {{ customer.city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">عنوان التوصيل</label>
+                <input type="text" name="delivery_address" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <div>
+                <label class="block font-label-md text-secondary mb-stack-sm">الحالة</label>
+                <select name="status" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <option value="draft">مسودة</option>
+                    <option value="confirmed">تأكيد مباشر</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="border-t border-secondary-container pt-stack-lg">
+            <div class="flex justify-between items-center mb-stack-md">
+                <h3 class="font-headline-md text-headline-md text-on-background">المنتجات</h3>
+                <button type="button" onclick="addProductRow()" class="bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md">
+                    <span class="material-symbols-outlined text-[18px] align-middle">add</span> إضافة منتج
+                </button>
+            </div>
+            
+            <div id="productRows" class="space-y-stack-md">
+                <div class="product-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end bg-background rounded-xl p-4">
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">المنتج</label>
+                        <select name="product_ids[]" required class="product-select w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="getProductData(this)">
+                            <option value="">اختر المنتج</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}" data-price="{{ product.lyd_sell_price }}">{{ product.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">الكمية</label>
+                        <input type="number" name="quantities[]" min="1" required class="quantity-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">سعر البيع</label>
+                        <input type="number" name="unit_prices[]" step="0.01" required class="unit-price-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">خصم للوحدة</label>
+                        <input type="number" name="unit_discounts[]" step="0.01" value="0" class="discount-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">المخزون</label>
+                        <input type="text" class="inventory-display w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-secondary" readonly>
+                    </div>
+                    <div>
+                        <label class="block font-label-sm text-secondary mb-1">التكلفة</label>
+                        <input type="text" class="cost-display w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-secondary" readonly>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <div class="flex-1">
+                            <label class="block font-label-sm text-secondary mb-1">الربح</label>
+                            <input type="text" class="profit-display w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-success" readonly>
+                        </div>
+                        <button type="button" onclick="removeRow(this)" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="border-t border-secondary-container pt-stack-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الخصم العام</label>
+                    <input type="number" name="discount" step="0.01" value="0" id="discount" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">المبلغ المدفوع</label>
+                    <input type="number" name="paid_amount" step="0.01" value="0" id="paidAmount" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي</label>
+                    <input type="text" name="subtotal" id="subtotal" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">إجمالي الربح</label>
+                    <input type="text" id="totalProfit" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-success">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي بعد الخصم</label>
+                    <input type="text" name="sales_total" id="salesTotal" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background font-bold text-primary">
+                </div>
+                <div>
+                    <label class="block font-label-md text-secondary mb-stack-sm">المتبقي</label>
+                    <input type="text" name="debt_amount" id="debtAmount" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full">
+                        حفظ الطلبية
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function addProductRow() {
+    const row = document.querySelector('.product-row').cloneNode(true);
+    row.querySelectorAll('input, select').forEach(el => {
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else if (el.type !== 'button') {
+            el.value = '';
+        }
+    });
+    row.querySelectorAll('.inventory-display, .cost-display, .profit-display').forEach(el => el.value = '');
+    document.getElementById('productRows').appendChild(row);
+    calculateTotals();
+}
+
+function removeRow(btn) {
+    const rows = document.querySelectorAll('.product-row');
+    if (rows.length > 1) {
+        btn.closest('.product-row').remove();
+        calculateTotals();
+    }
+}
+
+function getProductData(select) {
+    const row = select.closest('.product-row');
+    const productId = select.value;
+    const selectedOption = select.options[select.selectedIndex];
+    const price = selectedOption.getAttribute('data-price') || 0;
+    
+    const inventoryDisplay = row.querySelector('.inventory-display');
+    const costDisplay = row.querySelector('.cost-display');
+    const profitDisplay = row.querySelector('.profit-display');
+    const unitPrice = row.querySelector('.unit-price-input');
+    const discount = row.querySelector('.discount-input');
+    
+    if (productId) {
+        unitPrice.value = price;
+        
+        fetch(`/get-product-inventory/${productId}/`)
+            .then(response => response.json())
+            .then(data => {
+                inventoryDisplay.value = data.quantity;
+                costDisplay.value = data.cost;
+                if (unitPrice.value && costDisplay.value) {
+                    const profit = parseFloat(unitPrice.value) - parseFloat(discount.value || 0) - parseFloat(data.cost);
+                    profitDisplay.value = profit.toFixed(2);
+                    if (profit > 0) {
+                        profitDisplay.classList.add('text-success');
+                        profitDisplay.classList.remove('text-error');
+                    } else {
+                        profitDisplay.classList.remove('text-success');
+                        profitDisplay.classList.add('text-error');
+                    }
+                }
+                calculateTotals();
+            });
+    } else {
+        unitPrice.value = '';
+        inventoryDisplay.value = '';
+        costDisplay.value = '';
+        profitDisplay.value = '';
+    }
+}
+
+function calculateTotals() {
+    let subtotal = 0;
+    let totalProfit = 0;
+    const rows = document.querySelectorAll('.product-row');
+    
+    rows.forEach(row => {
+        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price-input').value) || 0;
+        const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        const cost = parseFloat(row.querySelector('.cost-display').value) || 0;
+        const profitDisplay = row.querySelector('.profit-display');
+        
+        const itemTotal = (unitPrice - discount) * quantity;
+        const profit = (unitPrice - discount - cost) * quantity;
+        subtotal += itemTotal;
+        totalProfit += profit;
+        
+        profitDisplay.value = profit.toFixed(2);
+        if (profit > 0) {
+            profitDisplay.classList.add('text-success');
+            profitDisplay.classList.remove('text-error');
+        } else {
+            profitDisplay.classList.remove('text-success');
+            profitDisplay.classList.add('text-error');
+        }
+    });
+    
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const paidAmount = parseFloat(document.getElementById('paidAmount').value) || 0;
+    
+    const salesTotal = subtotal - discount;
+    const debtAmount = salesTotal - paidAmount;
+    
+    document.getElementById('subtotal').value = subtotal.toFixed(2);
+    document.getElementById('salesTotal').value = salesTotal.toFixed(2);
+    document.getElementById('debtAmount').value = debtAmount.toFixed(2);
+    document.getElementById('totalProfit').value = totalProfit.toFixed(2);
+    
+    const debtEl = document.getElementById('debtAmount');
+    if (debtAmount > 0) {
+        debtEl.classList.add('text-error');
+        debtEl.classList.remove('text-success');
+    } else {
+        debtEl.classList.remove('text-error');
+        debtEl.classList.add('text-success');
+    }
+}
+
+document.addEventListener('input', calculateTotals);
+document.addEventListener('change', calculateTotals);
+</script>
+{% endblock %}
