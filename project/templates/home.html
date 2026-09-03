@@ -115,13 +115,14 @@
         font-size: 22px;
     }
     .stat-label {
-        margin-right: 51px;
+        margin-right: 55px;
         color: #4f4b52;
         font-size: 13px;
         font-weight: 600;
     }
     .stat-value {
         margin: 8px 0 0;
+        margin-right: 55px;
         color: #25232a;
         font-family: Arial, sans-serif;
         font-size: 22px;
@@ -140,18 +141,27 @@
         justify-content: flex-end;
         gap: 8px;
         margin-top: 8px;
+        padding-left: 85px;
         color: #56ae8b;
         font-size: 11px;
         font-weight: 500;
         white-space: nowrap;
     }
-    .stat-foot .down { color: #e8a72e; }
+    .stat-foot .down {
+        color: #e8a72e;
+    }
     .mini-chart {
         position: absolute;
-        bottom: 12px;
-        left: 16px;
+        bottom: 8px;
+        left: 12px;
         width: 73px;
         height: 27px;
+        overflow: hidden;
+    }
+    .mini-chart svg {
+        display: block;
+        width: 100%;
+        height: 100%;
     }
     .mini-chart path {
         fill: none;
@@ -221,64 +231,11 @@
         border-radius: 8px;
         background: #dc3e91;
     }
-    .sales-chart {
-        display: block;
+    .sales-chart-wrapper {
+        position: relative;
         width: calc(100% - 30px);
         height: 250px;
         margin: 0 15px 15px;
-    }
-    .chart-grid {
-        stroke: #f0edf0;
-        stroke-width: 1;
-    }
-    .chart-label {
-        fill: #5f5b62;
-        font-family: "Cairo", sans-serif;
-        font-size: 11px;
-        font-weight: 500;
-    }
-    .chart-area { fill: url(#salesFill); }
-    .chart-line {
-        fill: none;
-        stroke: #c83a86;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        stroke-width: 2;
-    }
-    .chart-point {
-        fill: #c83a86;
-        stroke: #fff;
-        stroke-width: 2;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .chart-point:hover {
-        fill: #af006b;
-        r: 5;
-    }
-    .chart-tooltip {
-        display: none;
-        position: absolute;
-        background: #fff;
-        border: 1px solid #e5eeff;
-        border-radius: 8px;
-        padding: 8px 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        font-size: 11px;
-        color: #25232a;
-        pointer-events: none;
-        z-index: 10;
-        min-width: 80px;
-        text-align: center;
-    }
-    .chart-tooltip .value {
-        font-weight: 700;
-        color: #af006b;
-        font-size: 13px;
-    }
-    .chart-tooltip .date {
-        color: #5f5b62;
-        font-size: 10px;
     }
     .orders-panel { min-height: 300px; }
     .orders-table {
@@ -435,6 +392,7 @@
         font: 700 15px/1.5 "Cairo", sans-serif;
         text-align: center;
         white-space: pre;
+        content: "{{ total_sales|floatformat:0|default:'0' }}\A إجمالي المبيعات";
     }
     .legend-list {
         display: flex;
@@ -518,7 +476,9 @@
             <div class="stat-foot">
                 <span>{% if profit_change > 0 %}+{% endif %}{{ profit_change|floatformat:1|default:"0" }}% عن الشهر</span>
             </div>
-            <svg class="mini-chart pink" viewBox="0 0 90 32" aria-hidden="true"><path d="M2 27 C12 28 17 19 25 21 S36 12 45 20 S55 7 64 12 S73 9 88 2"/></svg>
+            <div class="mini-chart pink">
+                <svg viewBox="0 0 90 32" aria-hidden="true"><path d="M2 27 C12 28 17 19 25 21 S36 12 45 20 S55 7 64 12 S73 9 88 2"/></svg>
+            </div>
         </article>
         <article class="stat-card">
             <span class="stat-icon material-symbols-outlined">shopping_bag</span>
@@ -527,14 +487,18 @@
             <div class="stat-foot">
                 <span>{% if sales_change > 0 %}+{% endif %}{{ sales_change|floatformat:1|default:"0" }}% عن الشهر</span>
             </div>
-            <svg class="mini-chart" viewBox="0 0 90 32" aria-hidden="true"><path d="M2 27 L13 27 L22 18 L31 24 L40 12 L49 22 L58 14 L68 16 L78 5 L88 9"/></svg>
+            <div class="mini-chart">
+                <svg viewBox="0 0 90 32" aria-hidden="true"><path d="M2 27 L13 27 L22 18 L31 24 L40 12 L49 22 L58 14 L68 16 L78 5 L88 9"/></svg>
+            </div>
         </article>
         <article class="stat-card">
             <span class="stat-icon material-symbols-outlined">assignment</span>
             <div class="stat-label">عدد الطلبات</div>
             <div class="stat-value">{{ total_orders|default:"0" }}</div>
             <div class="stat-foot"><span>إجمالي الطلبات</span></div>
-            <svg class="mini-chart" viewBox="0 0 90 32" aria-hidden="true"><path d="M2 28 L14 25 L23 16 L34 22 L44 11 L55 18 L65 8 L74 14 L88 2"/></svg>
+            <div class="mini-chart">
+                <svg viewBox="0 0 90 32" aria-hidden="true"><path d="M2 28 L14 25 L23 16 L34 22 L44 11 L55 18 L65 8 L74 14 L88 2"/></svg>
+            </div>
         </article>
         <article class="stat-card">
             <span class="stat-icon material-symbols-outlined">deployed_code</span>
@@ -596,12 +560,8 @@
                 </select>
             </div>
             <div class="sales-legend"><i></i><span>المبيعات (د.ل)</span></div>
-            <div style="position:relative;">
+            <div class="sales-chart-wrapper">
                 <canvas id="salesChart" width="650" height="250"></canvas>
-                <div class="chart-tooltip" id="tooltip">
-                    <div class="date"></div>
-                    <div class="value"></div>
-                </div>
             </div>
         </section>
     </div>
