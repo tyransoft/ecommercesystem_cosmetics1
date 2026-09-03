@@ -392,7 +392,7 @@ def customer_detail(request, pk):
     
     external_orders = customer.externalorder_set.filter(
         status='confirmed',
-        debt_amount__gt=0
+        lyd_debt_amount__gt=0
     ).order_by('created_at')
     
     for order in external_orders:
