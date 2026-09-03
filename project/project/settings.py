@@ -24,7 +24,7 @@ TEMP=BASE_DIR / 'templates'
 SECRET_KEY = 'django-insecure-r2&k+m_%_vtl+$%wgas!7ysveax^2lb-=xng4c7a=t!2u4$010'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['glamour.tip2.libyanspider.cloud']
 
