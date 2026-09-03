@@ -32,6 +32,7 @@ urlpatterns = [
     path('customers/<int:customer_pk>/payment/add/', payment_add, name='payment_add'),
     path('customers/payments/<int:pk>/delete/', payment_delete, name='payment_delete'),
     path('customers/payments/', payment_list, name='payment_list'),
+    path('marketing/', marketing_dashboard, name='marketing_dashboard'),
 
     path('suppliers/', supplier_list, name='supplier_list'),
     path('suppliers/add/', supplier_add, name='supplier_add'),

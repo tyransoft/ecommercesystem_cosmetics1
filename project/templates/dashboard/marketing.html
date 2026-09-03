@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load mathfilters %}
+
+{% block title %}التسويق - Glamour{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    .chart-container-pie {
+        position: relative;
+        height: 280px;
+        width: 100%;
+        max-width: 350px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-stack-lg">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <form method="get" class="flex flex-col sm:flex-row gap-4 items-end">
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">من تاريخ</label>
+                <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="w-full sm:w-48 px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <div>
+                <label class="block font-label-sm text-secondary mb-1">إلى تاريخ</label>
+                <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="w-full sm:w-48 px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+            </div>
+            <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">عرض التقرير</button>
+            <a href="{% url 'marketing_dashboard' %}" class="bg-secondary/10 text-secondary px-4 py-2 rounded-xl hover:bg-secondary/20 transition-all duration-200 font-label-md">إعادة تعيين</a>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-gutter">
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <p class="font-label-sm text-secondary">إجمالي العملاء</p>
+            <p class="font-headline-md text-headline-md text-on-background">{{ total_customers }}</p>
+        </div>
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <p class="font-label-sm text-secondary">عملاء جدد</p>
+            <p class="font-headline-md text-headline-md text-success">{{ new_customers }}</p>
+            <p class="font-label-sm text-secondary text-xs">منذ {{ date_from|date:'Y-m-d' }}</p>
+        </div>
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <p class="font-label-sm text-secondary">عملاء متكررين</p>
+            <p class="font-headline-md text-headline-md text-primary">{{ repeat_customers }}</p>
+        </div>
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <p class="font-label-sm text-secondary">نسبة التكرار</p>
+            <p class="font-headline-md text-headline-md text-on-background">{{ repeat_rate }}%</p>
+        </div>
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <p class="font-label-sm text-secondary">متوسط الطلبات لكل عميل</p>
+            <p class="font-headline-md text-headline-md text-on-background">{{ avg_orders_per_customer }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">توزيع العملاء حسب المصدر</h3>
+            <div class="chart-container-pie">
+                <canvas id="sourcePieChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">العملاء الجدد حسب المصدر</h3>
+            <div class="chart-container">
+                <canvas id="newSourceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">العملاء الجدد شهرياً</h3>
+            <div class="chart-container">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+            <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">أكثر العملاء طلباً</h3>
+            <div class="chart-container">
+                <canvas id="topCustomersChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">تفاصيل أكثر العملاء طلباً</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-secondary-container">
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">العميل</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">عدد الطلبات</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">إجمالي الإنفاق</th>
+                        <th class="text-right py-3 px-4 font-label-sm text-secondary">آخر طلب</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in top_customers %}
+                    <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
+                        <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ customer.name }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ customer.orders }}</td>
+                        <td class="py-3 px-4 font-body-md text-primary">{{ customer.spent|floatformat:2 }}</td>
+                        <td class="py-3 px-4 font-body-md">{{ customer.last_order|date:"Y-m-d"|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-8 text-secondary font-body-lg">لا توجد بيانات</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colors = {
+        facebook: '#1877f2',
+        instagram: '#e4405f',
+        tiktok: '#000000',
+        snapchat: '#fffc00',
+        friend: '#16a34a',
+        advertisement: '#f59e0b',
+        other: '#6b7280',
+        primary: '#af006b',
+        success: '#16a34a',
+        error: '#dc2626',
+        warning: '#f59e0b',
+        secondary: '#6b7280',
+        blue: '#3b82f6',
+        purple: '#8b5cf6'
+    };
+
+    const colorPalette = [
+        '#af006b', '#16a34a', '#f59e0b', '#dc2626',
+        '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6',
+        '#f97316', '#6366f1', '#10b981', '#06b6d4'
+    ];
+
+    const sourceCtx = document.getElementById('sourcePieChart').getContext('2d');
+    new Chart(sourceCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ source_labels|safe }},
+            datasets: [{
+                data: {{ source_counts|safe }},
+                backgroundColor: {{ source_colors|safe }},
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { 
+                        font: { family: 'Tajawal' },
+                        padding: 10
+                    }
+                }
+            }
+        }
+    });
+
+    const newSourceCtx = document.getElementById('newSourceChart').getContext('2d');
+    new Chart(newSourceCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ new_source_labels|safe }},
+            datasets: [{
+                label: 'عدد العملاء الجدد',
+                data: {{ new_source_counts|safe }},
+                backgroundColor: {{ source_colors|safe }},
+                borderRadius: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { 
+                        font: { family: 'Tajawal' },
+                        stepSize: 1
+                    }
+                },
+                x: {
+                    ticks: { 
+                        font: { family: 'Tajawal' }
+                    }
+                }
+            }
+        }
+    });
+
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_labels|safe }},
+            datasets: [{
+                label: 'عملاء جدد',
+                data: {{ monthly_counts|safe }},
+                borderColor: colors.primary,
+                backgroundColor: colors.primary + '33',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: colors.primary,
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { font: { family: 'Tajawal' } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { 
+                        font: { family: 'Tajawal' },
+                        stepSize: 1
+                    }
+                },
+                x: {
+                    ticks: { 
+                        font: { family: 'Tajawal' }
+                    }
+                }
+            }
+        }
+    });
+
+    const topCustomersCtx = document.getElementById('topCustomersChart').getContext('2d');
+    new Chart(topCustomersCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ customer_names|safe }},
+            datasets: [{
+                label: 'إجمالي الإنفاق',
+                data: {{ customer_spent|safe }},
+                backgroundColor: colorPalette.slice(0, {{ customer_names|length }}),
+                borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { font: { family: 'Tajawal' } }
+                },
+                x: {
+                    ticks: { 
+                        font: { family: 'Tajawal' },
+                        maxRotation: 30
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

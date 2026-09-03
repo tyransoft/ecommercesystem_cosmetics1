@@ -16,9 +16,305 @@ from .models import *
 
 
 def home(request):
-    if request.user.is_authenticated:
-      return render(request, 'home.html')
-    return redirect('user_login')
+
+    today = timezone.now().date()
+    first_day_month = today.replace(day=1)
+    last_month = first_day_month - timedelta(days=1)
+    first_day_last_month = last_month.replace(day=1)
+    
+    # ========== إحصائيات المنتجات ==========
+    total_products = Product.objects.count()
+    
+    # ========== إحصائيات الطلبات ==========
+    total_orders = InternalOrder.objects.count() + ExternalOrder.objects.count()
+    
+    # ========== مبيعات الشهر الحالي ==========
+    current_month_sales_internal = InternalOrder.objects.filter(
+        created_at__date__gte=first_day_month,
+        status__in=['confirmed', 'indelivery', 'received']
+    ).aggregate(total=Sum('sales_total'))['total'] or Decimal('0')
+    
+    current_month_sales_external = ExternalOrder.objects.filter(
+        created_at__date__gte=first_day_month,
+        status__in=['confirmed', 'indeliver', 'received']
+    ).aggregate(total=Sum('lyd_sales_total'))['total'] or Decimal('0')
+    
+    current_month_sales = current_month_sales_internal + current_month_sales_external
+    
+    # ========== مبيعات الشهر الماضي ==========
+    last_month_sales_internal = InternalOrder.objects.filter(
+        created_at__date__gte=first_day_last_month,
+        created_at__date__lte=last_month,
+        status__in=['confirmed', 'indelivery', 'received']
+    ).aggregate(total=Sum('sales_total'))['total'] or Decimal('0')
+    
+    last_month_sales_external = ExternalOrder.objects.filter(
+        created_at__date__gte=first_day_last_month,
+        created_at__date__lte=last_month,
+        status__in=['confirmed', 'indeliver', 'received']
+    ).aggregate(total=Sum('lyd_sales_total'))['total'] or Decimal('0')
+    
+    last_month_sales = last_month_sales_internal + last_month_sales_external
+    
+    # ========== نسبة التغير في المبيعات ==========
+    sales_change = 0
+    if last_month_sales > 0:
+        sales_change = round(((current_month_sales - last_month_sales) / last_month_sales) * 100, 2)
+    
+    # ========== أرباح الشهر الحالي ==========
+    current_month_profit_internal = InternalOrder.objects.filter(
+        created_at__date__gte=first_day_month,
+        status__in=['confirmed', 'indelivery', 'received']
+    ).aggregate(total=Sum('total_profit'))['total'] or Decimal('0')
+    
+    current_month_profit_external = ExternalOrder.objects.filter(
+        created_at__date__gte=first_day_month,
+        status__in=['confirmed', 'indeliver', 'received']
+    ).aggregate(total=Sum('lyd_commission_amount'))['total'] or Decimal('0')
+    
+    current_month_profit = current_month_profit_internal + current_month_profit_external
+    
+    # ========== أرباح الشهر الماضي ==========
+    last_month_profit_internal = InternalOrder.objects.filter(
+        created_at__date__gte=first_day_last_month,
+        created_at__date__lte=last_month,
+        status__in=['confirmed', 'indelivery', 'received']
+    ).aggregate(total=Sum('total_profit'))['total'] or Decimal('0')
+    
+    last_month_profit_external = ExternalOrder.objects.filter(
+        created_at__date__gte=first_day_last_month,
+        created_at__date__lte=last_month,
+        status__in=['confirmed', 'indeliver', 'received']
+    ).aggregate(total=Sum('lyd_commission_amount'))['total'] or Decimal('0')
+    
+    last_month_profit = last_month_profit_internal + last_month_profit_external
+    
+    # ========== نسبة التغير في الأرباح ==========
+    profit_change = 0
+    if last_month_profit > 0:
+        profit_change = round(((current_month_profit - last_month_profit) / last_month_profit) * 100, 2)
+    
+    # ========== مصروفات الشهر الحالي ==========
+    current_month_expenses = Expense.objects.filter(
+        created_at__date__gte=first_day_month
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    # ========== الطلبات الأخيرة (آخر 5) ==========
+    recent_orders = []
+    
+    internal_recent = InternalOrder.objects.filter(
+        status__in=['confirmed', 'indelivery', 'received']
+    ).select_related('customer').order_by('-created_at')[:5]
+    
+    for order in internal_recent:
+        recent_orders.append({
+            'customer': order.customer.full_name if order.customer else 'عميل',
+            'order_number': order.order_number,
+            'amount': order.sales_total,
+            'type': 'internal'
+        })
+    
+    external_recent = ExternalOrder.objects.filter(
+        status__in=['confirmed', 'indeliver', 'received']
+    ).select_related('customer').order_by('-created_at')[:5]
+    
+    for order in external_recent:
+        recent_orders.append({
+            'customer': order.customer.full_name if order.customer else 'عميل',
+            'order_number': order.order_number,
+            'amount': order.lyd_sales_total,
+            'type': 'external'
+        })
+    
+    recent_orders = sorted(recent_orders, key=lambda x: x['order_number'], reverse=True)[:5]
+    
+    # ========== المنتجات منخفضة المخزون ==========
+    low_stock_products = Inventory.objects.select_related('product').filter(
+        quantity__lt=50
+    ).order_by('quantity')[:5]
+    
+    # ========== أفضل المنتجات مبيعاً ==========
+    best_selling = get_best_selling_products()
+    
+    # ========== قنوات المبيعات (مصادر العملاء) ==========
+    channel_data = Customer.objects.values('known_us_from').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    channel_labels = []
+    channel_counts = []
+    channel_colors = []
+    
+    channel_names = {
+        'facebook': 'فيسبوك',
+        'instagram': 'إنستغرام',
+        'tiktok': 'تيكتوك',
+        'snapchat': 'سناب شات',
+        'friend': 'صديق',
+        'advertisement': 'إعلان',
+        'other': 'أخرى'
+    }
+    
+    channel_colors_map = {
+        'facebook': '#1877f2',
+        'instagram': '#e4405f',
+        'tiktok': '#000000',
+        'snapchat': '#fffc00',
+        'friend': '#16a34a',
+        'advertisement': '#f59e0b',
+        'other': '#6b7280'
+    }
+    
+    total_customers = Customer.objects.count()
+    
+    for item in channel_data:
+        if item['known_us_from']:
+            channel_labels.append(channel_names.get(item['known_us_from'], item['known_us_from']))
+            percentage = round((item['count'] / total_customers) * 100, 2) if total_customers > 0 else 0
+            channel_counts.append(percentage)
+            channel_colors.append(channel_colors_map.get(item['known_us_from'], '#6b7280'))
+    
+    # ========== تفاصيل المصروفات هذا الشهر ==========
+    expense_details = Expense.objects.filter(
+        created_at__date__gte=first_day_month
+    ).values('category__name').annotate(
+        total=Sum('amount')
+    ).order_by('-total')[:5]
+    
+    expense_labels = []
+    expense_amounts = []
+    
+    for item in expense_details:
+        expense_labels.append(item['category__name'] or 'أخرى')
+        expense_amounts.append(float(item['total']))
+    
+    # ========== بيانات الرسم البياني للمبيعات ==========
+    chart_data = get_daily_sales_chart()
+    
+    # ========== تجهيز البيانات للسلايدر ==========
+    # إحصائيات إضافية للسلايدر
+    total_customers_count = Customer.objects.count()
+    pending_internal_orders = InternalOrder.objects.filter(
+        ~Q(status='received') & ~Q(status='cancelled')
+    ).count()
+    pending_external_orders = ExternalOrder.objects.filter(
+        ~Q(status='received') & ~Q(status='cancelled')
+    ).count()
+    
+    context = {
+        # الإحصائيات الرئيسية
+        'total_products': total_products,
+        'total_orders': total_orders,
+        'current_month_sales': current_month_sales,
+        'sales_change': sales_change,
+        'current_month_profit': current_month_profit,
+        'profit_change': profit_change,
+        'current_month_expenses': current_month_expenses,
+        
+        # الطلبات والمنتجات
+        'recent_orders': recent_orders,
+        'low_stock_products': low_stock_products,
+        'best_selling': best_selling,
+        
+        # قنوات المبيعات
+        'channel_labels': channel_labels,
+        'channel_counts': channel_counts,
+        'channel_colors': channel_colors,
+        
+        # المصروفات
+        'expense_labels': expense_labels,
+        'expense_amounts': expense_amounts,
+        
+        # الرسم البياني
+        'chart_labels': chart_data['labels'],
+        'chart_values': chart_data['values'],
+        
+        # بيانات السلايدر
+        'total_customers': total_customers_count,
+        'pending_internal_orders': pending_internal_orders,
+        'pending_external_orders': pending_external_orders,
+    }
+    
+    return render(request, 'home.html', context)
+
+
+def get_best_selling_products():
+    """الحصول على أفضل 4 منتجات مبيعاً"""
+    from collections import defaultdict
+    
+    product_data = defaultdict(int)
+    
+    internal_items = InternalOrderItem.objects.filter(
+        order__status__in=['confirmed', 'indelivery', 'received']
+    ).select_related('product')
+    
+    for item in internal_items:
+        product_data[item.product.name] += item.quantity
+    
+    external_items = ExternalOrderItem.objects.filter(
+        order__status__in=['confirmed', 'indeliver', 'received']
+    )
+    
+    for item in external_items:
+        product_data[item.product_name] += item.quantity
+    
+    sorted_products = sorted(
+        product_data.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:4]
+    
+    return [
+        {
+            'name': name,
+            'quantity': quantity
+        }
+        for name, quantity in sorted_products
+    ]
+
+
+def get_daily_sales_chart():
+    """الحصول على بيانات المبيعات اليومية لآخر 30 يوم"""
+    today = timezone.now().date()
+    thirty_days_ago = today - timedelta(days=30)
+    
+    daily_data = {}
+    
+    # تهيئة كل الأيام
+    for i in range(30):
+        date = thirty_days_ago + timedelta(days=i)
+        daily_data[date.strftime('%Y-%m-%d')] = 0
+    
+    # المبيعات الداخلية
+    internal_sales = InternalOrder.objects.filter(
+        created_at__date__gte=thirty_days_ago,
+        created_at__date__lte=today,
+        status__in=['confirmed', 'indelivery', 'received']
+    ).values('created_at__date').annotate(total=Sum('sales_total'))
+    
+    for item in internal_sales:
+        date_str = item['created_at__date'].strftime('%Y-%m-%d')
+        if date_str in daily_data:
+            daily_data[date_str] += float(item['total'] or 0)
+    
+    # المبيعات الخارجية
+    external_sales = ExternalOrder.objects.filter(
+        created_at__date__gte=thirty_days_ago,
+        created_at__date__lte=today,
+        status__in=['confirmed', 'indeliver', 'received']
+    ).values('created_at__date').annotate(total=Sum('lyd_sales_total'))
+    
+    for item in external_sales:
+        date_str = item['created_at__date'].strftime('%Y-%m-%d')
+        if date_str in daily_data:
+            daily_data[date_str] += float(item['total'] or 0)
+    
+    sorted_dates = sorted(daily_data.keys())
+    
+    return {
+        'labels': [d[5:10] for d in sorted_dates],  # عرض اليوم والشهر فقط
+        'values': [daily_data[d] for d in sorted_dates]
+    }    
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -2728,4 +3024,209 @@ def get_daily_sales(date_from, date_to):
             'total': daily_data[date]['internal'] + daily_data[date]['external']
         }
         for date in sorted_dates
+    ]
+
+
+@login_required
+def marketing_dashboard(request):
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
+    if date_from:
+        try:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+        except ValueError:
+            date_from = timezone.now().date() - timedelta(days=90)
+    else:
+        date_from = timezone.now().date() - timedelta(days=90)
+    
+    if date_to:
+        try:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+        except ValueError:
+            date_to = timezone.now().date()
+    else:
+        date_to = timezone.now().date()
+    
+    total_customers = Customer.objects.count()
+    new_customers = Customer.objects.filter(
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to
+    ).count()
+    
+    source_data = Customer.objects.values('known_us_from').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    source_labels = []
+    source_counts = []
+    source_colors = []
+    
+    source_colors_map = {
+        'facebook': '#1877f2',
+        'instagram': '#e4405f',
+        'tiktok': '#000000',
+        'snapchat': '#fffc00',
+        'friend': '#16a34a',
+        'advertisement': '#f59e0b',
+        'other': '#6b7280'
+    }
+    
+    source_names = {
+        'facebook': 'فيسبوك',
+        'instagram': 'إنستغرام',
+        'tiktok': 'تيكتوك',
+        'snapchat': 'سناب شات',
+        'friend': 'صديق',
+        'advertisement': 'إعلان',
+        'other': 'أخرى'
+    }
+    
+    for item in source_data:
+        if item['known_us_from']:
+            source_labels.append(source_names.get(item['known_us_from'], item['known_us_from']))
+            source_counts.append(item['count'])
+            source_colors.append(source_colors_map.get(item['known_us_from'], '#6b7280'))
+    
+    top_customers = get_marketing_top_customers(date_from, date_to)
+    
+    new_customers_by_source = Customer.objects.filter(
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to
+    ).values('known_us_from').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    new_source_labels = []
+    new_source_counts = []
+    
+    for item in new_customers_by_source:
+        if item['known_us_from']:
+            new_source_labels.append(source_names.get(item['known_us_from'], item['known_us_from']))
+            new_source_counts.append(item['count'])
+    
+    from django.db.models import Count
+    
+    repeat_customers = Customer.objects.annotate(
+        order_count=Count('internalorder') + Count('externalorder')
+    ).filter(order_count__gt=1).count()
+    
+    repeat_rate = 0
+    if total_customers > 0:
+        repeat_rate = round((repeat_customers / total_customers) * 100, 2)
+    
+    total_orders = InternalOrder.objects.count() + ExternalOrder.objects.count()
+    avg_orders_per_customer = 0
+    if total_customers > 0:
+        avg_orders_per_customer = round(total_orders / total_customers, 2)
+    
+    monthly_new_customers = get_monthly_new_customers(date_from, date_to)
+    
+    monthly_labels = []
+    monthly_counts = []
+    
+    for item in monthly_new_customers:
+        monthly_labels.append(item['month'])
+        monthly_counts.append(item['count'])
+    customer_names = []
+    customer_spent = []
+    
+    for customer in top_customers[:10]:
+        customer_names.append(customer['name'])
+        customer_spent.append(float(customer['spent']))
+    context = {
+        'date_from': date_from,
+        'date_to': date_to,
+        'total_customers': total_customers,
+        'new_customers': new_customers,
+        'repeat_customers': repeat_customers,
+        'repeat_rate': repeat_rate,
+        'avg_orders_per_customer': avg_orders_per_customer,
+        'source_labels': source_labels,
+        'source_counts': source_counts,
+        'source_colors': source_colors,
+        'new_source_labels': new_source_labels,
+        'new_source_counts': new_source_counts,
+        'top_customers': top_customers,
+        'monthly_labels': monthly_labels,
+        'monthly_counts': monthly_counts,
+        'customer_names': customer_names,
+        'customer_spent': customer_spent,
+    }
+    
+    return render(request, 'dashboard/marketing.html', context)
+
+
+def get_marketing_top_customers(date_from, date_to):
+    from collections import defaultdict
+    
+    customer_data = defaultdict(lambda: {'orders': 0, 'spent': 0, 'last_order': None})
+    
+    internal_orders = InternalOrder.objects.filter(
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to,
+        status__in=['confirmed', 'indelivery', 'received'],
+        customer__isnull=False
+    ).select_related('customer').order_by('-created_at')
+    
+    for order in internal_orders:
+        if order.customer:
+            customer_data[order.customer.full_name]['orders'] += 1
+            customer_data[order.customer.full_name]['spent'] += order.sales_total
+            if not customer_data[order.customer.full_name]['last_order'] or order.created_at > customer_data[order.customer.full_name]['last_order']:
+                customer_data[order.customer.full_name]['last_order'] = order.created_at
+    
+    external_orders = ExternalOrder.objects.filter(
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to,
+        status__in=['confirmed', 'indeliver', 'received'],
+        customer__isnull=False
+    ).select_related('customer').order_by('-created_at')
+    
+    for order in external_orders:
+        if order.customer:
+            customer_data[order.customer.full_name]['orders'] += 1
+            customer_data[order.customer.full_name]['spent'] += order.lyd_sales_total
+            if not customer_data[order.customer.full_name]['last_order'] or order.created_at > customer_data[order.customer.full_name]['last_order']:
+                customer_data[order.customer.full_name]['last_order'] = order.created_at
+    
+    sorted_customers = sorted(
+        customer_data.items(),
+        key=lambda x: x[1]['spent'],
+        reverse=True
+    )[:10]
+    
+    return [
+        {
+            'name': name,
+            'orders': data['orders'],
+            'spent': data['spent'],
+            'last_order': data['last_order']
+        }
+        for name, data in sorted_customers
+    ]
+
+
+def get_monthly_new_customers(date_from, date_to):
+    from collections import defaultdict
+    
+    monthly_data = defaultdict(int)
+    
+    customers = Customer.objects.filter(
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to
+    )
+    
+    for customer in customers:
+        month_key = customer.created_at.strftime('%Y-%m')
+        monthly_data[month_key] += 1
+    
+    sorted_months = sorted(monthly_data.keys())
+    
+    return [
+        {
+            'month': month,
+            'count': monthly_data[month]
+        }
+        for month in sorted_months
     ]

@@ -1,207 +1,271 @@
-<!DOCTYPE html>
-<html dir="rtl" lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Glamour - لوحة التحكم{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "background": "#f8f9ff",
-                        "on-error-container": "#93000a",
-                        "secondary-fixed-dim": "#c8c6c5",
-                        "on-secondary-fixed-variant": "#474746",
-                        "on-background": "#0b1c30",
-                        "on-error": "#ffffff",
-                        "error": "#ba1a1a",
-                        "on-primary-container": "#fff7f7",
-                        "surface-container-lowest": "#ffffff",
-                        "on-secondary-container": "#636262",
-                        "primary-container": "#d51f86",
-                        "primary": "#af006b",
-                        "surface-bright": "#f8f9ff",
-                        "inverse-on-surface": "#eaf1ff",
-                        "error-container": "#ffdad6",
-                        "tertiary-fixed-dim": "#cdc4c9",
-                        "inverse-primary": "#ffb0ce",
-                        "tertiary": "#5e585c",
-                        "on-primary-fixed": "#3d0022",
-                        "tertiary-container": "#777074",
-                        "surface-container-highest": "#d3e4fe",
-                        "tertiary-fixed": "#e9e0e5",
-                        "surface": "#f8f9ff",
-                        "on-tertiary-fixed": "#1f1a1e",
-                        "on-surface-variant": "#584049",
-                        "surface-container-low": "#eff4ff",
-                        "surface-container-high": "#dce9ff",
-                        "inverse-surface": "#213145",
-                        "on-surface": "#0b1c30",
-                        "on-tertiary-fixed-variant": "#4b4549",
-                        "surface-tint": "#b70070",
-                        "secondary-container": "#e2dfde",
-                        "surface-dim": "#cbdbf5",
-                        "on-tertiary-container": "#fff6fa",
-                        "outline": "#8c7079",
-                        "surface-variant": "#d3e4fe",
-                        "on-primary-fixed-variant": "#8c0055",
-                        "on-primary": "#ffffff",
-                        "on-secondary-fixed": "#1c1b1b",
-                        "on-tertiary": "#ffffff",
-                        "secondary-fixed": "#e5e2e1",
-                        "on-secondary": "#ffffff",
-                        "secondary": "#5f5e5e",
-                        "surface-container": "#e5eeff",
-                        "primary-fixed": "#ffd9e5",
-                        "outline-variant": "#dfbec9",
-                        "primary-fixed-dim": "#ffb0ce"
-                    },
-                    borderRadius: {
-                        DEFAULT: "0.25rem",
-                        lg: "0.5rem",
-                        xl: "0.75rem",
-                        full: "9999px"
-                    },
-                    spacing: {
-                        unit: "8px",
-                        "margin-mobile": "20px",
-                        "stack-lg": "32px",
-                        "container-max": "1280px",
-                        "margin-desktop": "64px",
-                        "section-gap": "80px",
-                        gutter: "24px",
-                        "stack-md": "16px",
-                        "stack-sm": "8px"
-                    },
-                    fontFamily: {
-                        "headline-lg": ["Cairo", "sans-serif"],
-                        "label-sm": ["Tajawal", "sans-serif"],
-                        "headline-lg-mobile": ["Cairo", "sans-serif"],
-                        "body-lg": ["Tajawal", "sans-serif"],
-                        "label-md": ["Tajawal", "sans-serif"],
-                        "body-md": ["Tajawal", "sans-serif"],
-                        "display": ["Cairo", "sans-serif"],
-                        "headline-md": ["Cairo", "sans-serif"]
-                    },
-                    fontSize: {
-                        "headline-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.01em", fontWeight: "700" }],
-                        "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "500" }],
-                        "headline-lg-mobile": ["32px", { lineHeight: "40px", fontWeight: "700" }],
-                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
-                        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
-                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
-                        "display": ["64px", { lineHeight: "72px", letterSpacing: "-0.02em", fontWeight: "800" }],
-                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }]
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background-color: #f8f9ff;
-            color: #0b1c30;
-            font-family: 'Tajawal', sans-serif;
-        }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .message {
-            animation: slideDown 0.3s ease-out;
-        }
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        /* تحسين مظهر الخطوط */
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Cairo', sans-serif;
-            letter-spacing: -0.02em;
-        }
-        .font-headline-md, .font-headline-lg, .font-display {
-            font-family: 'Cairo', sans-serif;
-        }
-        .font-body-md, .font-body-lg, .font-label-md, .font-label-sm {
-            font-family: 'Tajawal', sans-serif;
-        }
-    </style>
-    {% block extra_head %}{% endblock %}
-</head>
-<body class="bg-background text-on-background antialiased min-h-screen flex flex-col pt-16">
-    <header class="bg-surface-container-lowest shadow-[0_4px_20px_rgba(213,31,134,0.04)] fixed top-0 right-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16">
-        <div class="text-headline-md font-headline-md font-bold text-primary">
-            <a href="{% url 'home' %}">Glamour</a>
-        </div>
-        <div class="flex items-center gap-stack-md">
-            <button class="text-on-surface-variant hover:bg-primary/5 p-2 rounded-full transition-colors duration-200 cursor-pointer active:scale-95 transition-transform">
-                <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
-            </button>
-            <a href="{% url 'logout' %}" class="text-on-surface-variant hover:bg-primary/5 p-2 rounded-full transition-colors duration-200 cursor-pointer active:scale-95 transition-transform" title="تسجيل الخروج">
-                <span class="material-symbols-outlined">logout</span>
-            </a>
-        </div>
-    </header>
+<!-- templates/dashboard/home.html -->
+{% extends 'base.html' %}
+{% load mathfilters %}
 
-    {% if messages %}
-    <div class="fixed top-20 right-4 left-4 z-50 max-w-2xl mx-auto space-y-2">
-        {% for message in messages %}
-        <div class="message px-6 py-4 rounded-xl shadow-lg border flex items-center gap-3 
-            {% if message.tags == 'success' %}bg-success/10 text-success border-success/20
-            {% elif message.tags == 'error' %}bg-error/10 text-error border-error/20
-            {% elif message.tags == 'warning' %}bg-warning/10 text-warning border-warning/20
-            {% elif message.tags == 'info' %}bg-primary/10 text-primary border-primary/20
-            {% else %}bg-secondary/10 text-secondary border-secondary/20{% endif %}">
-            <span class="material-symbols-outlined text-[24px]">
-                {% if message.tags == 'success' %}check_circle
-                {% elif message.tags == 'error' %}error
-                {% elif message.tags == 'warning' %}warning
-                {% elif message.tags == 'info' %}info
-                {% else %}notifications{% endif %}
-            </span>
-            <span class="font-body-md flex-1">{{ message }}</span>
-            <button onclick="this.parentElement.remove()" class="text-secondary hover:text-on-background transition-colors duration-200">
-                <span class="material-symbols-outlined text-[20px]">close</span>
-            </button>
+{% block title %}الرئيسية - Glamour{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* السلايدر الجانبي */
+    .sidebar {
+        position: fixed;
+        top: 64px;
+        right: 0;
+        width: 280px;
+        height: calc(100vh - 64px);
+        background: #ffffff;
+        border-left: 1px solid #e5eeff;
+        padding: 20px 16px;
+        overflow-y: auto;
+        z-index: 40;
+        transition: all 0.3s ease;
+        box-shadow: -4px 0 20px rgba(213,31,134,0.04);
+    }
+    .sidebar.closed {
+        transform: translateX(100%);
+    }
+    .sidebar-toggle {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 50;
+        background: #af006b;
+        color: #ffffff;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        box-shadow: 0 4px 20px rgba(175,0,107,0.3);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .sidebar-toggle:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 30px rgba(175,0,107,0.4);
+    }
+    .sidebar-toggle .icon {
+        font-size: 32px;
+        line-height: 1;
+    }
+    .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #0b1c30;
+        text-decoration: none;
+        margin-bottom: 2px;
+    }
+    .sidebar-item:hover {
+        background: #f8f9ff;
+    }
+    .sidebar-item.active {
+        background: #f8f9ff;
+        color: #af006b;
+    }
+    .sidebar-item .icon {
+        font-size: 24px;
+    }
+    .sidebar-item .label {
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .sidebar-item .badge {
+        margin-right: auto;
+        background: #af006b;
+        color: #ffffff;
+        font-size: 11px;
+        padding: 2px 10px;
+        border-radius: 20px;
+    }
+    .sidebar-divider {
+        border-top: 1px solid #e5eeff;
+        margin: 12px 0;
+    }
+    .sidebar-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        padding: 8px 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .sidebar-logo {
+        padding: 0 16px 16px 16px;
+        border-bottom: 1px solid #e5eeff;
+        margin-bottom: 12px;
+    }
+    .sidebar-logo h2 {
+        font-size: 20px;
+        font-weight: 800;
+        color: #af006b;
+        font-family: 'Cairo', sans-serif;
+    }
+    .sidebar-logo p {
+        font-size: 12px;
+        color: #6b7280;
+    }
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 100%;
+            border-left: none;
+            border-bottom: 1px solid #e5eeff;
+            top: 64px;
+            height: calc(100vh - 64px);
+        }
+        .sidebar-toggle {
+            bottom: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+        }
+        .sidebar-toggle .icon {
+            font-size: 28px;
+        }
+    }
+    .main-content {
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex">
+    <!-- السلايدر (Sidebar) -->
+    <div class="sidebar closed" id="sidebar">
+        <div class="sidebar-logo">
+            <h2>Glamour</h2>
+            <p>لوحة التحكم</p>
         </div>
-        {% endfor %}
+        
+        <div class="sidebar-title">القائمة الرئيسية</div>
+        
+        <a href="{% url 'dashboard_home' %}" class="sidebar-item active">
+            <span class="material-symbols-outlined icon">dashboard</span>
+            <span class="label">الرئيسية</span>
+        </a>
+        
+        <a href="{% url 'product_list' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">inventory_2</span>
+            <span class="label">المنتجات</span>
+            <span class="badge">{{ total_products }}</span>
+        </a>
+        
+        <a href="{% url 'internal_order_list' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">shopping_cart</span>
+            <span class="label">الطلبات</span>
+            <span class="badge">{{ total_orders }}</span>
+        </a>
+        
+        <a href="{% url 'customer_list' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">people</span>
+            <span class="label">العملاء</span>
+        </a>
+        
+        <a href="{% url 'inventory_list' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">warehouse</span>
+            <span class="label">المخزون</span>
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-title">التقارير</div>
+        
+        <a href="{% url 'reports_dashboard' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">bar_chart</span>
+            <span class="label">التقارير</span>
+        </a>
+        
+        <a href="{% url 'marketing_dashboard' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">campaign</span>
+            <span class="label">التسويق</span>
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-title">الإدارة</div>
+        
+        <a href="{% url 'expense_list' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">payments</span>
+            <span class="label">المصروفات</span>
+        </a>
+        
+        <a href="{% url 'purchase_invoice_list' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">credit_card</span>
+            <span class="label">المشتريات</span>
+        </a>
+        
+        <a href="{% url 'users_list' %}" class="sidebar-item">
+            <span class="material-symbols-outlined icon">settings</span>
+            <span class="label">المستخدمين</span>
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        <a href="{% url 'logout' %}" class="sidebar-item" style="color:#dc2626;">
+            <span class="material-symbols-outlined icon">logout</span>
+            <span class="label">تسجيل الخروج</span>
+        </a>
     </div>
-    
-    <script>
-        setTimeout(function() {
-            document.querySelectorAll('.message').forEach(function(msg) {
-                msg.style.opacity = '0';
-                msg.style.transform = 'translateY(-20px)';
-                msg.style.transition = 'all 0.3s ease-out';
-                setTimeout(function() {
-                    msg.remove();
-                }, 300);
-            });
-        }, 5000);
-    </script>
-    {% endif %}
 
-    <main class="flex-grow max-w-container-max w-full mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col gap-section-gap">
-        {% block content %}
+    <!-- زر فتح/غلق السلايدر -->
+    <button class="sidebar-toggle closed" id="sidebarToggle" onclick="toggleSidebar()">
+        <span class="material-symbols-outlined icon" id="toggleIcon">menu_open</span>
+    </button>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="main-content w-full" id="mainContent">
+        <!-- هنا المحتوى الي حطيتوه قبل -->
+        {% block dashboard_content %}
         {% endblock %}
-    </main>
-    <footer class="bg-background border-t border-secondary-container py-stack-lg mt-auto">
-        <div class="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-stack-md">
-            <div class="font-headline-md text-headline-md font-bold text-primary">Glamour</div>
-            <div class="font-label-sm text-label-sm text-secondary">© 2026 Glamour. جميع الحقوق محفوظة.</div>
-            <div class="flex gap-stack-md font-label-sm text-label-sm text-secondary"></div>
-        </div>
-    </footer>
-    {% block extra_scripts %}{% endblock %}
-</body>
-</html>
+    </div>
+</div>
+
+<script>
+// التحكم في السلايدر
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    const icon = document.getElementById('toggleIcon');
+    
+    sidebar.classList.toggle('closed');
+    toggle.classList.toggle('closed');
+    
+    if (sidebar.classList.contains('closed')) {
+        icon.textContent = 'menu_open';
+    } else {
+        icon.textContent = 'menu';
+    }
+}
+
+// إغلاق السلايدر تلقائياً على الشاشات الصغيرة عند التحميل
+if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.add('closed');
+    document.getElementById('sidebarToggle').classList.add('closed');
+    document.getElementById('toggleIcon').textContent = 'menu_open';
+}
+
+// إغلاق السلايدر عند النقر خارجها على الشاشات الصغيرة
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile && !sidebar.classList.contains('closed')) {
+        const isClickInside = sidebar.contains(event.target) || toggle.contains(event.target);
+        if (!isClickInside) {
+            sidebar.classList.add('closed');
+            toggle.classList.add('closed');
+            document.getElementById('toggleIcon').textContent = 'menu_open';
+        }
+    }
+});
+</script>
+{% endblock %}

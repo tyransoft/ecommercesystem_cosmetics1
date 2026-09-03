@@ -1,301 +1,219 @@
-<!DOCTYPE html>
-<html dir="rtl" lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>لوحة التحكم - Glamour</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "background": "#f8f9ff",
-                        "on-error-container": "#93000a",
-                        "secondary-fixed-dim": "#c8c6c5",
-                        "on-secondary-fixed-variant": "#474746",
-                        "on-background": "#0b1c30",
-                        "on-error": "#ffffff",
-                        "error": "#ba1a1a",
-                        "on-primary-container": "#fff7f7",
-                        "surface-container-lowest": "#ffffff",
-                        "on-secondary-container": "#636262",
-                        "primary-container": "#d51f86",
-                        "primary": "#af006b",
-                        "surface-bright": "#f8f9ff",
-                        "inverse-on-surface": "#eaf1ff",
-                        "error-container": "#ffdad6",
-                        "tertiary-fixed-dim": "#cdc4c9",
-                        "inverse-primary": "#ffb0ce",
-                        "tertiary": "#5e585c",
-                        "on-primary-fixed": "#3d0022",
-                        "tertiary-container": "#777074",
-                        "surface-container-highest": "#d3e4fe",
-                        "tertiary-fixed": "#e9e0e5",
-                        "surface": "#f8f9ff",
-                        "on-tertiary-fixed": "#1f1a1e",
-                        "on-surface-variant": "#584049",
-                        "surface-container-low": "#eff4ff",
-                        "surface-container-high": "#dce9ff",
-                        "inverse-surface": "#213145",
-                        "on-surface": "#0b1c30",
-                        "on-tertiary-fixed-variant": "#4b4549",
-                        "surface-tint": "#b70070",
-                        "secondary-container": "#e2dfde",
-                        "surface-dim": "#cbdbf5",
-                        "on-tertiary-container": "#fff6fa",
-                        "outline": "#8c7079",
-                        "surface-variant": "#d3e4fe",
-                        "on-primary-fixed-variant": "#8c0055",
-                        "on-primary": "#ffffff",
-                        "on-secondary-fixed": "#1c1b1b",
-                        "on-tertiary": "#ffffff",
-                        "secondary-fixed": "#e5e2e1",
-                        "on-secondary": "#ffffff",
-                        "secondary": "#5f5e5e",
-                        "surface-container": "#e5eeff",
-                        "primary-fixed": "#ffd9e5",
-                        "outline-variant": "#dfbec9",
-                        "primary-fixed-dim": "#ffb0ce"
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    spacing: {
-                        "unit": "8px",
-                        "margin-mobile": "20px",
-                        "stack-lg": "32px",
-                        "container-max": "1280px",
-                        "margin-desktop": "64px",
-                        "section-gap": "80px",
-                        "gutter": "24px",
-                        "stack-md": "16px",
-                        "stack-sm": "8px"
-                    },
-                    fontFamily: {
-                        "headline-lg": ["Cairo", "sans-serif"],
-                        "label-sm": ["Tajawal", "sans-serif"],
-                        "headline-lg-mobile": ["Cairo", "sans-serif"],
-                        "body-lg": ["Tajawal", "sans-serif"],
-                        "label-md": ["Tajawal", "sans-serif"],
-                        "body-md": ["Tajawal", "sans-serif"],
-                        "display": ["Cairo", "sans-serif"],
-                        "headline-md": ["Cairo", "sans-serif"]
-                    },
-                    fontSize: {
-                        "headline-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.01em", fontWeight: "700" }],
-                        "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "500" }],
-                        "headline-lg-mobile": ["32px", { lineHeight: "40px", fontWeight: "700" }],
-                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
-                        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
-                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
-                        "display": ["64px", { lineHeight: "72px", letterSpacing: "-0.02em", fontWeight: "800" }],
-                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+<!-- الصفحة الرئيسية مع المحتوى (home_content.html) -->
+{% extends 'dashboard/home.html' %}
+
+{% block dashboard_content %}
+<!-- مرحباً -->
+<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] mb-stack-lg">
+    <h2 class="font-headline-md text-headline-md text-on-background">مرحباً 👋، إليك ملخص عملك اليوم</h2>
+</div>
+
+<!-- بطاقات الإحصائيات -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-gutter mb-stack-lg">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <p class="font-label-sm text-secondary">المنتجات</p>
+        <p class="font-headline-md text-headline-md text-on-background">{{ total_products }}</p>
+        <p class="font-label-sm text-secondary text-xs">إجمالي المنتجات</p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <p class="font-label-sm text-secondary">عدد الطلبات</p>
+        <p class="font-headline-md text-headline-md text-on-background">{{ total_orders }}</p>
+        <p class="font-label-sm text-secondary text-xs">كل الطلبات</p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <p class="font-label-sm text-secondary">إجمالي المبيعات</p>
+        <p class="font-headline-md text-headline-md text-primary">{{ current_month_sales|floatformat:0 }}</p>
+        <p class="font-label-sm text-secondary text-xs {% if sales_change > 0 %}text-success{% else %}text-error{% endif %}">
+            {% if sales_change > 0 %}+{% endif %}{{ sales_change }}% عن الشهر الماضي
+        </p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <p class="font-label-sm text-secondary">صافي الأرباح</p>
+        <p class="font-headline-md text-headline-md {% if current_month_profit > 0 %}text-success{% else %}text-error{% endif %}">
+            {{ current_month_profit|floatformat:0 }}
+        </p>
+        <p class="font-label-sm text-secondary text-xs {% if profit_change > 0 %}text-success{% else %}text-error{% endif %}">
+            {% if profit_change > 0 %}+{% endif %}{{ profit_change }}% عن الشهر الماضي
+        </p>
+    </div>
+</div>
+
+<!-- الرسم البياني والطلبات الأخيرة -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter mb-stack-lg">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex justify-between items-center mb-stack-md">
+            <h3 class="font-headline-md text-headline-md text-on-background">المبيعات</h3>
+            <span class="font-label-sm text-secondary">آخر 30 يوم</span>
+        </div>
+        <div style="height:250px;">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex justify-between items-center mb-stack-md">
+            <h3 class="font-headline-md text-headline-md text-on-background">الطلبات الأخيرة</h3>
+            <a href="{% url 'internal_order_list' %}" class="font-label-sm text-primary hover:underline">عرض الكل</a>
+        </div>
+        <div class="space-y-3">
+            {% for order in recent_orders %}
+            <div class="flex justify-between items-center bg-background rounded-xl px-4 py-3">
+                <div>
+                    <p class="font-body-md">{{ order.customer }}</p>
+                    <p class="font-label-sm text-secondary">#{{ order.order_number }}</p>
+                </div>
+                <span class="font-body-md text-primary">{{ order.amount|floatformat:0 }}</span>
+            </div>
+            {% empty %}
+            <p class="text-secondary font-body-lg text-center py-4">لا توجد طلبات</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- المنتجات منخفضة المخزون وأفضل المنتجات -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter mb-stack-lg">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex justify-between items-center mb-stack-md">
+            <h3 class="font-headline-md text-headline-md text-on-background">المنتجات منخفضة المخزون</h3>
+            <a href="{% url 'inventory_list' %}" class="font-label-sm text-primary hover:underline">عرض الكل</a>
+        </div>
+        <div class="space-y-3">
+            {% for item in low_stock_products %}
+            <div class="flex justify-between items-center bg-background rounded-xl px-4 py-3">
+                <span class="font-body-md">{{ item.product.name }}</span>
+                <span class="font-body-md text-error">{{ item.quantity }}</span>
+            </div>
+            {% empty %}
+            <p class="text-secondary font-body-lg text-center py-4">جميع المنتجات متوفرة</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <div class="flex justify-between items-center mb-stack-md">
+            <h3 class="font-headline-md text-headline-md text-on-background">أفضل المنتجات مبيعاً</h3>
+        </div>
+        <div class="space-y-3">
+            {% for product in best_selling %}
+            <div class="flex justify-between items-center bg-background rounded-xl px-4 py-3">
+                <span class="font-body-md">{{ product.name }}</span>
+                <span class="font-body-md text-success">{{ product.quantity }}</span>
+            </div>
+            {% empty %}
+            <p class="text-secondary font-body-lg text-center py-4">لا توجد مبيعات</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- قنوات المبيعات والمصروفات -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">قنوات المبيعات</h3>
+        <div style="height:200px; max-width:250px; margin:0 auto;">
+            <canvas id="channelChart"></canvas>
+        </div>
+        <div class="flex flex-wrap justify-center gap-3 mt-4">
+            {% for label, count, color in channel_labels|zip:channel_counts|zip:channel_colors %}
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full" style="background:{{ color }}"></span>
+                <span class="font-label-sm">{{ label }}</span>
+                <span class="font-label-sm text-secondary">{{ count }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">المصروفات هذا الشهر</h3>
+        <div class="space-y-3">
+            <div class="flex justify-between items-center bg-background rounded-xl px-4 py-3 font-bold">
+                <span>إجمالي المصروفات</span>
+                <span class="text-error">{{ current_month_expenses|floatformat:0 }}</span>
+            </div>
+            {% for label, amount in expense_labels|zip:expense_amounts %}
+            <div class="flex justify-between items-center bg-background rounded-xl px-4 py-3">
+                <span class="font-body-md">{{ label }}</span>
+                <span class="font-body-md text-secondary">{{ amount|floatformat:0 }}</span>
+            </div>
+            {% empty %}
+            <p class="text-secondary font-body-lg text-center py-4">لا توجد مصروفات</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colors = {
+        primary: '#af006b',
+        success: '#16a34a',
+        error: '#dc2626',
+        warning: '#f59e0b',
+        secondary: '#6b7280',
+        blue: '#3b82f6'
+    };
+
+    // 1. الرسم البياني للمبيعات
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'المبيعات',
+                data: {{ chart_values|safe }},
+                borderColor: colors.primary,
+                backgroundColor: colors.primary + '33',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: colors.primary,
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { font: { family: 'Tajawal' } }
+                },
+                x: {
+                    ticks: { 
+                        font: { family: 'Tajawal' },
+                        maxTicksLimit: 10
                     }
                 }
             }
         }
-    </script>
-    <style>
-        body {
-            background-color: #f8f9ff;
-            color: #0b1c30;
-            font-family: 'Tajawal', sans-serif;
-        }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Cairo', sans-serif;
-            letter-spacing: -0.02em;
-        }
-        .font-headline-md, .font-headline-lg, .font-display {
-            font-family: 'Cairo', sans-serif;
-        }
-        .font-body-md, .font-body-lg, .font-label-md, .font-label-sm {
-            font-family: 'Tajawal', sans-serif;
-        }
-        .message {
-            animation: slideDown 0.3s ease-out;
-        }
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+    });
+
+    // 2. قنوات المبيعات (دائري)
+    const channelCtx = document.getElementById('channelChart').getContext('2d');
+    new Chart(channelCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ channel_labels|safe }},
+            datasets: [{
+                data: {{ channel_counts|safe }},
+                backgroundColor: {{ channel_colors|safe }},
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
             }
         }
-    </style>
-</head>
-<body class="bg-background text-on-background antialiased min-h-screen flex flex-col pt-16">
-    <header class="bg-surface-container-lowest shadow-[0_4px_20px_rgba(213,31,134,0.04)] fixed top-0 right-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16">
-        <div class="text-headline-md font-headline-md font-bold text-primary">Glamour</div>
-        <div class="flex items-center gap-stack-md">
-            <button class="text-on-surface-variant hover:bg-primary/5 p-2 rounded-full transition-colors duration-200 cursor-pointer active:scale-95 transition-transform">
-                <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
-            </button>
-            <a href="{% url 'logout' %}" class="text-on-surface-variant hover:bg-primary/5 p-2 rounded-full transition-colors duration-200 cursor-pointer active:scale-95 transition-transform" title="تسجيل الخروج">
-                <span class="material-symbols-outlined">logout</span>
-            </a>
-        </div>
-    </header>
-
-    {% if messages %}
-    <div class="fixed top-20 right-4 left-4 z-50 max-w-2xl mx-auto space-y-2">
-        {% for message in messages %}
-        <div class="message px-6 py-4 rounded-xl shadow-lg border flex items-center gap-3 
-            {% if message.tags == 'success' %}bg-success/10 text-success border-success/20
-            {% elif message.tags == 'error' %}bg-error/10 text-error border-error/20
-            {% elif message.tags == 'warning' %}bg-warning/10 text-warning border-warning/20
-            {% elif message.tags == 'info' %}bg-primary/10 text-primary border-primary/20
-            {% else %}bg-secondary/10 text-secondary border-secondary/20{% endif %}">
-            <span class="material-symbols-outlined text-[24px]">
-                {% if message.tags == 'success' %}check_circle
-                {% elif message.tags == 'error' %}error
-                {% elif message.tags == 'warning' %}warning
-                {% elif message.tags == 'info' %}info
-                {% else %}notifications{% endif %}
-            </span>
-            <span class="font-body-md flex-1">{{ message }}</span>
-            <button onclick="this.parentElement.remove()" class="text-secondary hover:text-on-background transition-colors duration-200">
-                <span class="material-symbols-outlined text-[20px]">close</span>
-            </button>
-        </div>
-        {% endfor %}
-    </div>
-    
-    <script>
-        setTimeout(function() {
-            document.querySelectorAll('.message').forEach(function(msg) {
-                msg.style.opacity = '0';
-                msg.style.transform = 'translateY(-20px)';
-                msg.style.transition = 'all 0.3s ease-out';
-                setTimeout(function() {
-                    msg.remove();
-                }, 300);
-            });
-        }, 5000);
-    </script>
-    {% endif %}
-
-    <main class="flex-grow max-w-container-max w-full mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col gap-section-gap">
-
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter pb-section-gap">
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer" href="{% url 'product_list' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                        <span class="material-symbols-outlined text-[28px]" data-icon="smartphone">smartphone</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">الفئات و المنتجات</h3>
-            </a>
-
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer relative" href="{% url 'internal_order_list' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="relative">
-                        <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                            <span class="material-symbols-outlined text-[28px]" data-icon="point_of_sale">point_of_sale</span>
-                        </div>
-                        <span class="absolute -top-2 -right-2 bg-error text-on-error text-[12px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm border-2 border-surface-container-lowest">{{ pending_internal_orders }}</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">الطلبات الداخلية</h3>
-            </a>
-
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer" href="{% url 'inventory_list' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                        <span class="material-symbols-outlined text-[28px]" data-icon="shelves">shelves</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">المخزون</h3>
-            </a>
-
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer" href="{% url 'customer_list' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                        <span class="material-symbols-outlined text-[28px]" data-icon="groups">groups</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">العملاء و المدفوعات</h3>
-            </a>
-
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer relative" href="{% url 'external_order_list' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="relative">
-                        <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                            <span class="material-symbols-outlined text-[28px]" data-icon="local_shipping">local_shipping</span>
-                        </div>
-                        <span class="absolute -top-2 -right-2 bg-error text-on-error text-[12px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm border-2 border-surface-container-lowest">{{ pending_external_orders }}</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">الطلبات الخارجية و العمولات</h3>
-            </a>
-
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer" href="{% url 'reports_dashboard' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                        <span class="material-symbols-outlined text-[28px]" data-icon="bar_chart">bar_chart</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">الاحصائيات</h3>
-            </a>
-
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer relative" href="{% url 'purchase_invoice_list' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="relative">
-                        <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                            <span class="material-symbols-outlined text-[28px]" data-icon="credit_card">credit_card</span>
-                        </div>
-                        <span class="absolute -top-2 -right-2 bg-error text-on-error text-[12px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm border-2 border-surface-container-lowest">{{ pending_purchase_invoices }}</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">الموردين والمشتريات</h3>
-            </a>
-
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer" href="{% url 'expense_list' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                        <span class="material-symbols-outlined text-[28px]" data-icon="payments">payments</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">المصروفات</h3>
-            </a>
-
-            <a class="group block bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] hover:shadow-[0_8px_30px_rgba(213,31,134,0.08)] border border-transparent hover:border-primary-fixed-dim transition-all duration-300 cursor-pointer" href="{% url 'users_list' %}">
-                <div class="flex items-start justify-between mb-stack-md">
-                    <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                        <span class="material-symbols-outlined text-[28px]" data-icon="settings">settings</span>
-                    </div>
-                    <span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors duration-300">chevron_left</span>
-                </div>
-                <h3 class="font-headline-md text-headline-md text-on-background mb-stack-sm">المستخدمين</h3>
-            </a>
-        </section>
-    </main>
-    <footer class="bg-background border-t border-secondary-container full-width py-stack-lg mt-auto">
-        <div class="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-stack-md">
-            <div class="font-headline-md text-headline-md font-bold text-primary">Glamour</div>
-            <div class="font-label-sm text-label-sm text-secondary">© 2026 Glamour. جميع الحقوق محفوظة.</div>
-            <div class="flex gap-stack-md font-label-sm text-label-sm text-secondary"></div>
-        </div>
-    </footer>
-</body>
-</html>
+    });
+});
+</script>
+{% endblock %}
