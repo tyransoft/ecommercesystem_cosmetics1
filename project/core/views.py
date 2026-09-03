@@ -13,7 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta,time
 from django.utils import timezone
 from .models import *
-
+from collections import defaultdict
 
 def home(request):
 
@@ -22,13 +22,9 @@ def home(request):
     last_month = first_day_month - timedelta(days=1)
     first_day_last_month = last_month.replace(day=1)
     
-    # ========== إحصائيات المنتجات ==========
     total_products = Product.objects.count()
-    
-    # ========== إحصائيات الطلبات ==========
     total_orders = InternalOrder.objects.count() + ExternalOrder.objects.count()
     
-    # ========== مبيعات الشهر الحالي ==========
     current_month_sales_internal = InternalOrder.objects.filter(
         created_at__date__gte=first_day_month,
         status__in=['confirmed', 'indelivery', 'received']
@@ -41,7 +37,6 @@ def home(request):
     
     current_month_sales = current_month_sales_internal + current_month_sales_external
     
-    # ========== مبيعات الشهر الماضي ==========
     last_month_sales_internal = InternalOrder.objects.filter(
         created_at__date__gte=first_day_last_month,
         created_at__date__lte=last_month,
@@ -56,12 +51,10 @@ def home(request):
     
     last_month_sales = last_month_sales_internal + last_month_sales_external
     
-    # ========== نسبة التغير في المبيعات ==========
     sales_change = 0
     if last_month_sales > 0:
         sales_change = round(((current_month_sales - last_month_sales) / last_month_sales) * 100, 2)
     
-    # ========== أرباح الشهر الحالي ==========
     current_month_profit_internal = InternalOrder.objects.filter(
         created_at__date__gte=first_day_month,
         status__in=['confirmed', 'indelivery', 'received']
@@ -74,7 +67,6 @@ def home(request):
     
     current_month_profit = current_month_profit_internal + current_month_profit_external
     
-    # ========== أرباح الشهر الماضي ==========
     last_month_profit_internal = InternalOrder.objects.filter(
         created_at__date__gte=first_day_last_month,
         created_at__date__lte=last_month,
@@ -89,17 +81,14 @@ def home(request):
     
     last_month_profit = last_month_profit_internal + last_month_profit_external
     
-    # ========== نسبة التغير في الأرباح ==========
     profit_change = 0
     if last_month_profit > 0:
         profit_change = round(((current_month_profit - last_month_profit) / last_month_profit) * 100, 2)
     
-    # ========== مصروفات الشهر الحالي ==========
     current_month_expenses = Expense.objects.filter(
         created_at__date__gte=first_day_month
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
     
-    # ========== الطلبات الأخيرة (آخر 5) ==========
     recent_orders = []
     
     internal_recent = InternalOrder.objects.filter(
@@ -108,10 +97,12 @@ def home(request):
     
     for order in internal_recent:
         recent_orders.append({
-            'customer': order.customer.full_name if order.customer else 'عميل',
             'order_number': order.order_number,
+            'customer': order.customer.full_name if order.customer else 'عميل',
+            'city': order.customer.city if order.customer and order.customer.city else '-',
             'amount': order.sales_total,
-            'type': 'internal'
+            'status': order.status,
+            'status_display': order.get_status_display()
         })
     
     external_recent = ExternalOrder.objects.filter(
@@ -120,30 +111,59 @@ def home(request):
     
     for order in external_recent:
         recent_orders.append({
-            'customer': order.customer.full_name if order.customer else 'عميل',
             'order_number': order.order_number,
+            'customer': order.customer.full_name if order.customer else 'عميل',
+            'city': order.customer.city if order.customer and order.customer.city else '-',
             'amount': order.lyd_sales_total,
-            'type': 'external'
+            'status': order.status,
+            'status_display': order.get_status_display()
         })
     
     recent_orders = sorted(recent_orders, key=lambda x: x['order_number'], reverse=True)[:5]
     
-    # ========== المنتجات منخفضة المخزون ==========
-    low_stock_products = Inventory.objects.select_related('product').filter(
-        quantity__lt=50
+    low_stock_items = Inventory.objects.select_related('product').filter(
+        quantity__lt=5
     ).order_by('quantity')[:5]
     
-    # ========== أفضل المنتجات مبيعاً ==========
-    best_selling = get_best_selling_products()
+    low_stock = []
+    for item in low_stock_items:
+        low_stock.append({
+            'product_name': item.product.name,
+            'quantity': item.quantity
+        })
     
-    # ========== قنوات المبيعات (مصادر العملاء) ==========
+    best_selling_data = defaultdict(int)
+    
+    internal_items = InternalOrderItem.objects.filter(
+        order__status__in=['confirmed', 'indelivery', 'received']
+    ).select_related('product')
+    
+    for item in internal_items:
+        best_selling_data[item.product.name] += item.quantity
+    
+    external_items = ExternalOrderItem.objects.filter(
+        order__status__in=['confirmed', 'indeliver', 'received']
+    )
+    
+    for item in external_items:
+        best_selling_data[item.product_name] += item.quantity
+    
+    sorted_products = sorted(
+        best_selling_data.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:4]
+    
+    best_selling = []
+    for name, quantity in sorted_products:
+        best_selling.append({
+            'name': name,
+            'quantity': quantity
+        })
+    
     channel_data = Customer.objects.values('known_us_from').annotate(
         count=Count('id')
     ).order_by('-count')
-    
-    channel_labels = []
-    channel_counts = []
-    channel_colors = []
     
     channel_names = {
         'facebook': 'فيسبوك',
@@ -155,85 +175,79 @@ def home(request):
         'other': 'أخرى'
     }
     
-    channel_colors_map = {
-        'facebook': '#1877f2',
-        'instagram': '#e4405f',
-        'tiktok': '#000000',
-        'snapchat': '#fffc00',
-        'friend': '#16a34a',
-        'advertisement': '#f59e0b',
-        'other': '#6b7280'
-    }
-    
     total_customers = Customer.objects.count()
     
+    sales_channels = []
     for item in channel_data:
         if item['known_us_from']:
-            channel_labels.append(channel_names.get(item['known_us_from'], item['known_us_from']))
             percentage = round((item['count'] / total_customers) * 100, 2) if total_customers > 0 else 0
-            channel_counts.append(percentage)
-            channel_colors.append(channel_colors_map.get(item['known_us_from'], '#6b7280'))
+            sales_channels.append({
+                'name': channel_names.get(item['known_us_from'], item['known_us_from']),
+                'percentage': percentage
+            })
     
-    # ========== تفاصيل المصروفات هذا الشهر ==========
     expense_details = Expense.objects.filter(
         created_at__date__gte=first_day_month
     ).values('category__name').annotate(
         total=Sum('amount')
-    ).order_by('-total')[:5]
+    ).order_by('-total')
     
-    expense_labels = []
-    expense_amounts = []
-    
+    expense_data = []
     for item in expense_details:
-        expense_labels.append(item['category__name'] or 'أخرى')
-        expense_amounts.append(float(item['total']))
+        expense_data.append({
+            'name': item['category__name'] or 'أخرى',
+            'amount': item['total'] or 0
+        })
     
-    # ========== بيانات الرسم البياني للمبيعات ==========
-    chart_data = get_daily_sales_chart()
+    thirty_days_ago = today - timedelta(days=30)
+    daily_data = {}
+    for i in range(30):
+        date = thirty_days_ago + timedelta(days=i)
+        daily_data[date.strftime('%Y-%m-%d')] = 0
     
-    # ========== تجهيز البيانات للسلايدر ==========
-    # إحصائيات إضافية للسلايدر
-    total_customers_count = Customer.objects.count()
-    pending_internal_orders = InternalOrder.objects.filter(
-        ~Q(status='received') & ~Q(status='cancelled')
-    ).count()
-    pending_external_orders = ExternalOrder.objects.filter(
-        ~Q(status='received') & ~Q(status='cancelled')
-    ).count()
+    internal_daily = InternalOrder.objects.filter(
+        created_at__date__gte=thirty_days_ago,
+        created_at__date__lte=today,
+        status__in=['confirmed', 'indelivery', 'received']
+    ).values('created_at__date').annotate(total=Sum('sales_total'))
+    
+    for item in internal_daily:
+        date_str = item['created_at__date'].strftime('%Y-%m-%d')
+        if date_str in daily_data:
+            daily_data[date_str] += float(item['total'] or 0)
+    
+    external_daily = ExternalOrder.objects.filter(
+        created_at__date__gte=thirty_days_ago,
+        created_at__date__lte=today,
+        status__in=['confirmed', 'indeliver', 'received']
+    ).values('created_at__date').annotate(total=Sum('lyd_sales_total'))
+    
+    for item in external_daily:
+        date_str = item['created_at__date'].strftime('%Y-%m-%d')
+        if date_str in daily_data:
+            daily_data[date_str] += float(item['total'] or 0)
+    
+    sorted_dates = sorted(daily_data.keys())
+    chart_labels = [d[5:10] for d in sorted_dates]
+    chart_values = [daily_data[d] for d in sorted_dates]
     
     context = {
-        # الإحصائيات الرئيسية
         'total_products': total_products,
         'total_orders': total_orders,
-        'current_month_sales': current_month_sales,
-        'sales_change': sales_change,
-        'current_month_profit': current_month_profit,
-        'profit_change': profit_change,
-        'current_month_expenses': current_month_expenses,
-        
-        # الطلبات والمنتجات
+        'total_sales': current_month_sales,
+        'total_profit': current_month_profit,
+        'total_expenses': current_month_expenses,
         'recent_orders': recent_orders,
-        'low_stock_products': low_stock_products,
+        'low_stock': low_stock,
         'best_selling': best_selling,
-        
-        # قنوات المبيعات
-        'channel_labels': channel_labels,
-        'channel_counts': channel_counts,
-        'channel_colors': channel_colors,
-        
-        # المصروفات
-        'expense_labels': expense_labels,
-        'expense_amounts': expense_amounts,
-        
-        # الرسم البياني
-        'chart_labels': chart_data['labels'],
-        'chart_values': chart_data['values'],
-        
-        # بيانات السلايدر
-        'total_customers': total_customers_count,
-        'pending_internal_orders': pending_internal_orders,
-        'pending_external_orders': pending_external_orders,
+        'sales_channels': sales_channels,
+        'expense_data': expense_data,
+        'chart_labels': chart_labels,
+        'chart_values': chart_values,
+        'sales_change': sales_change,
+        'profit_change': profit_change,
     }
+    
     
     return render(request, 'home.html', context)
 
