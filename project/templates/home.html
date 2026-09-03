@@ -391,6 +391,7 @@
         font: 700 15px/1.5 "Cairo", sans-serif;
         text-align: center;
         white-space: pre;
+        content: "{{ total_sales|floatformat:0|default:'0' }}\A ";
     }
     .legend-list {
         display: flex;
