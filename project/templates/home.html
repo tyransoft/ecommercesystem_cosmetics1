@@ -1,4 +1,4 @@
-<!-- templates/dashboard/home.html - النسخة المعدلة بدون zip -->
+<!-- templates/dashboard/home.html -->
 {% extends 'base.html' %}
 {% load mathfilters %}
 
@@ -136,6 +136,9 @@
         transform: translateY(-4px);
         box-shadow: 0 8px 30px rgba(213,31,134,0.08);
     }
+    .main-content {
+        transition: all 0.3s ease;
+    }
 </style>
 {% endblock %}
 
@@ -150,7 +153,7 @@
         
         <div class="sidebar-title">القائمة الرئيسية</div>
         
-        <a href="{% url 'dashboard_home' %}" class="sidebar-item active">
+        <a href="{% url 'home' %}" class="sidebar-item active">
             <span class="material-symbols-outlined icon">dashboard</span>
             <span class="label">الرئيسية</span>
         </a>
@@ -369,7 +372,6 @@
 </div>
 
 <script>
-// التحكم في السلايدر
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const toggle = document.getElementById('sidebarToggle');
@@ -385,14 +387,12 @@ function toggleSidebar() {
     }
 }
 
-// إغلاق السلايدر تلقائياً على الشاشات الصغيرة عند التحميل
 if (window.innerWidth <= 768) {
     document.getElementById('sidebar').classList.add('closed');
     document.getElementById('sidebarToggle').classList.add('closed');
     document.getElementById('toggleIcon').textContent = 'menu_open';
 }
 
-// إغلاق السلايدر عند النقر خارجها على الشاشات الصغيرة
 document.addEventListener('click', function(event) {
     const sidebar = document.getElementById('sidebar');
     const toggle = document.getElementById('sidebarToggle');
@@ -408,7 +408,6 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// الرسوم البيانية
 document.addEventListener('DOMContentLoaded', function() {
     const colors = {
         primary: '#af006b',
@@ -419,7 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
         blue: '#3b82f6'
     };
 
-    // 1. الرسم البياني للمبيعات
     const salesCtx = document.getElementById('salesChart').getContext('2d');
     new Chart(salesCtx, {
         type: 'line',
@@ -458,7 +456,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 2. قنوات المبيعات (دائري)
     const channelCtx = document.getElementById('channelChart').getContext('2d');
     new Chart(channelCtx, {
         type: 'pie',
