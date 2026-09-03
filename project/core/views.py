@@ -16,7 +16,9 @@ from .models import *
 
 
 def home(request):
-    return render(request, 'home.html')
+    if request.user.is_authenticated:
+      return render(request, 'home.html')
+    return redirect('user_login')
 
 def login_view(request):
     if request.user.is_authenticated:
