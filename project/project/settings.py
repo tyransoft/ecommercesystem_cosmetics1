@@ -24,10 +24,13 @@ TEMP=BASE_DIR / 'templates'
 SECRET_KEY = 'django-insecure-r2&k+m_%_vtl+$%wgas!7ysveax^2lb-=xng4c7a=t!2u4$010'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['glamour.tip2.libyanspider.cloud']
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://glamour.tip2.libyanspider.cloud",
+]
 
 # Application definition
 
@@ -78,8 +81,12 @@ WSGI_APPLICATION = 'project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'glamour',
+        'USER': 'webadmin',
+        'PASSWORD': 'SLPskg91411',
+        'HOST': '10.7.6.92',
+        'PORT': '5432',
     }
 }
 
