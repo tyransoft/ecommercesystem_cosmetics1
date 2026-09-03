@@ -116,22 +116,22 @@
     }
     .stat-label {
         margin-right: 51px;
-        color: #5d5960;
-        font-size: 11px;
-        font-weight: 500;
+        color: #4f4b52;
+        font-size: 13px;
+        font-weight: 600;
     }
     .stat-value {
-        margin: 9px 0 0;
+        margin: 8px 0 0;
         color: #25232a;
         font-family: Arial, sans-serif;
-        font-size: 19px;
+        font-size: 22px;
         font-weight: 700;
         direction: rtl;
         text-align: right;
     }
     .stat-value small {
         font-family: "Cairo", sans-serif;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 500;
     }
     .stat-foot {
@@ -141,7 +141,8 @@
         gap: 8px;
         margin-top: 8px;
         color: #56ae8b;
-        font-size: 10px;
+        font-size: 11px;
+        font-weight: 500;
         white-space: nowrap;
     }
     .stat-foot .down { color: #e8a72e; }
@@ -202,6 +203,7 @@
         background: #fff;
         color: #605c63;
         font: 10px "Cairo", sans-serif;
+        cursor: pointer;
     }
     .sales-panel { min-height: 300px; }
     .sales-legend {
@@ -210,7 +212,7 @@
         gap: 7px;
         margin: 0 19px 4px;
         color: #5d5960;
-        font-size: 10px;
+        font-size: 12px;
     }
     .sales-legend i {
         display: block;
@@ -221,9 +223,9 @@
     }
     .sales-chart {
         display: block;
-        width: calc(100% - 27px);
-        height: 218px;
-        margin: 0 14px 13px;
+        width: calc(100% - 30px);
+        height: 250px;
+        margin: 0 15px 15px;
     }
     .chart-grid {
         stroke: #f0edf0;
@@ -232,7 +234,8 @@
     .chart-label {
         fill: #5f5b62;
         font-family: "Cairo", sans-serif;
-        font-size: 9px;
+        font-size: 11px;
+        font-weight: 500;
     }
     .chart-area { fill: url(#salesFill); }
     .chart-line {
@@ -241,6 +244,41 @@
         stroke-linecap: round;
         stroke-linejoin: round;
         stroke-width: 2;
+    }
+    .chart-point {
+        fill: #c83a86;
+        stroke: #fff;
+        stroke-width: 2;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .chart-point:hover {
+        fill: #af006b;
+        r: 5;
+    }
+    .chart-tooltip {
+        display: none;
+        position: absolute;
+        background: #fff;
+        border: 1px solid #e5eeff;
+        border-radius: 8px;
+        padding: 8px 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        font-size: 11px;
+        color: #25232a;
+        pointer-events: none;
+        z-index: 10;
+        min-width: 80px;
+        text-align: center;
+    }
+    .chart-tooltip .value {
+        font-weight: 700;
+        color: #af006b;
+        font-size: 13px;
+    }
+    .chart-tooltip .date {
+        color: #5f5b62;
+        font-size: 10px;
     }
     .orders-panel { min-height: 300px; }
     .orders-table {
@@ -380,23 +418,21 @@
         padding: 4px 16px 0;
     }
     .donut {
-        flex: 0 0 115px;
-        width: 115px;
-        height: 115px;
+        flex: 0 0 125px;
+        width: 125px;
+        height: 125px;
         border-radius: 50%;
-        background: conic-gradient(#dd3f91 0 65%, #8150c5 65% 85%, #ec8a85 85% 95%, #e9a24f 95% 100%);
         position: relative;
     }
     .donut::after {
         position: absolute;
-        inset: 23px;
+        inset: 25px;
         display: grid;
         place-items: center;
         border-radius: 50%;
         background: #fff;
         color: #2f2b32;
-        content: "{{ total_sales|floatformat:0|default:'0' }}\A إجمالي المبيعات";
-        font: 700 14px/1.5 "Cairo", sans-serif;
+        font: 700 15px/1.5 "Cairo", sans-serif;
         text-align: center;
         white-space: pre;
     }
@@ -553,37 +589,20 @@
         <section class="panel sales-panel">
             <div class="panel-heading">
                 <h2>المبيعات</h2>
-                <select class="period-select" aria-label="الفترة الزمنية">
-                    <option>آخر 30 يوم</option>
+                <select class="period-select" id="periodSelect" aria-label="الفترة الزمنية">
+                    <option value="7">آخر 7 أيام</option>
+                    <option value="30" selected>آخر 30 يوم</option>
+                    <option value="90">آخر 90 يوم</option>
                 </select>
             </div>
             <div class="sales-legend"><i></i><span>المبيعات (د.ل)</span></div>
-            <svg class="sales-chart" viewBox="0 0 650 220" preserveAspectRatio="none" role="img" aria-label="مخطط المبيعات خلال آخر 30 يوم">
-                <defs>
-                    <linearGradient id="salesFill" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0" stop-color="#dc3e91" stop-opacity=".20"/>
-                        <stop offset="1" stop-color="#dc3e91" stop-opacity=".015"/>
-                    </linearGradient>
-                </defs>
-                <line class="chart-grid" x1="38" y1="24" x2="632" y2="24"/>
-                <line class="chart-grid" x1="38" y1="62" x2="632" y2="62"/>
-                <line class="chart-grid" x1="38" y1="100" x2="632" y2="100"/>
-                <line class="chart-grid" x1="38" y1="138" x2="632" y2="138"/>
-                <line class="chart-grid" x1="38" y1="176" x2="632" y2="176"/>
-                <text class="chart-label" x="9" y="28">8K</text>
-                <text class="chart-label" x="9" y="66">6K</text>
-                <text class="chart-label" x="9" y="104">4K</text>
-                <text class="chart-label" x="9" y="142">2K</text>
-                <text class="chart-label" x="18" y="180">0</text>
-                <path class="chart-area" d="M42 163 L58 128 L74 154 L90 117 L106 143 L122 126 L138 145 L154 144 L170 139 L186 98 L202 129 L218 143 L234 157 L250 139 L266 112 L282 42 L298 83 L314 109 L330 97 L346 104 L362 101 L378 99 L394 101 L410 47 L426 68 L442 58 L458 28 L474 70 L490 51 L506 90 L522 70 L538 103 L554 79 L570 61 L586 12 L602 63 L618 49 L632 93 L632 176 L42 176 Z"/>
-                <path class="chart-line" d="M42 163 L58 128 L74 154 L90 117 L106 143 L122 126 L138 145 L154 144 L170 139 L186 98 L202 129 L218 143 L234 157 L250 139 L266 112 L282 42 L298 83 L314 109 L330 97 L346 104 L362 101 L378 99 L394 101 L410 47 L426 68 L442 58 L458 28 L474 70 L490 51 L506 90 L522 70 L538 103 L554 79 L570 61 L586 12 L602 63 L618 49 L632 93"/>
-                <text class="chart-label" x="43" y="205">5 مايو</text>
-                <text class="chart-label" x="143" y="205">10 مايو</text>
-                <text class="chart-label" x="250" y="205">15 مايو</text>
-                <text class="chart-label" x="365" y="205">20 مايو</text>
-                <text class="chart-label" x="475" y="205">25 مايو</text>
-                <text class="chart-label" x="581" y="205">30 مايو</text>
-            </svg>
+            <div style="position:relative;">
+                <canvas id="salesChart" width="650" height="250"></canvas>
+                <div class="chart-tooltip" id="tooltip">
+                    <div class="date"></div>
+                    <div class="value"></div>
+                </div>
+            </div>
         </section>
     </div>
 
@@ -633,7 +652,9 @@
         <section class="panel bottom-panel">
             <div class="panel-heading"><h2>قنوات المبيعات</h2></div>
             <div class="sales-channels">
-                <div class="donut" aria-label="مخطط قنوات المبيعات"></div>
+                <div class="donut" id="channelDonut" aria-label="مخطط قنوات المبيعات" 
+                     style="background:{% if sales_channels %}conic-gradient({% for channel in sales_channels %}#dd3f91 0 {{ channel.percentage }}%{% if not forloop.last %}, {% endif %}{% endfor %}){% else %}#e5eeff{% endif %}">
+                </div>
                 <div class="legend-list">
                     {% for channel in sales_channels %}
                     <div class="legend-item">
@@ -654,7 +675,9 @@
         <section class="panel bottom-panel">
             <div class="panel-heading"><h2>المصروفات هذا الشهر</h2></div>
             <div class="sales-channels">
-                <div class="donut" style="background:conic-gradient(#9e4fd0 0 66.7%, #e79078 66.7% 85.7%, #e8a64e 85.7% 95.2%, #e9bfd2 95.2% 100%)" aria-label="مخطط المصروفات"></div>
+                <div class="donut" id="expenseDonut" aria-label="مخطط المصروفات"
+                     style="background:{% if expense_data %}conic-gradient({% for expense in expense_data %}#9e4fd0 0 {{ expense.percentage }}%{% if not forloop.last %}, {% endif %}{% endfor %}){% else %}#e5eeff{% endif %}">
+                </div>
                 <div class="legend-list">
                     {% for expense in expense_data %}
                     <div class="legend-item">
@@ -675,4 +698,93 @@
 
     <div class="footer-note">Glamour 2026 © جميع الحقوق محفوظة <span>♥</span></div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const chartData = {
+        labels: {{ chart_labels|safe }},
+        values: {{ chart_values|safe }}
+    };
+    
+    const maxValue = Math.max(...chartData.values, 1000);
+    const stepSize = Math.ceil(maxValue / 5 / 1000) * 1000;
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                label: 'المبيعات',
+                data: chartData.values,
+                borderColor: '#dc3e91',
+                backgroundColor: 'rgba(220, 62, 145, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#dc3e91',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    rtl: true,
+                    backgroundColor: '#ffffff',
+                    titleColor: '#0b1c30',
+                    bodyColor: '#5f5e5e',
+                    borderColor: '#e5eeff',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 12,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y.toLocaleString() + ' د.ل';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: maxValue + stepSize,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: {
+                        font: { family: 'Cairo', size: 11 },
+                        stepSize: stepSize,
+                        callback: function(value) {
+                            if (value >= 1000) return (value / 1000) + 'K';
+                            return value;
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { family: 'Cairo', size: 10 },
+                        maxTicksLimit: 10,
+                        maxRotation: 0
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index',
+            }
+        }
+    });
+
+    document.getElementById('periodSelect').addEventListener('change', function() {
+        const days = this.value;
+        window.location.href = window.location.pathname + '?days=' + days;
+    });
+});
+</script>
 {% endblock %}
