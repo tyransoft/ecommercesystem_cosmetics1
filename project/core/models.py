@@ -594,7 +594,7 @@ class InternalOrder(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     total_profit = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='إجمالي الربح')
     created_at = models.DateTimeField(auto_now_add=True)
-    indelivery_at=models.DateTimeField()
+    indelivery_at=models.DateTimeField(null=True, blank=True, verbose_name='تاريخ بدء التوصيل')
     @staticmethod
     def generate_ordernumber():
         while True:

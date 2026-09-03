@@ -631,28 +631,30 @@
             </div>
         </section>
 
-        <section class="panel bottom-panel">
-            <div class="panel-heading"><h2>المصروفات هذا الشهر</h2></div>
-            <div class="sales-channels">
-                <div class="donut" id="expenseDonut" aria-label="مخطط المصروفات"
-                     style="background:{% if expense_data %}conic-gradient({% for expense in expense_data %}#9e4fd0 0 {{ expense.percentage }}%{% if not forloop.last %}, {% endif %}{% endfor %}){% else %}#e5eeff{% endif %}">
-                </div>
-                <div class="legend-list">
-                    {% for expense in expense_data %}
-                    <div class="legend-item">
-                        <span class="legend-name">
-                            <i class="legend-dot 
-                                {% if forloop.counter == 1 %}purple{% elif forloop.counter == 2 %}coral{% elif forloop.counter == 3 %}gold{% else %}style="background:#e9bfd2"{% endif %}"></i>
-                            {{ expense.name }}
-                        </span>
-                        <b>{{ expense.amount|floatformat:0 }}</b>
-                    </div>
-                    {% empty %}
-                    <div style="text-align:center;padding:10px;color:#8a858d;font-size:10px;">لا توجد مصروفات</div>
-                    {% endfor %}
-                </div>
+      <section class="panel bottom-panel">
+    <div class="panel-heading"><h2>المصروفات هذا الشهر</h2></div>
+    <div class="sales-channels">
+        {% with total_expense=expense_data|sum:'amount' %}
+        <div class="donut" id="expenseDonut" aria-label="مخطط المصروفات"
+             style="background:{% if expense_data %}conic-gradient({% for expense in expense_data %}#9e4fd0 0 {{ expense.amount|div:total_expense|mul:100|floatformat:1 }}%{% if not forloop.last %}, {% endif %}{% endfor %}){% else %}#e5eeff{% endif %}">
+        </div>
+        <div class="legend-list">
+            {% for expense in expense_data %}
+            <div class="legend-item">
+                <span class="legend-name">
+                    <i class="legend-dot 
+                        {% if forloop.counter == 1 %}purple{% elif forloop.counter == 2 %}coral{% elif forloop.counter == 3 %}gold{% else %}style="background:#e9bfd2"{% endif %}"></i>
+                    {{ expense.name }}
+                </span>
+                <b>{{ expense.amount|floatformat:0 }}</b>
             </div>
-        </section>
+            {% empty %}
+            <div style="text-align:center;padding:10px;color:#8a858d;font-size:10px;">لا توجد مصروفات</div>
+            {% endfor %}
+        </div>
+        {% endwith %}
+    </div>
+</section>
     </div>
 
     <div class="footer-note">Glamour 2026 © جميع الحقوق محفوظة <span>♥</span></div>

@@ -2756,7 +2756,6 @@ def reports_dashboard(request):
     order_status_counts = get_order_status_counts(date_from, date_to)
     daily_sales = get_daily_sales(date_from, date_to)
     
-    # بيانات الرسوم البيانية - المبيعات اليومية
     chart_labels = []
     chart_internal_sales = []
     chart_external_sales = []
@@ -2768,7 +2767,6 @@ def reports_dashboard(request):
         chart_external_sales.append(float(day['external']))
         chart_total_sales.append(float(day['total']))
     
-    # بيانات حالة الطلبات للرسم الدائري
     pie_labels = []
     pie_data = []
     pie_colors = []
@@ -2787,7 +2785,6 @@ def reports_dashboard(request):
         pie_data.append(item['count'])
         pie_colors.append(status_colors.get(item['status'], '#6b7280'))
     
-    # بيانات المنتجات الأكثر مبيعاً
     product_names = []
     product_quantities = []
     
@@ -2795,7 +2792,6 @@ def reports_dashboard(request):
         product_names.append(product['name'])
         product_quantities.append(product['quantity'])
     
-    # بيانات العملاء الأكثر طلباً
     customer_names = []
     customer_spent = []
     
@@ -2803,7 +2799,6 @@ def reports_dashboard(request):
         customer_names.append(customer['name'])
         customer_spent.append(float(customer['spent']))
     
-    # بيانات المصروفات
     expense_names = []
     expense_amounts = []
     
