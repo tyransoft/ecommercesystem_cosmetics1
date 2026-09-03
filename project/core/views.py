@@ -3119,7 +3119,6 @@ def marketing_dashboard(request):
             new_source_labels.append(source_names.get(item['known_us_from'], item['known_us_from']))
             new_source_counts.append(item['count'])
     
-    from django.db.models import Count
     
     repeat_customers = Customer.objects.annotate(
         order_count=Count('internalorder') + Count('externalorder')

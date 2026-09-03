@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="rtl" lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +31,6 @@
             vertical-align: middle;
         }
 
-        /* The page content is kept clear of the fixed sidebar. */
         .dashboard-content {
             min-height: 100vh;
             margin-right: var(--sidebar-width);
@@ -47,10 +46,41 @@
             flex-direction: column;
             width: var(--sidebar-width);
             min-height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #efcfe0 transparent;
             border-left: 1px solid var(--line);
             background: #fff;
             box-shadow: -1px 0 9px rgba(102, 77, 95, .035);
+            transform: translateX(0);
+            transition: transform .25s ease;
+        }
+        .mobile-menu-toggle {
+            position: fixed;
+            z-index: 70;
+            top: 14px;
+            right: 14px;
+            display: none;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            border: 1px solid #f0dce8;
+            border-radius: 10px;
+            background: #fff;
+            color: var(--pink-strong);
+            box-shadow: 0 5px 18px rgba(94, 52, 78, .12);
+            cursor: pointer;
+        }
+        .mobile-menu-toggle .material-symbols-outlined { font-size: 24px; }
+        .sidebar-overlay {
+            position: fixed;
+            z-index: 40;
+            inset: 0;
+            display: none;
+            background: rgba(36, 29, 36, .34);
+            opacity: 0;
+            transition: opacity .25s ease;
         }
         .brand {
             position: relative;
@@ -244,16 +274,36 @@
         }
 
         @media (max-width: 800px) {
-            :root { --sidebar-width: 100%; }
-            .dashboard-content { display: none; }
-            .sidebar { border-left: 0; }
+            :root { --sidebar-width: 280px; }
+            .mobile-menu-toggle { display: grid; }
+            .sidebar {
+                border-left: 0;
+                box-shadow: -8px 0 28px rgba(49, 34, 47, .14);
+                transform: translateX(100%);
+            }
+            .sidebar.is-open { transform: translateX(0); }
+            .sidebar-overlay.is-visible {
+                display: block;
+                opacity: 1;
+            }
+            .dashboard-content {
+                display: block;
+                margin-right: 0;
+                padding: 76px 16px 24px;
+            }
             .message { display: none; }
         }
         {% block extra_head %}{% endblock %}
     </style>
 </head>
 <body>
-    <aside class="sidebar" aria-label="القائمة الرئيسية">
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle" type="button"
+            aria-label="فتح القائمة" aria-controls="main-sidebar" aria-expanded="false">
+        <span class="material-symbols-outlined">menu</span>
+    </button>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="main-sidebar" aria-label="القائمة الرئيسية">
         <div class="brand" aria-label="Glamour with Jannat">
             <div class="brand-name">Glamour</div>
             <span class="bow"><span class="bow-dot"></span></span>
@@ -262,8 +312,8 @@
         <div class="store">
             <span class="store-chevron material-symbols-outlined">expand_more</span>
             <div class="store-copy">
-                <span class="store-name">جنت</span>
-                <span class="store-role">مديرة المتجر</span>
+                <span class="store-name">{{request.user.get_full_name}}</span>
+                <span class="store-role">{{request.user.role}}</span>
             </div>
             <span class="store-avatar" aria-hidden="true"></span>
         </div>
@@ -272,32 +322,35 @@
             <a class="nav-link active" href="{% url 'home' %}">
                 <span>الرئيسية</span><span class="material-symbols-outlined">home</span>
             </a>
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'product_list' %}">
                 <span>المنتجات</span><span class="material-symbols-outlined">deployed_code</span>
             </a>
-            <a class="nav-link" href="#">
-                <span>الطلبات</span><span class="material-symbols-outlined">shopping_bag</span>
+            <a class="nav-link" href="{% url 'internal_order_list' %}">
+                <span>الطلبات الداخلية</span><span class="material-symbols-outlined">shopping_bag</span>
             </a>
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'external_order_list' %}">
+                <span>الطلبات الخارجية</span><span class="material-symbols-outlined">shopping_bag</span>
+            </a>
+            <a class="nav-link" href="{% url 'customer_list' %}">
                 <span>العملاء</span><span class="material-symbols-outlined">group</span>
             </a>
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'inventory_list' %}">
                 <span>المخزون</span><span class="material-symbols-outlined">inventory_2</span>
             </a>
-            <a class="nav-link" href="#">
-                <span>الموردين</span><span class="material-symbols-outlined">local_shipping</span>
+            <a class="nav-link" href="{% url 'purchase_invoice_list' %}">
+                <span>الموردين والمشتريات</span><span class="material-symbols-outlined">local_shipping</span>
             </a>
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'expense_list' %}">
                 <span>المصروفات</span><span class="material-symbols-outlined">receipt_long</span>
             </a>
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'reports_dashboard' %}">
                 <span>التقارير</span><span class="material-symbols-outlined">bar_chart</span>
             </a>
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'marketing' %}">
                 <span>التسويق</span><span class="material-symbols-outlined">campaign</span>
             </a>
-            <a class="nav-link" href="#">
-                <span>الإعدادات</span><span class="material-symbols-outlined">settings</span>
+            <a class="nav-link" href="{% url 'user_list' %}">
+                <span>المستخدمين</span><span class="material-symbols-outlined">person</span>
             </a>
         </nav>
 
@@ -341,5 +394,33 @@
     </main>
 
     {% block extra_scripts %}{% endblock %}
+    <script>
+        (function () {
+            const button = document.getElementById("mobile-menu-toggle");
+            const sidebar = document.getElementById("main-sidebar");
+            const overlay = document.getElementById("sidebar-overlay");
+            if (!button || !sidebar || !overlay) return;
+
+            function setMenuState(open) {
+                sidebar.classList.toggle("is-open", open);
+                overlay.classList.toggle("is-visible", open);
+                button.setAttribute("aria-expanded", String(open));
+                button.setAttribute("aria-label", open ? "إغلاق القائمة" : "فتح القائمة");
+                button.querySelector(".material-symbols-outlined").textContent = open ? "close" : "menu";
+                document.body.style.overflow = open ? "hidden" : "";
+            }
+
+            button.addEventListener("click", function () {
+                setMenuState(!sidebar.classList.contains("is-open"));
+            });
+            overlay.addEventListener("click", function () { setMenuState(false); });
+            sidebar.querySelectorAll("a").forEach(function (link) {
+                link.addEventListener("click", function () { setMenuState(false); });
+            });
+            window.addEventListener("resize", function () {
+                if (window.innerWidth > 800) setMenuState(false);
+            });
+        }());
+    </script>
 </body>
 </html>

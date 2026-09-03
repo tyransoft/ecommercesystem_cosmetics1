@@ -1,4 +1,3 @@
-<!-- templates/dashboard/home.html -->
 {% extends "base.html" %}
 
 {% block title %}الرئيسية - Glamour{% endblock %}
@@ -392,7 +391,6 @@
         font: 700 15px/1.5 "Cairo", sans-serif;
         text-align: center;
         white-space: pre;
-        content: "{{ total_sales|floatformat:0|default:'0' }}\A إجمالي المبيعات";
     }
     .legend-list {
         display: flex;
@@ -601,7 +599,7 @@
                         <b>{{ product.name }}</b>
                         <small>{{ product.quantity }} مبيعات</small>
                     </span>
-                    <span class="product-thumb">⭐</span>
+                    <span class="product-thumb">{{ product.image }}</span>
                 </div>
                 {% empty %}
                 <div style="text-align:center;padding:20px;color:#8a858d;font-size:10px;">لا توجد مبيعات</div>
