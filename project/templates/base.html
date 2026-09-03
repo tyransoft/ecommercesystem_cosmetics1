@@ -295,6 +295,134 @@
         }
         {% block extra_head %}{% endblock %}
     </style>
+        <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "background": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-background": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#fff7f7",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#636262",
+                        "primary-container": "#d51f86",
+                        "primary": "#af006b",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#cdc4c9",
+                        "inverse-primary": "#ffb0ce",
+                        "tertiary": "#5e585c",
+                        "on-primary-fixed": "#3d0022",
+                        "tertiary-container": "#777074",
+                        "surface-container-highest": "#d3e4fe",
+                        "tertiary-fixed": "#e9e0e5",
+                        "surface": "#f8f9ff",
+                        "on-tertiary-fixed": "#1f1a1e",
+                        "on-surface-variant": "#584049",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-high": "#dce9ff",
+                        "inverse-surface": "#213145",
+                        "on-surface": "#0b1c30",
+                        "on-tertiary-fixed-variant": "#4b4549",
+                        "surface-tint": "#b70070",
+                        "secondary-container": "#e2dfde",
+                        "surface-dim": "#cbdbf5",
+                        "on-tertiary-container": "#fff6fa",
+                        "outline": "#8c7079",
+                        "surface-variant": "#d3e4fe",
+                        "on-primary-fixed-variant": "#8c0055",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#5f5e5e",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed": "#ffd9e5",
+                        "outline-variant": "#dfbec9",
+                        "primary-fixed-dim": "#ffb0ce"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    spacing: {
+                        unit: "8px",
+                        "margin-mobile": "20px",
+                        "stack-lg": "32px",
+                        "container-max": "1280px",
+                        "margin-desktop": "64px",
+                        "section-gap": "80px",
+                        gutter: "24px",
+                        "stack-md": "16px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Cairo", "sans-serif"],
+                        "label-sm": ["Tajawal", "sans-serif"],
+                        "headline-lg-mobile": ["Cairo", "sans-serif"],
+                        "body-lg": ["Tajawal", "sans-serif"],
+                        "label-md": ["Tajawal", "sans-serif"],
+                        "body-md": ["Tajawal", "sans-serif"],
+                        "display": ["Cairo", "sans-serif"],
+                        "headline-md": ["Cairo", "sans-serif"]
+                    },
+                    fontSize: {
+                        "headline-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.01em", fontWeight: "700" }],
+                        "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "500" }],
+                        "headline-lg-mobile": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "display": ["64px", { lineHeight: "72px", letterSpacing: "-0.02em", fontWeight: "800" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8f9ff;
+            color: #0b1c30;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .message {
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Cairo', sans-serif;
+            letter-spacing: -0.02em;
+        }
+        .font-headline-md, .font-headline-lg, .font-display {
+            font-family: 'Cairo', sans-serif;
+        }
+        .font-body-md, .font-body-lg, .font-label-md, .font-label-sm {
+            font-family: 'Tajawal', sans-serif;
+        }
+    </style>
 </head>
 <body>
     <button class="mobile-menu-toggle" id="mobile-menu-toggle" type="button"
@@ -312,8 +440,8 @@
         <div class="store">
             <span class="store-chevron material-symbols-outlined">expand_more</span>
             <div class="store-copy">
-                <span class="store-name">{{request.user.get_full_name}}</span>
-                <span class="store-role">{{request.user.role}}</span>
+                <span class="store-name">{{request.user.username}}</span>
+                <span class="store-role">{{request.user.get_role_display}}</span>
             </div>
             <span class="store-avatar" aria-hidden="true"></span>
         </div>
