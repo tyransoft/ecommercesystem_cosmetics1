@@ -15,8 +15,8 @@ from django.utils import timezone
 from .models import *
 from collections import defaultdict
 
+@login_required
 def home(request):
-
     today = timezone.now().date()
     first_day_month = today.replace(day=1)
     last_month = first_day_month - timedelta(days=1)
@@ -156,9 +156,11 @@ def home(request):
     
     best_selling = []
     for name, quantity in sorted_products:
+        product = Product.objects.filter(name=name).first()
         best_selling.append({
             'name': name,
-            'quantity': quantity
+            'quantity': quantity,
+            'image': product.image.url if product and product.image else None
         })
     
     channel_data = Customer.objects.values('known_us_from').annotate(
@@ -194,16 +196,17 @@ def home(request):
     
     total_expense_amount = 0
     for item in expense_details:
-        total_expense_amount += item['total'] or 0
+        total_expense_amount += float(item['total'] or 0)
     
     expense_data = []
     for item in expense_details:
+        amount = float(item['total'] or 0)
         percentage = 0
         if total_expense_amount > 0:
-            percentage = round((item['total'] / total_expense_amount) * 100, 1)
+            percentage = round((amount / total_expense_amount) * 100, 1)
         expense_data.append({
             'name': item['category__name'] or 'أخرى',
-            'amount': item['total'] or 0,
+            'amount': amount,
             'percentage': percentage
         })
     
@@ -257,9 +260,7 @@ def home(request):
         'profit_change': profit_change,
     }
     
-    
     return render(request, 'home.html', context)
-
 
 def get_best_selling_products():
     """الحصول على أفضل 4 منتجات مبيعاً"""

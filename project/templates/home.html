@@ -782,7 +782,9 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = window.location.pathname + '?days=' + days;
     });
 });
+// كود JavaScript لتقسيم الدائرة بشكل صحيح
 document.addEventListener('DOMContentLoaded', function() {
+    // ===== قنوات المبيعات =====
     const channelData = {{ sales_channels|safe }};
     if (channelData && channelData.length > 0) {
         const donut = document.getElementById('channelDonut');
@@ -791,18 +793,20 @@ document.addEventListener('DOMContentLoaded', function() {
         let currentPercent = 0;
         
         channelData.forEach((item, index) => {
-            const percent = item.percentage;
-            const color = colors[index % colors.length];
-            gradient += `${color} ${currentPercent}% ${currentPercent + percent}%`;
-            if (index < channelData.length - 1) gradient += ', ';
-            currentPercent += percent;
+            const percent = item.percentage || 0;
+            if (percent > 0) {
+                const color = colors[index % colors.length];
+                gradient += `${color} ${currentPercent}% ${currentPercent + percent}%`;
+                if (index < channelData.length - 1) gradient += ', ';
+                currentPercent += percent;
+            }
         });
         gradient += ')';
         donut.style.background = gradient;
     }
 
- 
-   const expenseData = {{ expense_data|safe }};
+    // ===== المصروفات =====
+    const expenseData = {{ expense_data|safe }};
     if (expenseData && expenseData.length > 0) {
         const totalExpense = expenseData.reduce((sum, item) => sum + (item.amount || 0), 0);
         
