@@ -801,22 +801,34 @@ document.addEventListener('DOMContentLoaded', function() {
         donut.style.background = gradient;
     }
 
-    const expenseData = {{ expense_data|safe }};
+ 
+   const expenseData = {{ expense_data|safe }};
     if (expenseData && expenseData.length > 0) {
-        const donut = document.getElementById('expenseDonut');
-        const colors = ['#9e4fd0', '#e79078', '#e8a64e', '#e9bfd2', '#6b7280'];
-        let gradient = 'conic-gradient(';
-        let currentPercent = 0;
+        const totalExpense = expenseData.reduce((sum, item) => sum + (item.amount || 0), 0);
         
-        expenseData.forEach((item, index) => {
-            const percent = item.percentage;
-            const color = colors[index % colors.length];
-            gradient += `${color} ${currentPercent}% ${currentPercent + percent}%`;
-            if (index < expenseData.length - 1) gradient += ', ';
-            currentPercent += percent;
-        });
-        gradient += ')';
-        donut.style.background = gradient;
+        if (totalExpense > 0) {
+            const donut = document.getElementById('expenseDonut');
+            const colors = ['#9e4fd0', '#e79078', '#e8a64e', '#e9bfd2', '#6b7280'];
+            let gradient = 'conic-gradient(';
+            let currentPercent = 0;
+            let hasData = false;
+            
+            expenseData.forEach((item, index) => {
+                const percent = (item.amount / totalExpense) * 100;
+                if (percent > 0) {
+                    const color = colors[index % colors.length];
+                    gradient += `${color} ${currentPercent}% ${currentPercent + percent}%`;
+                    if (index < expenseData.length - 1) gradient += ', ';
+                    currentPercent += percent;
+                    hasData = true;
+                }
+            });
+            
+            if (hasData && currentPercent > 0) {
+                gradient += ')';
+                donut.style.background = gradient;
+            }
+        }
     }
 });
 </script>
