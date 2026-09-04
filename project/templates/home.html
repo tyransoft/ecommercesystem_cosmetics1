@@ -373,26 +373,56 @@
         gap: 11px;
         padding: 4px 16px 0;
     }
-    .donut {
-        flex: 0 0 125px;
-        width: 125px;
-        height: 125px;
-        border-radius: 50%;
-        position: relative;
-    }
-    .donut::after {
-        position: absolute;
-        inset: 25px;
-        display: grid;
-        place-items: center;
-        border-radius: 50%;
-        background: #fff;
-        color: #2f2b32;
-        font: 700 15px/1.5 "Cairo", sans-serif;
-        text-align: center;
-        white-space: pre;
-        content: "{{ total_sales|floatformat:0|default:'0' }}\A ";
-    }
+.donut {
+    flex: 0 0 125px;
+    width: 125px;
+    height: 125px;
+    border-radius: 50%;
+    position: relative;
+    background: #e5eeff;
+}
+
+.donut-center {
+    position: absolute;
+    inset: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #fff;
+    text-align: center;
+    padding: 8px;
+}
+
+.donut-center .donut-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #2f2b32;
+    font-family: "Cairo", sans-serif;
+    line-height: 1.2;
+}
+
+.donut-center .donut-label {
+    font-size: 9px;
+    color: #8a858d;
+    font-weight: 500;
+    font-family: "Cairo", sans-serif;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-dot.purple { background: #8150c5; }
+.legend-dot.coral { background: #ec8a85; }
+.legend-dot.gold { background: #e9a24f; }
+.legend-dot.pink { background: #dd3f91; }
+
+
     .legend-list {
         display: flex;
         flex: 1;
@@ -600,7 +630,7 @@
                         <b>{{ product.name }}</b>
                         <small>{{ product.quantity }} مبيعات</small>
                     </span>
-                    <span class="product-thumb">{{ product.image }}</span>
+                    <span class="product-thumb">{{ product.image.url }}</span>
                 </div>
                 {% empty %}
                 <div style="text-align:center;padding:20px;color:#8a858d;font-size:10px;">لا توجد مبيعات</div>
@@ -608,34 +638,40 @@
             </div>
         </section>
 
-        <section class="panel bottom-panel">
-            <div class="panel-heading"><h2>قنوات المبيعات</h2></div>
-            <div class="sales-channels">
-                <div class="donut" id="channelDonut" aria-label="مخطط قنوات المبيعات" 
-                     style="background:{% if sales_channels %}conic-gradient({% for channel in sales_channels %}#dd3f91 0 {{ channel.percentage }}%{% if not forloop.last %}, {% endif %}{% endfor %}){% else %}#e5eeff{% endif %}">
-                </div>
-                <div class="legend-list">
-                    {% for channel in sales_channels %}
-                    <div class="legend-item">
-                        <span class="legend-name">
-                            <i class="legend-dot 
-                                {% if forloop.counter == 1 %}{% elif forloop.counter == 2 %}purple{% elif forloop.counter == 3 %}coral{% elif forloop.counter == 4 %}gold{% endif %}"></i>
-                            {{ channel.name }}
-                        </span>
-                        <b>{{ channel.percentage|floatformat:0 }}%</b>
-                    </div>
-                    {% empty %}
-                    <div style="text-align:center;padding:10px;color:#8a858d;font-size:10px;">لا توجد بيانات</div>
-                    {% endfor %}
-                </div>
+  <section class="panel bottom-panel">
+    <div class="panel-heading"><h2>قنوات المبيعات</h2></div>
+    <div class="sales-channels">
+        <div class="donut" id="channelDonut" aria-label="مخطط قنوات المبيعات">
+            <div class="donut-center">
+                <span class="donut-value">{{ total_sales|floatformat:0|default:"0" }}</span>
+                <span class="donut-label">إجمالي المبيعات</span>
             </div>
-        </section>
+        </div>
+        <div class="legend-list">
+            {% for channel in sales_channels %}
+            <div class="legend-item">
+                <span class="legend-name">
+                    <i class="legend-dot 
+                        {% if forloop.counter == 1 %}{% elif forloop.counter == 2 %}purple{% elif forloop.counter == 3 %}coral{% elif forloop.counter == 4 %}gold{% endif %}"></i>
+                    {{ channel.name }}
+                </span>
+                <b>{{ channel.percentage|floatformat:0 }}%</b>
+            </div>
+            {% empty %}
+            <div style="text-align:center;padding:10px;color:#8a858d;font-size:10px;">لا توجد بيانات</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
 
-      <section class="panel bottom-panel">
+<section class="panel bottom-panel">
     <div class="panel-heading"><h2>المصروفات هذا الشهر</h2></div>
     <div class="sales-channels">
-        <div class="donut" id="expenseDonut" aria-label="مخطط المصروفات"
-             style="background:{% if expense_data %}conic-gradient({% for expense in expense_data %}#9e4fd0 0 {{ expense.percentage }}%{% if not forloop.last %}, {% endif %}{% endfor %}){% else %}#e5eeff{% endif %}">
+        <div class="donut" id="expenseDonut" aria-label="مخطط المصروفات">
+            <div class="donut-center">
+                <span class="donut-value">{{ total_expense_amount|floatformat:0|default:"0" }}</span>
+                <span class="donut-label">إجمالي المصروفات</span>
+            </div>
         </div>
         <div class="legend-list">
             {% for expense in expense_data %}
@@ -745,6 +781,43 @@ document.addEventListener('DOMContentLoaded', function() {
         const days = this.value;
         window.location.href = window.location.pathname + '?days=' + days;
     });
+});
+document.addEventListener('DOMContentLoaded', function() {
+    const channelData = {{ sales_channels|safe }};
+    if (channelData && channelData.length > 0) {
+        const donut = document.getElementById('channelDonut');
+        const colors = ['#dd3f91', '#8150c5', '#ec8a85', '#e9a24f'];
+        let gradient = 'conic-gradient(';
+        let currentPercent = 0;
+        
+        channelData.forEach((item, index) => {
+            const percent = item.percentage;
+            const color = colors[index % colors.length];
+            gradient += `${color} ${currentPercent}% ${currentPercent + percent}%`;
+            if (index < channelData.length - 1) gradient += ', ';
+            currentPercent += percent;
+        });
+        gradient += ')';
+        donut.style.background = gradient;
+    }
+
+    const expenseData = {{ expense_data|safe }};
+    if (expenseData && expenseData.length > 0) {
+        const donut = document.getElementById('expenseDonut');
+        const colors = ['#9e4fd0', '#e79078', '#e8a64e', '#e9bfd2', '#6b7280'];
+        let gradient = 'conic-gradient(';
+        let currentPercent = 0;
+        
+        expenseData.forEach((item, index) => {
+            const percent = item.percentage;
+            const color = colors[index % colors.length];
+            gradient += `${color} ${currentPercent}% ${currentPercent + percent}%`;
+            if (index < expenseData.length - 1) gradient += ', ';
+            currentPercent += percent;
+        });
+        gradient += ')';
+        donut.style.background = gradient;
+    }
 });
 </script>
 {% endblock %}
