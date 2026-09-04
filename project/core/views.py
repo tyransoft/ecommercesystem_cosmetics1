@@ -17,6 +17,7 @@ from collections import defaultdict
 
 @login_required
 def home(request):
+
     today = timezone.now().date()
     first_day_month = today.replace(day=1)
     last_month = first_day_month - timedelta(days=1)

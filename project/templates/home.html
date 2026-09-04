@@ -481,20 +481,7 @@
             <h1>الرئيسية</h1>
             <p>مرحباً {{ user.get_full_name|default:user.username|default:"مدير" }}، إليك ملخص عملك اليوم</p>
         </div>
-        <div class="top-tools">
-            <div class="search-box">
-                <input type="search" placeholder="ابحث عن منتج، طلب، عميل..." aria-label="بحث">
-                <span class="material-symbols-outlined">search</span>
-            </div>
-            <button class="top-action" type="button" aria-label="الرسائل">
-                <span class="material-symbols-outlined">chat_bubble_outline</span>
-                <span class="badge">1</span>
-            </button>
-            <button class="top-action" type="button" aria-label="الإشعارات">
-                <span class="material-symbols-outlined">notifications_none</span>
-                <span class="badge">5</span>
-            </button>
-        </div>
+      
     </div>
 
     <div class="stats-grid">
