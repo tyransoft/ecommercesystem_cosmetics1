@@ -296,54 +296,76 @@ class Inventory(models.Model):
 
 
     def get_movement_status(self):
-        if self.quantity == 0:
-            return {
-                'status': 'منتهي',
-                'class': 'bg-error/10 text-error',
-                'badge_class': 'bg-error text-white'
-            }
-        
-        ninety_days_ago = timezone.now() - timedelta(days=90)
-        
-        total_sold = InventoryMovement.objects.filter(
-            product=self.product,
-            movement_type='sale',
-            created_at__gte=ninety_days_ago
-        ).aggregate(total=models.Sum('quantity'))['total'] or 0
-        
-        total_sold = abs(total_sold)
-        
-        if total_sold == 0 or  1 <= total_sold <= 3:
-            return {
-                'status': 'راكد',
-                'class': 'bg-error/10 text-error',
-                'badge_class': 'bg-error text-white'
-            }
-        elif 4 <= total_sold <= 20:
-            return {
-                'status': 'حركة منخفضة',
-                'class': 'bg-warning/10 text-warning',
-                'badge_class': 'bg-warning text-white'
-            }
-        elif 21 <= total_sold <= 35:
-            return {
-                'status': 'حركة متوسطة',
-                'class': 'bg-primary/10 text-primary',
-                'badge_class': 'bg-primary text-white'
-            }
-        elif 40 <= total_sold <= 55:
-            return {
-                'status': 'حركة جيدة',
-                'class': 'bg-success/10 text-success',
-                'badge_class': 'bg-success text-white'
-            }
-        else:
-            return {
-                'status': 'حركة غزيرة',
-                'class': 'bg-blue-500/10 text-blue-500',
-                'badge_class': 'bg-blue-500 text-white'
-            }
+      movements = InventoryMovement.objects.filter(
+        product=self.product
+      ).order_by('created_at', 'id')
 
+      if not movements.exists():
+        return {
+            'status': 'لا توجد حركة',
+            'class': 'bg-gray-100 text-gray-500',
+            'badge_class': 'bg-gray-500 text-white'
+        }
+
+      stock = 0
+      cycle_start = None
+      sold_out_days = None
+
+      for movement in movements:
+
+        stock += movement.quantity
+
+        if movement.quantity > 0 and stock > 0 and cycle_start is None:
+            cycle_start = movement.created_at
+
+        if stock == 0 and cycle_start is not None:
+            sold_out_days = (
+                movement.created_at - cycle_start
+            ).days
+
+            cycle_start = None
+
+      if self.quantity > 0:
+        return {
+            'status': 'قيد الحركة',
+            'class': 'bg-primary/10 text-primary',
+            'badge_class': 'bg-primary text-white'
+        }
+
+      if sold_out_days is None:
+        return {
+            'status': 'منتهي',
+            'class': 'bg-error/10 text-error',
+            'badge_class': 'bg-error text-white'
+        }
+
+      if sold_out_days <= 30:
+        return {
+            'status': 'حركة غزيرة',
+            'class': 'bg-blue-500/10 text-blue-500',
+            'badge_class': 'bg-blue-500 text-white'
+        }
+
+      elif sold_out_days <= 60:
+        return {
+            'status': 'حركة متوسطة',
+            'class': 'bg-primary/10 text-primary',
+            'badge_class': 'bg-primary text-white'
+        }
+
+      elif sold_out_days <= 90:
+        return {
+            'status': 'حركة منخفضة',
+            'class': 'bg-warning/10 text-warning',
+            'badge_class': 'bg-warning text-white'
+        }
+
+      else:
+        return {
+            'status': 'راكد',
+            'class': 'bg-error/10 text-error',
+            'badge_class': 'bg-error text-white'
+        }
     def get_sold_quantity_last_90_days(self):
         ninety_days_ago = timezone.now() - timedelta(days=90)
         total_sold = InventoryMovement.objects.filter(
