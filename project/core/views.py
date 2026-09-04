@@ -192,11 +192,19 @@ def home(request):
         total=Sum('amount')
     ).order_by('-total')
     
+    total_expense_amount = 0
+    for item in expense_details:
+        total_expense_amount += item['total'] or 0
+    
     expense_data = []
     for item in expense_details:
+        percentage = 0
+        if total_expense_amount > 0:
+            percentage = round((item['total'] / total_expense_amount) * 100, 1)
         expense_data.append({
             'name': item['category__name'] or 'أخرى',
-            'amount': item['total'] or 0
+            'amount': item['total'] or 0,
+            'percentage': percentage
         })
     
     thirty_days_ago = today - timedelta(days=30)
@@ -242,6 +250,7 @@ def home(request):
         'best_selling': best_selling,
         'sales_channels': sales_channels,
         'expense_data': expense_data,
+        'total_expense_amount': total_expense_amount,
         'chart_labels': chart_labels,
         'chart_values': chart_values,
         'sales_change': sales_change,

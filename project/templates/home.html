@@ -634,9 +634,8 @@
       <section class="panel bottom-panel">
     <div class="panel-heading"><h2>المصروفات هذا الشهر</h2></div>
     <div class="sales-channels">
-        {% with total_expense=expense_data|sum:'amount' %}
         <div class="donut" id="expenseDonut" aria-label="مخطط المصروفات"
-             style="background:{% if expense_data %}conic-gradient({% for expense in expense_data %}#9e4fd0 0 {{ expense.amount|div:total_expense|mul:100|floatformat:1 }}%{% if not forloop.last %}, {% endif %}{% endfor %}){% else %}#e5eeff{% endif %}">
+             style="background:{% if expense_data %}conic-gradient({% for expense in expense_data %}#9e4fd0 0 {{ expense.percentage }}%{% if not forloop.last %}, {% endif %}{% endfor %}){% else %}#e5eeff{% endif %}">
         </div>
         <div class="legend-list">
             {% for expense in expense_data %}
@@ -647,12 +646,12 @@
                     {{ expense.name }}
                 </span>
                 <b>{{ expense.amount|floatformat:0 }}</b>
+                <span style="color:#8a858d;font-size:9px;">{{ expense.percentage }}%</span>
             </div>
             {% empty %}
             <div style="text-align:center;padding:10px;color:#8a858d;font-size:10px;">لا توجد مصروفات</div>
             {% endfor %}
         </div>
-        {% endwith %}
     </div>
 </section>
     </div>
