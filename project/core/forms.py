@@ -121,9 +121,15 @@ class CustomerPaymentForm(forms.ModelForm):
 class SupplierForm(forms.ModelForm):
     class Meta:
         model = Supplier
-        fields = ['name']
+        fields = ['name','supplier_cuntry','supplier_carrency','supplier_kind','phone','website']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'phone': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'supplier_cuntry': forms.Select(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'supplier_carrency': forms.Select(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'supplier_kind': forms.Select(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'website': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+
         }
 
 class SupplierPaymentForm(forms.ModelForm):
