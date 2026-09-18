@@ -2,6 +2,8 @@
 {% block title %}{{ supplier.name }} - Glamour{% endblock %}
 {% block content %}
 <div class="space-y-stack-lg">
+
+    <!-- ============ الهيدر + الإحصائيات السريعة ============ -->
     <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
             <h2 class="font-headline-md text-headline-md text-on-background">{{ supplier.name }}</h2>
@@ -36,10 +38,95 @@
         </div>
     </div>
 
-    <!-- الفواتير المعلقة -->
+    <!-- ============ بيانات المورد ============ -->
     <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">الفواتير المعلقة </h3>
-        
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">بيانات المورد</h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gutter">
+
+            <!-- الاسم -->
+            <div class="bg-background rounded-xl p-4 flex items-start gap-3">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">store</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-label-sm text-secondary">اسم المورد</p>
+                    <p class="font-body-lg text-on-background break-words">{{ supplier.name }}</p>
+                </div>
+            </div>
+
+            <!-- الهاتف -->
+            <div class="bg-background rounded-xl p-4 flex items-start gap-3">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">call</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-label-sm text-secondary">رقم الهاتف</p>
+                    <p class="font-body-lg text-on-background break-words" dir="ltr">
+                        {{ supplier.phone|default:"-" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- نوع المورد -->
+            <div class="bg-background rounded-xl p-4 flex items-start gap-3">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">category</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-label-sm text-secondary">نوع المورد</p>
+                    <p class="font-body-lg text-on-background break-words">
+                        {{ supplier.get_supplier_kind_display|default:"-" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- الدولة -->
+            <div class="bg-background rounded-xl p-4 flex items-start gap-3">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">public</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-label-sm text-secondary">الدولة</p>
+                    <p class="font-body-lg text-on-background break-words">
+                        {{ supplier.get_supplier_cuntry_display|default:"-" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- العملة -->
+            <div class="bg-background rounded-xl p-4 flex items-start gap-3">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-label-sm text-secondary">العملة</p>
+                    <p class="font-body-lg text-on-background break-words">
+                        {{ supplier.get_supplier_carrency_display|default:"-" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- تاريخ الإضافة -->
+            <div class="bg-background rounded-xl p-4 flex items-start gap-3">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">event</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-label-sm text-secondary">تاريخ الإضافة</p>
+                    <p class="font-body-lg text-on-background break-words">
+                        {{ supplier.created_at|date:"Y-m-d" }}
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============ الفواتير المعلقة ============ -->
+    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+        <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">الفواتير المعلقة</h3>
+
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
@@ -76,10 +163,10 @@
         </div>
     </div>
 
-    <!-- سجل المدفوعات -->
+    <!-- ============ سجل المدفوعات ============ -->
     <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
         <h3 class="font-headline-md text-headline-md text-on-background mb-stack-lg">سجل المدفوعات</h3>
-        
+
         <div class="hidden md:block overflow-x-auto">
             <table class="w-full">
                 <thead>
@@ -115,5 +202,6 @@
             </table>
         </div>
     </div>
+
 </div>
 {% endblock %}

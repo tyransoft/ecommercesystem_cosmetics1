@@ -23,6 +23,7 @@ urlpatterns = [
     path('products/<int:pk>/delete/', product_delete, name='product_delete'),
     path('products/price-update/', product_price_update, name='product_price_update'),
     path('products/price-update-ajax/', product_price_update_ajax, name='product_price_update_ajax'),
+    path('products/<int:pk>/duplicate/', product_duplicate, name='product_duplicate'),
     
     path('customers/', customer_list, name='customer_list'),
     path('customers/add/', customer_add, name='customer_add'),

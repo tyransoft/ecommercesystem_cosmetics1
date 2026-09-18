@@ -8,13 +8,13 @@ import json
 from .forms import *
 from django.core.paginator import Paginator
 from decimal import Decimal
-from django.db.models import Q ,Sum, Count,F
+from django.db.models import Q ,Sum, Count,F,Value,DecimalField
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta,time
 from django.utils import timezone
 from .models import *
 from collections import defaultdict
-
+from django.db.models.functions import Coalesce
 @login_required
 def home(request):
 
@@ -119,6 +119,7 @@ def home(request):
             'status': order.status,
             'status_display': order.get_status_display()
         })
+
     
     recent_orders = sorted(recent_orders, key=lambda x: x['order_number'], reverse=True)[:5]
     
@@ -482,32 +483,53 @@ def category_delete(request, pk):
 
 @login_required
 def product_list(request):
-
-    products = Product.objects.select_related('category').all()
+    products = Product.objects.select_related('category').prefetch_related('inventory').all()
     
-    search_query = request.GET.get('search', '')
+    search_query = request.GET.get('search', '').strip()
+    category_id = request.GET.get('category', '')
+    brand_filter = request.GET.get('brand', '')
+    stock_filter = request.GET.get('stock', '')
+    
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query) |
-            Q(barcode__icontains=search_query)
+            Q(barcode__icontains=search_query) |
+            Q(brand__icontains=search_query)
         )
-    
-    category_id = request.GET.get('category')
     if category_id:
         products = products.filter(category_id=category_id)
+    if brand_filter:
+        products = products.filter(brand=brand_filter)
     
-    paginator = Paginator(products, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    products = products.order_by('name')
+    
+    paginator = Paginator(products, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    
+    total_products = Product.objects.count()
+    low_stock = Inventory.objects.filter(quantity__gt=0, quantity__lte=5).values('product').distinct().count()
+    out_of_stock = Inventory.objects.filter(quantity=0).values('product').distinct().count()
+    slow_moving = Inventory.objects.filter(quantity__gt=0).values('product').distinct().count()
     
     categories = Category.objects.all().order_by('name')
+    brands = Product.objects.exclude(brand__isnull=True).exclude(brand='') \
+        .values_list('brand', flat=True).distinct().order_by('brand')
     
-    return render(request, 'products/product_list.html', {
+    context = {
         'page_obj': page_obj,
         'categories': categories,
+        'brands': brands,
         'search_query': search_query,
-        'selected_category': category_id
-    })
+        'selected_category': category_id,
+        'brand_filter': brand_filter,
+        'stock_filter': stock_filter,
+        'total_products': total_products,
+        'low_stock_count': low_stock,
+        'out_of_stock_count': out_of_stock,
+        'slow_moving_count': slow_moving,
+    }    
+   
+    return render(request, 'products/product_list.html', context)
 
 @login_required
 def product_add(request):
@@ -846,31 +868,75 @@ def payment_delete(request, pk):
 @login_required
 def customer_list(request):
     customers = Customer.objects.all()
-    
-    search_query = request.GET.get('search', '')
-    filter_debt = request.GET.get('filter_debt', '')
-    
+
+    search_query = request.GET.get('search', '').strip()
     if search_query:
         customers = customers.filter(
             Q(full_name__icontains=search_query) |
             Q(phone__icontains=search_query) |
             Q(city__icontains=search_query)
         )
-    
+
+    filter_debt = request.GET.get('filter_debt', '')
     if filter_debt == 'has_debt':
         customers = customers.filter(debt_balance__gt=0)
     elif filter_debt == 'no_debt':
         customers = customers.filter(debt_balance=0)
-    
-    paginator = Paginator(customers, 10)
+
+    city_filter = request.GET.get('city', '')
+    if city_filter:
+        customers = customers.filter(city=city_filter)
+
+    source_filter = request.GET.get('source', '')
+    if source_filter:
+        customers = customers.filter(known_us_from=source_filter)
+
+    stats = Customer.objects.aggregate(
+        total_customers=Count('id'),
+        total_debt=Coalesce(
+            Sum('debt_balance'),
+            Value(Decimal('0')),
+            output_field=DecimalField(max_digits=14, decimal_places=2)
+        ),
+        customers_with_debt=Count('id', filter=Q(debt_balance__gt=0)),
+    )
+
+    active_statuses = ['confirmed', 'indelivery', 'received']
+    active_customers_count = Customer.objects.filter(
+        Q(internalorder__status__in=active_statuses) |
+        Q(externalorder__status__in=active_statuses)
+    ).distinct().count()
+
+    customers = customers.prefetch_related(
+        'internalorder_set',
+        'externalorder_set',
+    )
+
+    paginator = Paginator(customers, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'customers/customer_list.html', {
+
+    cities = Customer.objects.exclude(city__isnull=True).exclude(city='') \
+        .values_list('city', flat=True).distinct().order_by('city')
+
+    sources = Customer.SOURSES 
+
+    context = {
         'page_obj': page_obj,
         'search_query': search_query,
-        'filter_debt': filter_debt
-    })
+        'filter_debt': filter_debt,
+        'city_filter': city_filter,
+        'source_filter': source_filter,
+        'cities': cities,
+        'sources': sources,
+
+        
+        'total_customers': stats['total_customers'],
+        'active_customers': active_customers_count,
+        'customers_with_debt': stats['customers_with_debt'],
+        'total_debt': stats['total_debt'],
+    }
+    return render(request, 'customers/customer_list.html', context)
 
 @login_required
 def payment_list(request):
@@ -1255,44 +1321,65 @@ def expense_detail(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
     return render(request, 'dashboard/expense_detail.html', {'expense': expense})
 
+
 @login_required
 def inventory_list(request):
-    product_id = request.GET.get('product')
-    inventory_items = Inventory.objects.select_related('product').all()
-  
+    from django.db.models import F, Sum, Q
+    
+    product_id = request.GET.get('product', '')
+    category_id = request.GET.get('category', '')
+    stock_filter = request.GET.get('stock', '')
+    movement_filter = request.GET.get('movement', '')
+    search_query = request.GET.get('search', '').strip()
+    
+    inventory_items = Inventory.objects.select_related('product', 'product__category').all()
+    
     if product_id:
-        inventory_items  = inventory_items.filter(product_id=product_id)
+        inventory_items = inventory_items.filter(product_id=product_id)
+    if category_id:
+        inventory_items = inventory_items.filter(product__category_id=category_id)
+    if search_query:
+        inventory_items = inventory_items.filter(
+            Q(product__name__icontains=search_query) |
+            Q(product__barcode__icontains=search_query)
+        )
+    if stock_filter == 'available':
+        inventory_items = inventory_items.filter(quantity__gt=5)
+    elif stock_filter == 'low':
+        inventory_items = inventory_items.filter(quantity__gt=0, quantity__lte=5)
+    elif stock_filter == 'out':
+        inventory_items = inventory_items.filter(quantity=0)
     
-    
-    for item in inventory_items:
-        item.total_buy_value = item.quantity * item.lyd_total_cost
-        item.total_sell_value = item.quantity * item.lyd_sell_price
-        item.profit_margin = item.lyd_sell_price - item.lyd_total_cost
-        item.status_data = item.get_movement_status()
-    
-    total_buy_value = inventory_items.aggregate(
+    all_items = inventory_items  
+    total_buy_value = all_items.aggregate(
         total=Sum(F('quantity') * F('lyd_total_cost'))
     )['total'] or 0
-    
-    total_sell_value = inventory_items.aggregate(
+    total_sell_value = all_items.aggregate(
         total=Sum(F('quantity') * F('lyd_sell_price'))
     )['total'] or 0
-    
     total_profit = total_sell_value - total_buy_value
     
-    paginator = Paginator(inventory_items, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    products = Product.objects.all().order_by('name')
+    low_stock_count = Inventory.objects.filter(quantity__gt=0, quantity__lte=5).count()
     
+    paginator = Paginator(inventory_items, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    
+    products = Product.objects.all().order_by('name')
+    categories = Category.objects.all().order_by('name')
     
     return render(request, 'dashboard/inventory_list.html', {
         'page_obj': page_obj,
         'total_buy_value': total_buy_value,
         'total_sell_value': total_sell_value,
         'total_profit': total_profit,
+        'low_stock_count': low_stock_count,
         'selected_product': product_id,
+        'selected_category': category_id,
+        'stock_filter': stock_filter,
+        'movement_filter': movement_filter,
+        'search_query': search_query,
         'products': products,
+        'categories': categories,
     })
 
 @login_required
@@ -1532,7 +1619,25 @@ def purchase_invoice_list(request):
             invoices = invoices.filter(receive_date__date__lte=receive_date_to_parsed)
         except ValueError:
             pass
-    
+    stats = PurchaseInvoice.objects.aggregate(
+     total_purchases=Coalesce(
+        Sum('total'), Value(Decimal('0')),
+        output_field=DecimalField(max_digits=14, decimal_places=2)
+     ),
+     total_paid=Coalesce(
+        Sum('paid_amount'), Value(Decimal('0')),
+        output_field=DecimalField(max_digits=14, decimal_places=2)
+     ),
+     total_debt=Coalesce(
+        Sum('debt_amount'), Value(Decimal('0')),
+        output_field=DecimalField(max_digits=14, decimal_places=2)
+      ),
+    )
+
+    pending_delivery = PurchaseInvoice.objects.filter(
+     status='confirmed',
+     receive_date__isnull=True
+    ).count()    
     paginator = Paginator(invoices, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -1549,6 +1654,10 @@ def purchase_invoice_list(request):
         'selected_status': status_filter,
         'date_from': date_from,
         'date_to': date_to,
+        'total_purchases': stats['total_purchases'],
+        'total_paid': stats['total_paid'],
+        'total_debt': stats['total_debt'],
+        'pending_delivery': pending_delivery,
         'receive_date_from': receive_date_from,
         'receive_date_to': receive_date_to,
     })
@@ -1565,7 +1674,11 @@ def purchase_invoice_add(request):
         shipping_cost = float(request.POST.get('shipping_cost', 0))
         exchange_rate = float(request.POST.get('exchange_rate', 1))
         paid_amount = float(request.POST.get('paid_amount', 0))
-        receive_date = request.POST.get('receive_date')
+        receive_date = (
+          request.POST.get('receive_date')
+          or request.POST.get('expected_delivery_date')
+          or None
+        )
         notes = request.POST.get('notes', '')
         status = request.POST.get('status', 'draft')
         
@@ -1661,7 +1774,11 @@ def purchase_invoice_edit(request, pk):
         shipping_cost = float(request.POST.get('shipping_cost', 0))
         exchange_rate = float(request.POST.get('exchange_rate', 1))
         paid_amount = float(request.POST.get('paid_amount', 0))
-        receive_date = request.POST.get('receive_date')
+        receive_date = (
+          request.POST.get('receive_date')
+          or request.POST.get('expected_delivery_date')
+          or None
+        )
         notes = request.POST.get('notes', '')
         status = request.POST.get('status', 'draft')
         
@@ -1762,6 +1879,33 @@ def purchase_invoice_confirm(request, pk):
     confirm_invoice(invoice)
     messages.success(request, f'تم تأكيد الفاتورة رقم {invoice.invoice_number} بنجاح')
     return redirect('purchase_invoice_detail', pk=pk)
+@login_required
+def product_duplicate(request, pk):
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('home')
+    original = get_object_or_404(Product, pk=pk)
+    if request.method == 'POST':
+        new_color = request.POST.get('color', '').strip()
+        new_name = request.POST.get('name', f"{original.name} - {new_color}").strip()
+        new_barcode = request.POST.get('barcode', '').strip() or Product.generate_barcode()
+        
+        with transaction.atomic():
+            new_product = Product.objects.create(
+                name=new_name,
+                barcode=new_barcode,
+                category=original.category,
+                image=original.image,
+                brand=original.brand,
+                color=new_color,
+                made_in=original.made_in,
+                usd_sell_price=original.usd_sell_price,
+                lyd_sell_price=original.lyd_sell_price,
+            )
+            
+        messages.success(request, f'تم إنشاء نسخة جديدة: {new_product.name}')
+        return redirect('product_edit', pk=new_product.pk)
+    return render(request, 'dashboard/product_duplicate.html', {'product': original})
 
 @login_required
 def purchase_invoice_cancel(request, pk):
@@ -1856,10 +2000,11 @@ def get_product_details(request, product_id):
     return JsonResponse(data)
 
 
-
-
 @login_required
 def internal_order_list(request):
+    from django.db.models import Sum, Count
+    from django.utils import timezone
+    
     orders = InternalOrder.objects.select_related('customer').all().order_by('-created_at')
     
     search_query = request.GET.get('search', '')
@@ -1871,7 +2016,8 @@ def internal_order_list(request):
     if search_query:
         orders = orders.filter(
             Q(order_number__icontains=search_query) |
-            Q(customer__full_name__icontains=search_query)
+            Q(customer__full_name__icontains=search_query) |
+            Q(customer__phone__icontains=search_query)
         )
     
     if status_filter:
@@ -1896,6 +2042,13 @@ def internal_order_list(request):
         except ValueError:
             pass
     
+    stats_today = InternalOrder.objects.filter(created_at__date=timezone.now().date()).count()
+    stats_draft = InternalOrder.objects.filter(status='draft').count()
+    stats_confirmed = InternalOrder.objects.filter(status='confirmed').count()
+    stats_indelivery = InternalOrder.objects.filter(status='indelivery').count()
+    stats_total = InternalOrder.objects.count()
+    stats_total_debt = InternalOrder.objects.aggregate(t=Sum('debt_amount'))['t'] or 0
+    
     paginator = Paginator(orders, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -1909,7 +2062,13 @@ def internal_order_list(request):
         'selected_status': status_filter,
         'selected_debt': debt_filter,
         'date_from': date_from,
-        'date_to': date_to
+        'date_to': date_to,
+        'stats_today': stats_today,
+        'stats_draft': stats_draft,
+        'stats_confirmed': stats_confirmed,
+        'stats_indelivery': stats_indelivery,
+        'stats_total': stats_total,
+        'stats_total_debt': stats_total_debt,
     })
 
 @login_required
@@ -2324,6 +2483,11 @@ def external_order_list(request):
         except ValueError:
             pass
     
+    stats_total = ExternalOrder.objects.count()
+    stats_in_transit = ExternalOrder.objects.filter(status='indeliver').count()
+    stats_received = ExternalOrder.objects.filter(status='received').count()
+    stats_reserved = ExternalOrderItem.objects.aggregate(t=Sum('quantity'))['t'] or 0
+    
     paginator = Paginator(orders, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -2339,7 +2503,11 @@ def external_order_list(request):
         'selected_status': status_filter,
         'selected_supply': supply_filter,
         'date_from': date_from,
-        'date_to': date_to
+        'date_to': date_to,
+        'stats_total': stats_total,
+        'stats_in_transit': stats_in_transit,
+        'stats_received': stats_received,
+        'stats_reserved': stats_reserved,
     })
 
 @login_required

@@ -264,9 +264,21 @@ class Product(models.Model):
         if not self.barcode:
             self.barcode = self.generate_barcode()
         super().save(*args, **kwargs)
-    def __str__(self):
-        return f"{self.name} ({self.barcode})"
+   
 
+    def get_profit_margin_lyd(self):
+      inv = self.inventory.first()
+      if not inv:
+        return Decimal('0')
+      return self.lyd_sell_price - inv.lyd_total_cost
+
+
+    def get_profit_margin_percent(self):
+      inv = self.inventory.first()
+      if not inv or inv.lyd_total_cost == 0:
+        return 0
+      margin = self.lyd_sell_price - inv.lyd_total_cost
+      return round((margin / inv.lyd_total_cost) * 100, 1)
 
 class Inventory(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='المنتج', related_name='inventory')
@@ -413,7 +425,32 @@ class InventoryMovement(models.Model):
 
 
 class Supplier(models.Model):
+    kind={
+        ('متجر الكتروني','متجر الكتروني'),
+        ('تاجر محلي','تاجر محلي'),
+        ('تاجر دولي','تاجر دولي'),
+    }
+    carrency={
+         ('دولار','دولار'),
+         ('دينار','دينار'),
+     }
+    cuntry = (
+      ('الولايات المتحدة', 'الولايات المتحدة'),
+      ('ليبيا', 'ليبيا'),
+      ('بريطانيا', 'بريطانيا'),
+      ('مصر', 'مصر'),
+      ('الصين', 'الصين'),
+      ('تركيا', 'تركيا'),
+      ('أخرى', 'أخرى'),
+    ) 
     name = models.CharField(max_length=200, verbose_name='اسم المورد')
+    phone = models.CharField(max_length=30, verbose_name='رقم الهاتف',null=True,blank=True)
+ 
+    supplier_kind= models.CharField(max_length=20, choices=kind,verbose_name='نوع المورد',null=True,blank=True)
+    supplier_cuntry= models.CharField(max_length=20, choices=cuntry,verbose_name='الدولة',null=True,blank=True)
+    supplier_carrency= models.CharField(max_length=20, choices=carrency,verbose_name='العملة',null=True,blank=True)
+    website = models.CharField(max_length=30, verbose_name='الموقع الالكتروني',null=True,blank=True)
+
     debt_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='رصيد الدين')
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -495,7 +532,7 @@ class PurchaseInvoice(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
 
     notes = models.TextField(blank=True)
-    receive_date = models.DateTimeField(verbose_name='تاريخ الوصول')
+    receive_date = models.DateField(verbose_name='تاريخ الوصول',null=True,blank=True)
     
     created_by = models.ForeignKey('core.CustomUser', on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

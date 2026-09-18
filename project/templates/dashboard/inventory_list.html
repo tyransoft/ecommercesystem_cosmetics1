@@ -1,190 +1,325 @@
 {% extends 'base.html' %}
 {% block title %}المخزون - Glamour{% endblock %}
 {% block content %}
-<div class="space-y-stack-lg">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gutter">
-        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-            <p class="font-label-sm text-secondary">إجمالي قيمة الشراء </p>
-            <p class="font-headline-md text-headline-md text-on-background"> {{ total_buy_value }}  د.ل </p>
-        </div>
-        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-            <p class="font-label-sm text-secondary">إجمالي قيمة البيع </p>
-            <p class="font-headline-md text-headline-md text-on-background"> {{ total_sell_value }}  د.ل </p>
-        </div>
-        <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-            <p class="font-label-sm text-secondary">إجمالي الربح المتوقع </p>
-            <p class="font-headline-md text-headline-md {% if total_profit > 0 %}text-success{% else %}text-error{% endif %}"> {{ total_profit }}  د.ل </p>
-        </div>
+
+<style>
+  .stat-card { background:#fff; border: 1px solid #f3f4f6; border-radius: 14px; padding: 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+  .stat-icon { width: 46px; height: 46px; border-radius: 50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .field-input { width:100%; padding:9px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:14px; background:#fff; }
+  .field-input:focus { outline:none; border-color:#d51f86; box-shadow: 0 0 0 3px rgba(213,31,134,.12); }
+  .btn-primary { background:#d51f86; color:#fff; padding:8px 16px; border-radius:10px; font-weight:600; border:none; cursor:pointer; font-size:13px; transition:.2s; display:inline-flex; align-items:center; gap:6px; }
+  .btn-primary:hover { background:#b0175c; }
+  .btn-outline { background:#fff; color:#d51f86; border:1px solid #d51f86; padding:8px 16px; border-radius:10px; font-weight:600; cursor:pointer; font-size:13px; transition:.2s; display:inline-flex; align-items:center; gap:6px; }
+  .btn-outline:hover { background:#fdf2f6; }
+  .badge { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-block; }
+</style>
+
+<div class="space-y-5">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">المخزون</h1>
+      <p class="text-sm text-gray-500 mt-1">متابعة الكميات وحركات المنتجات</p>
+    </div>
+    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+      
+      <a href="{% url 'product_add' %}" class="btn-primary flex-1 sm:flex-none justify-center">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        إضافة منتج
+      </a>
+    </div>
+  </div>
+
+  <!-- بطاقات الإحصائيات -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <div class="stat-card">
+      <div>
+        <p class="text-xs text-gray-500 mb-1">قيمة المخزون بالتكلفة</p>
+        <p class="text-2xl font-bold text-gray-800">{{ total_buy_value|floatformat:2 }} <span class="text-sm font-normal text-gray-500">د.ل</span></p>
+      </div>
+      <div class="stat-icon" style="background:#fff0f6;color:#d51f86;">
+        <span class="material-symbols-outlined text-[24px]">payments</span>
+      </div>
     </div>
 
-    <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
-            <h2 class="font-headline-md text-headline-md text-on-background">المخزون</h2>
-            <a href="{% url 'inventory_movement_list' %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md w-full sm:w-auto text-center">
-                 حركات المخزون
-            </a>
+    <div class="stat-card">
+      <div>
+        <p class="text-xs text-gray-500 mb-1">قيمة المخزون بسعر البيع</p>
+        <p class="text-2xl font-bold text-gray-800">{{ total_sell_value|floatformat:2 }} <span class="text-sm font-normal text-gray-500">د.ل</span></p>
+      </div>
+      <div class="stat-icon" style="background:#fff0f6;color:#d51f86;">
+        <span class="material-symbols-outlined text-[24px]">sell</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div>
+        <p class="text-xs text-gray-500 mb-1">الربح المتوقع</p>
+        <p class="text-2xl font-bold {% if total_profit > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+          {{ total_profit|floatformat:2 }} <span class="text-sm font-normal">د.ل</span>
+        </p>
+      </div>
+      <div class="stat-icon" style="background:#fff0f6;color:#d51f86;">
+        <span class="material-symbols-outlined text-[24px]">trending_up</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div>
+        <p class="text-xs text-gray-500 mb-1">منخفض المخزون</p>
+        <p class="text-2xl font-bold text-gray-800">{{ low_stock_count }} <span class="text-sm font-normal text-gray-500">منتجات</span></p>
+      </div>
+      <div class="stat-icon" style="background:#fff0f6;color:#d51f86;">
+        <span class="material-symbols-outlined text-[24px]">warning</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- الفلاتر -->
+  <div class="bg-white rounded-2xl border border-gray-100 p-4">
+    <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">التصنيفات</label>
+        <select name="category" class="field-input">
+          <option value="">جميع التصنيفات</option>
+          {% for category in categories %}
+          <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">حالة المخزون</label>
+        <select name="stock" class="field-input">
+          <option value="">جميع الحالات</option>
+          <option value="available" {% if stock_filter == 'available' %}selected{% endif %}>متوفر</option>
+          <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>منخفض</option>
+          <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>نافد</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">المنتج</label>
+        <select name="product" class="field-input">
+          <option value="">جميع المنتجات</option>
+          {% for product in products %}
+          <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">البحث</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
+          <input type="text" name="search" value="{{ search_query }}" placeholder="بالاسم أو الباركود" class="field-input pr-10">
         </div>
-        <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-stack-lg">
-        
-        <div>
-            <label class="block font-label-sm text-secondary mb-1">المنتج</label>
-            <select name="product" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                <option value="">الكل</option>
-                {% for product in products %}
-                <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <div class="sm:col-span-2 lg:col-span-4 flex gap-2">
-            <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">بحث</button>
-            <a href="{% url 'inventory_movement_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">إلغاء الفلتر</a>
-        </div>
+      </div>
+
+      <div class="sm:col-span-2 lg:col-span-4 flex flex-wrap gap-2 pt-2">
+        <button type="submit" class="btn-primary">بحث</button>
+        <a href="{% url 'inventory_list' %}" class="btn-outline">إعادة تعيين</a>
+      </div>
     </form>
-        <div class="hidden md:block overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-secondary-container">
-                        <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
-                        <th class="text-right py-3 px-4 font-label-sm text-secondary">المنتج</th>
-                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الكمية</th>
-                        <th class="text-right py-3 px-4 font-label-sm text-secondary">سعر الشراء </th>
-                        <th class="text-right py-3 px-4 font-label-sm text-secondary">سعر البيع </th>
-                        <th class="text-right py-3 px-4 font-label-sm text-secondary">قيمة الشراء </th>
-                        <th class="text-right py-3 px-4 font-label-sm text-secondary">قيمة البيع </th>
-                                <th class="text-right py-3 px-4 font-label-sm text-secondary">الحالة</th>
+  </div>
 
-                        <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in page_obj %}
-                    <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
-                        <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
-                        <td class="py-3 px-4 font-body-md">{{ item.product.name }}</td>
-                        <td class="py-3 px-4 font-body-md">{{ item.quantity }}</td>
-                        <td class="py-3 px-4 font-body-md"> {{ item.lyd_total_cost }} د.ل</td>
-                        <td class="py-3 px-4 font-body-md"> {{ item.lyd_sell_price }}د.ل</td>
-                        <td class="py-3 px-4 font-body-md"> {{ item.total_buy_value }}د.ل</td>
-                        <td class="py-3 px-4 font-body-md"> {{ item.total_sell_value }}د.ل</td>
-                        <td class="py-3 px-4">
-    {% with status=item.get_movement_status %}
-    <div class="flex flex-col">
-        <span class="px-3 py-1 rounded-full text-xs font-bold {{ status.class }}">
-             {{ status.status }}
-        </span>
-        <span class="text-xs text-secondary mt-1">
-            مباع: {{ item.get_sold_quantity_last_90_days }} وحدة
-        </span>
-    </div>
-    {% endwith %}
-</td>
-                        <td class="py-3 px-4">
-    <div class="flex flex-col sm:flex-row gap-2">
-        <a href="{% url 'inventory_damage' item.product.pk %}" class="bg-error/10 text-error px-3 py-2 rounded-lg hover:bg-error/20 transition-colors duration-200 font-label-md text-sm text-center">
-            <span class="material-symbols-outlined text-[16px] align-middle">delete</span> اتلاف
-        </a>
-        <a href="{% url 'inventory_gift' item.product.pk %}" class="bg-primary/10 text-primary px-3 py-2 rounded-lg hover:bg-primary/20 transition-colors duration-200 font-label-md text-sm text-center">
-            <span class="material-symbols-outlined text-[16px] align-middle">redeem</span> هدية
-        </a>
-        <a href="{% url 'inventory_stock_adjustment' item.product.pk %}" class="bg-secondary/10 text-secondary px-3 py-2 rounded-lg hover:bg-secondary/20 transition-colors duration-200 font-label-md text-sm text-center">
-            <span class="material-symbols-outlined text-[16px] align-middle">compare_arrows</span> جرد
-        </a>
-    </div>
-</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center py-8 text-secondary font-body-lg">لا توجد منتجات في المخزون</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <!-- الجدول (Desktop) -->
+  <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+    <div class="hidden md:block overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-pink-50/60">
+          <tr class="text-gray-600">
+            <th class="text-right py-3 px-3 font-semibold">#</th>
+            <th class="text-right py-3 px-3 font-semibold">المنتج</th>
+            <th class="text-right py-3 px-3 font-semibold">الباركود</th>
+            <th class="text-right py-3 px-3 font-semibold">المتوفر</th>
+            <th class="text-right py-3 px-3 font-semibold">المحجوز</th>
+            <th class="text-right py-3 px-3 font-semibold">تكلفة القطعة</th>
+            <th class="text-right py-3 px-3 font-semibold">سعر البيع</th>
+            <th class="text-right py-3 px-3 font-semibold">قيمة المخزون</th>
+            <th class="text-right py-3 px-3 font-semibold">الحالة</th>
+            <th class="text-right py-3 px-3 font-semibold">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page_obj %}
+          <tr class="border-b border-gray-100 hover:bg-pink-50/30 transition-colors">
 
-        <div class="md:hidden space-y-stack-md">
-            {% for item in page_obj %}
-            <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
-                <div class="flex justify-between items-start mb-2">
-                    <span class="font-headline-md text-headline-md text-on-background">{{ item.product.name }}</span>
-                    <div class="relative">
-                        <button onclick="toggleDropdown('dropdown-mobile-{{ forloop.counter }}')" class="bg-primary/10 text-primary px-3 py-1 rounded-lg hover:bg-primary/20 transition-colors duration-200 font-label-md text-sm">
-                            إجراءات
-                            <span class="material-symbols-outlined text-[16px] align-middle">arrow_drop_down</span>
-                        </button>
-                        <div id="dropdown-mobile-{{ forloop.counter }}" class="hidden absolute left-0 mt-2 w-48 bg-surface-container-lowest rounded-xl shadow-lg border border-secondary-container/50 z-10">
-                            <a href="{% url 'inventory_damage' item.product.pk %}" class="block px-4 py-2 hover:bg-primary/5 text-error transition-colors duration-200 font-body-md">
-                                <span class="material-symbols-outlined text-[18px] align-middle">delete</span> اتلاف
-                            </a>
-                            <a href="{% url 'inventory_gift' item.product.pk %}" class="block px-4 py-2 hover:bg-primary/5 text-primary transition-colors duration-200 font-body-md">
-                                <span class="material-symbols-outlined text-[18px] align-middle">redeem</span> هدية
-                            </a>
-                            <a href="{% url 'inventory_stock_adjustment' item.product.pk %}" class="block px-4 py-2 hover:bg-primary/5 text-on-background transition-colors duration-200 font-body-md border-t border-secondary-container/50">
-                                <span class="material-symbols-outlined text-[18px] align-middle">compare_arrows</span> جرد
-                            </a>
-                        </div>
-                    </div>
+            <td class="py-3 px-3 text-gray-500">{{ forloop.counter0|add:page_obj.start_index }}</td>
+
+            <td class="py-3 px-3">
+              <div class="flex items-center gap-3">
+                {% if item.product.image %}
+                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-12 h-12 rounded-lg object-cover">
+                {% else %}
+                <div class="w-12 h-12 rounded-lg bg-pink-100 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-pink-500">inventory</span>
                 </div>
-                <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
-    <div class="flex justify-between items-start mb-2">
-        <span class="font-headline-md text-headline-md text-on-background">{{ item.product.name }}</span>
-        {% with status=item.get_movement_status %}
-        <span class="px-3 py-1 rounded-full text-xs font-bold {{ status.class }}">
-             {{ status.status }}
-        </span>
-        {% endwith %}
+                {% endif %}
+                <div class="min-w-0">
+                  <p class="font-semibold text-gray-800 truncate">{{ item.product.name }}</p>
+                  {% if item.product.color %}
+                  <p class="text-xs text-gray-400">{{ item.product.color }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+
+            <td class="py-3 px-3 text-gray-600">{{ item.product.barcode|default:"-" }}</td>
+
+            <td class="py-3 px-3">
+              <span class="font-bold
+                {% if item.quantity == 0 %}text-red-600
+                {% elif item.quantity <= 5 %}text-amber-600
+                {% else %}text-green-600{% endif %}">
+                {{ item.quantity }}
+              </span>
+            </td>
+
+            <td class="py-3 px-3 text-gray-600">0</td>
+
+            <td class="py-3 px-3 text-gray-600">{{ item.lyd_total_cost|floatformat:2 }} د.ل</td>
+
+            <td class="py-3 px-3 font-semibold text-gray-800">{{ item.lyd_sell_price|floatformat:2 }} د.ل</td>
+
+            <td class="py-3 px-3 font-semibold text-gray-800">
+              {% widthratio item.quantity 1 item.lyd_total_cost %} د.ل
+            </td>
+
+            <td class="py-3 px-3">
+              {% with status=item.get_movement_status %}
+              <span class="badge {{ status.class }}">{{ status.status }}</span>
+              {% endwith %}
+            </td>
+
+            <td class="py-3 px-3">
+              <div class="flex gap-1">
+                <a href="{% url 'inventory_damage' item.product.pk %}"
+                   class="text-red-600 hover:bg-red-50 p-1.5 rounded-full" title="اتلاف">
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </a>
+                <a href="{% url 'inventory_gift' item.product.pk %}"
+                   class="text-pink-600 hover:bg-pink-50 p-1.5 rounded-full" title="هدية">
+                  <span class="material-symbols-outlined text-[18px]">redeem</span>
+                </a>
+                <a href="{% url 'inventory_stock_adjustment' item.product.pk %}"
+                   class="text-gray-600 hover:bg-gray-100 p-1.5 rounded-full" title="جرد">
+                  <span class="material-symbols-outlined text-[18px]">compare_arrows</span>
+                </a>
+                <a href="{% url 'product_edit' item.product.pk %}"
+                   class="text-pink-600 hover:bg-pink-50 p-1.5 rounded-full" title="تعديل">
+                  <span class="material-symbols-outlined text-[18px]">edit</span>
+                </a>
+              </div>
+            </td>
+
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10" class="text-center py-10 text-gray-400">
+              <span class="material-symbols-outlined block text-[40px] mb-2 text-gray-300">inventory_2</span>
+              لا توجد منتجات في المخزون
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    <div class="grid grid-cols-2 gap-2">
-        <div>
-            <p class="font-label-sm text-secondary">الكمية</p>
-            <p class="font-body-md">{{ item.quantity }}</p>
-        </div>
-        <div>
-            <p class="font-label-sm text-secondary">المباع (90 يوم)</p>
-            <p class="font-body-md">{{ item.get_sold_quantity_last_90_days }}</p>
-        </div>
-        <div>
-            <p class="font-label-sm text-secondary">سعر الشراء</p>
-            <p class="font-body-md">{{ item.lyd_total_cost }}</p>
-        </div>
-        <div>
-            <p class="font-label-sm text-secondary">سعر البيع</p>
-            <p class="font-body-md">{{ item.lyd_sell_price }}</p>
-        </div>
-    </div>
-</div>
-            </div>
-            {% empty %}
-            <div class="text-center py-8 text-secondary font-body-lg">لا توجد منتجات في المخزون</div>
-            {% endfor %}
+
+    <!-- Cards (Mobile) -->
+    <div class="md:hidden p-4 space-y-3">
+      {% for item in page_obj %}
+      <div class="bg-white border border-gray-100 rounded-xl p-4">
+        <div class="flex items-start gap-3 mb-3">
+          {% if item.product.image %}
+          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-14 h-14 rounded-lg object-cover">
+          {% else %}
+          <div class="w-14 h-14 rounded-lg bg-pink-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-pink-500">inventory</span>
+          </div>
+          {% endif %}
+          <div class="min-w-0 flex-1">
+            <p class="font-semibold text-gray-800 truncate">{{ item.product.name }}</p>
+            <p class="text-xs text-gray-400">{{ item.product.barcode|default:"-" }}</p>
+            {% with status=item.get_movement_status %}
+            <span class="badge {{ status.class }} mt-1">{{ status.status }}</span>
+            {% endwith %}
+          </div>
         </div>
 
-        {% if page_obj.has_other_pages %}
-        <div class="flex justify-center gap-2 mt-stack-lg">
-            {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">السابق</a>
-            {% endif %}
-            <span class="px-4 py-2 rounded-xl bg-primary text-on-primary">{{ page_obj.number }}</span>
-            {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">التالي</a>
-            {% endif %}
+        <div class="grid grid-cols-2 gap-2 mb-3 text-sm">
+          <div>
+            <p class="text-xs text-gray-500">المتوفر</p>
+            <p class="font-bold {% if item.quantity == 0 %}text-red-600{% elif item.quantity <= 5 %}text-amber-600{% else %}text-green-600{% endif %}">{{ item.quantity }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">تكلفة القطعة</p>
+            <p class="font-semibold">{{ item.lyd_total_cost|floatformat:2 }} د.ل</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">سعر البيع</p>
+            <p class="font-semibold">{{ item.lyd_sell_price|floatformat:2 }} د.ل</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">قيمة المخزون</p>
+            <p class="font-semibold">{% widthratio item.quantity 1 item.lyd_total_cost %} د.ل</p>
+          </div>
         </div>
+
+        <div class="flex gap-2 pt-3 border-t border-gray-100">
+          <a href="{% url 'inventory_damage' item.product.pk %}" class="flex-1 text-center text-red-600 bg-red-50 py-2 rounded-lg text-sm font-semibold">اتلاف</a>
+          <a href="{% url 'inventory_gift' item.product.pk %}" class="flex-1 text-center text-pink-600 bg-pink-50 py-2 rounded-lg text-sm font-semibold">هدية</a>
+          <a href="{% url 'inventory_stock_adjustment' item.product.pk %}" class="flex-1 text-center text-gray-700 bg-gray-100 py-2 rounded-lg text-sm font-semibold">جرد</a>
+        </div>
+      </div>
+      {% empty %}
+      <div class="text-center py-10 text-gray-400">
+        <span class="material-symbols-outlined block text-[40px] mb-2 text-gray-300">inventory_2</span>
+        لا توجد منتجات في المخزون
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+    <p class="text-sm text-gray-500">
+      عرض {{ page_obj.start_index }}–{{ page_obj.end_index }} من {{ page_obj.paginator.count }} منتج
+    </p>
+    <div class="flex gap-1">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+         class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
+        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+      </a>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+          <span class="w-9 h-9 flex items-center justify-center rounded-lg bg-pink-600 text-white font-semibold">{{ num }}</span>
+        {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+             class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
+            {{ num }}
+          </a>
         {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+         class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
+        <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+      </a>
+      {% endif %}
     </div>
+  </div>
+  {% endif %}
+
 </div>
 
-<script>
-function toggleDropdown(id) {
-    const dropdown = document.getElementById(id);
-    dropdown.classList.toggle('hidden');
-}
-
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.relative')) {
-        document.querySelectorAll('[id^="dropdown-"]').forEach(function(el) {
-            el.classList.add('hidden');
-        });
-    }
-});
-</script>
 {% endblock %}

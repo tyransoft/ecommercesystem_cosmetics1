@@ -45,7 +45,7 @@
                         <select name="product_ids[]" required class="product-select w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="getProductData(this)">
                             <option value="">اختر المنتج</option>
                             {% for product in products %}
-                            <option value="{{ product.id }}" data-price="{{ product.lyd_sell_price }}">{{ product.name }}</option>
+                            <option value="{{ product.id }}" data-price="{{ product.lyd_sell_price }}">{{ product.name }}-{{ product.color}}</option>
                             {% endfor %}
                         </select>
                     </div>

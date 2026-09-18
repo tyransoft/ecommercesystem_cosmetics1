@@ -1,102 +1,341 @@
 {% extends 'base.html' %}
 {% block title %}العملاء - Glamour{% endblock %}
+
 {% block content %}
 <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
-        <div class="flex flex-wrap gap-2">
-            <a href="{% url 'payment_list' %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full sm:w-auto text-center">
-                المدفوعات
-            </a>
-            <a href="{% url 'customer_add' %}" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md">
-                إضافة عميل
-            </a>
+
+  <!-- ============ HEADER ============ -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md mb-stack-lg">
+    <div class="order-2 sm:order-1">
+      <h1 class="font-headline-lg text-on-surface">العملاء</h1>
+      <p class="font-body-md text-secondary mt-1">إدارة بيانات العملاء ومتابعة المشتريات والمستحقات</p>
+    </div>
+
+    <div class="flex flex-wrap gap-2 order-1 sm:order-2 w-full sm:w-auto">
+      <!-- زر التصدير: placeholder — راجع الملاحظة أسفل الكود -->
+    
+
+      <a href="{% url 'customer_add' %}"
+         class="flex items-center justify-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full sm:w-auto"
+         aria-label="إضافة عميل جديد">
+        <span class="material-symbols-outlined text-[20px]">add</span>
+        إضافة عميل
+      </a>
+    </div>
+  </div>
+
+  <!-- ============ STATS CARDS ============ -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-stack-lg">
+
+    <!-- Card 1: إجمالي العملاء -->
+    <div class="bg-white border border-secondary-container/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="font-label-sm text-secondary mb-1">إجمالي العملاء</p>
+        <p class="font-headline-md text-on-surface font-bold truncate">{{ total_customers }}</p>
+      </div>
+      <div class="w-11 h-11 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+        <span class="material-symbols-outlined text-[22px]">group</span>
+      </div>
+    </div>
+
+    <!-- Card 2: العملاء النشطون -->
+    <div class="bg-white border border-secondary-container/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="font-label-sm text-secondary mb-1">العملاء النشطون</p>
+        <p class="font-headline-md text-on-surface font-bold truncate">{{ active_customers }}</p>
+      </div>
+      <div class="w-11 h-11 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+        <span class="material-symbols-outlined text-[22px]">person_check</span>
+      </div>
+    </div>
+
+    <!-- Card 3: عملاء عليهم مستحقات -->
+    <div class="bg-white border border-secondary-container/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="font-label-sm text-secondary mb-1">عملاء عليهم مستحقات</p>
+        <p class="font-headline-md text-error font-bold truncate">{{ customers_with_debt }}</p>
+      </div>
+      <div class="w-11 h-11 shrink-0 rounded-full bg-error/10 text-error flex items-center justify-center">
+        <span class="material-symbols-outlined text-[22px]">schedule</span>
+      </div>
+    </div>
+
+    <!-- Card 4: إجمالي المستحقات -->
+    <div class="bg-white border border-secondary-container/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="font-label-sm text-secondary mb-1">إجمالي المستحقات</p>
+        <p class="font-headline-md text-error font-bold truncate">
+          {{ total_debt|floatformat:2 }} <span class="font-label-md">د.ل</span>
+        </p>
+      </div>
+      <div class="w-11 h-11 shrink-0 rounded-full bg-error/10 text-error flex items-center justify-center">
+        <span class="material-symbols-outlined text-[22px]">account_balance_wallet</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ SEARCH + FILTERS ============ -->
+  <div class="bg-background rounded-xl p-4 mb-stack-lg">
+    <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+
+      <!-- بحث -->
+      <div class="lg:col-span-4">
+        <div class="relative">
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary text-[20px] pointer-events-none">search</span>
+          <input type="text" name="search" value="{{ search_query }}"
+                 placeholder="بحث بالاسم أو رقم الهاتف"
+                 class="w-full pr-11 pl-4 py-2.5 rounded-xl border border-secondary-container bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 font-body-md"
+                 aria-label="بحث في العملاء">
         </div>
-    </div>
+      </div>
 
-    <div class="bg-background rounded-xl p-4 mb-stack-lg">
-        <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <label class="block font-label-sm text-secondary mb-1">بحث</label>
-                <input type="text" name="search" value="{{ search_query }}" placeholder="بحث بالاسم أو الهاتف أو المدينة" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-            </div>
-            <div>
-                <label class="block font-label-sm text-secondary mb-1">فلتر الدين</label>
-                <select name="filter_debt" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                    <option value="">جميع العملاء</option>
-                    <option value="has_debt" {% if filter_debt == 'has_debt' %}selected{% endif %}>عليهم دين</option>
-                    <option value="no_debt" {% if filter_debt == 'no_debt' %}selected{% endif %}>لا يوجد عليهم دين</option>
-                </select>
-            </div>
-            <div class="flex items-end gap-2">
-                <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">
-                    بحث
-                </button>
-                <a href="{% url 'customer_list' %}" class="bg-secondary/10 text-secondary px-4 py-2 rounded-xl hover:bg-secondary/20 transition-all duration-200 font-label-md">
-                    إعادة تعيين
-                </a>
-            </div>
-        </form>
-    </div>
+      <!-- فلتر المدينة -->
+      <div class="lg:col-span-2">
+        <select name="city"
+                class="w-full px-4 py-2.5 rounded-xl border border-secondary-container bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 font-body-md"
+                aria-label="فلتر المدينة">
+          <option value="">جميع المدن</option>
+          {% for c in cities %}
+            <option value="{{ c }}" {% if city_filter == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-    <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead>
-                <tr class="border-b border-secondary-container">
-                    <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
-                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الاسم</th>
-                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الهاتف</th>
-                    <th class="text-right py-3 px-4 font-label-sm text-secondary">رصيد الدين</th>
-                    <th class="text-right py-3 px-4 font-label-sm text-secondary">المدينة</th>
-                    <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for customer in page_obj %}
-                <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
-                    <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
-                    <td class="py-3 px-4 font-body-md">
-                        <a href="{% url 'customer_detail' customer.pk %}" class="text-primary hover:underline">
-                            {{ customer.full_name }}
-                        </a>
-                    </td>
-                    <td class="py-3 px-4 font-body-md">{{ customer.phone|default:"-" }}</td>
-                    <td class="py-3 px-4 font-body-md {% if customer.debt_balance > 0 %}text-error{% else %}text-success{% endif %}">
-                        {{ customer.debt_balance }}
-                    </td>
-                    <td class="py-3 px-4 font-body-md">{{ customer.city|default:"-" }}</td>
-                    <td class="py-3 px-4">
-                        <div class="flex gap-2">
-                            <a href="{% url 'customer_detail' customer.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
-                                <span class="material-symbols-outlined text-[20px]">visibility</span>
-                            </a>
-                            <a href="{% url 'customer_edit' customer.pk %}" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200">
-                                <span class="material-symbols-outlined text-[20px]">edit</span>
-                            </a>
-                            <a href="{% url 'customer_delete' customer.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
-                                <span class="material-symbols-outlined text-[20px]">delete</span>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center py-8 text-secondary font-body-lg">لا يوجد عملاء</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+      <!-- فلتر المصدر -->
+      <div class="lg:col-span-2">
+        <select name="source"
+                class="w-full px-4 py-2.5 rounded-xl border border-secondary-container bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 font-body-md"
+                aria-label="فلتر المصدر">
+          <option value="">جميع المصادر</option>
+          {% for key, label in sources %}
+            <option value="{{ key }}" {% if source_filter == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-    {% if page_obj.has_other_pages %}
-    <div class="flex justify-center gap-2 mt-stack-lg">
-        {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_debt %}&filter_debt={{ filter_debt }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">السابق</a>
+      <!-- فلتر حالة العميل / الدين -->
+      <div class="lg:col-span-2">
+        <select name="filter_debt"
+                class="w-full px-4 py-2.5 rounded-xl border border-secondary-container bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 font-body-md"
+                aria-label="فلتر حالة العميل">
+          <option value="">حالة العميل</option>
+          <option value="has_debt" {% if filter_debt == 'has_debt' %}selected{% endif %}>عليهم دين</option>
+          <option value="no_debt" {% if filter_debt == 'no_debt' %}selected{% endif %}>لا يوجد عليهم دين</option>
+        </select>
+      </div>
+
+      <!-- أزرار -->
+      <div class="lg:col-span-2 flex gap-2">
+        <button type="submit"
+                class="flex-1 bg-primary text-on-primary px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">
+          بحث
+        </button>
+        <a href="{% url 'customer_list' %}"
+           class="flex-1 text-center bg-secondary/10 text-secondary px-4 py-2.5 rounded-xl hover:bg-secondary/20 transition-all duration-200 font-label-md">
+          إعادة تعيين
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ============ TABLE (Desktop) ============ -->
+  <div class="hidden lg:block overflow-x-auto rounded-xl border border-secondary-container/60">
+    <table class="w-full">
+      <thead class="bg-background/60">
+        <tr class="border-b border-secondary-container">
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">الاسم</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">الهاتف</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">المدينة</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">عدد الطلبات</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">إجمالي المشتريات</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">المبلغ المستحق</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">آخر طلب</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">المصدر</th>
+          <th class="text-right py-3 px-4 font-label-sm text-secondary">الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for customer in page_obj %}
+        <tr class="border-b border-secondary-container/40 hover:bg-primary/5 transition-colors duration-200">
+          <td class="py-3 px-4 font-body-md text-secondary">
+            {{ forloop.counter0|add:page_obj.start_index }}
+          </td>
+          <td class="py-3 px-4 font-body-md">
+            <a href="{% url 'customer_detail' customer.pk %}" class="text-primary hover:underline font-medium">
+              {{ customer.full_name }}
+            </a>
+          </td>
+          <td class="py-3 px-4 font-body-md">{{ customer.phone|default:"-" }}</td>
+          <td class="py-3 px-4 font-body-md">{{ customer.city|default:"-" }}</td>
+          <td class="py-3 px-4 font-body-md">{{ customer.get_total_orders_count }}</td>
+          <td class="py-3 px-4 font-body-md">
+            {{ customer.get_total_spent|floatformat:2 }} د.ل
+          </td>
+          <td class="py-3 px-4 font-body-md {% if customer.debt_balance > 0 %}text-error font-semibold{% else %}text-success{% endif %}">
+            {{ customer.debt_balance|floatformat:2 }} د.ل
+          </td>
+          <td class="py-3 px-4 font-body-md text-secondary">
+            {% with last=customer.get_last_order_date %}
+              {% if last %}{{ last|date:"j F Y" }}{% else %}-{% endif %}
+            {% endwith %}
+          </td>
+          <td class="py-3 px-4 font-body-md">
+            {{ customer.get_known_us_from_display|default:"-" }}
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex gap-1">
+              <a href="{% url 'customer_detail' customer.pk %}"
+                 class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200"
+                 aria-label="عرض العميل {{ customer.full_name }}">
+                <span class="material-symbols-outlined text-[20px]">visibility</span>
+              </a>
+              <a href="{% url 'customer_edit' customer.pk %}"
+                 class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors duration-200"
+                 aria-label="تعديل العميل {{ customer.full_name }}">
+                <span class="material-symbols-outlined text-[20px]">edit</span>
+              </a>
+              <a href="{% url 'customer_delete' customer.pk %}"
+                 onclick="return confirm('هل أنت متأكد من حذف العميل {{ customer.full_name }}؟');"
+                 class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200"
+                 aria-label="حذف العميل {{ customer.full_name }}">
+                <span class="material-symbols-outlined text-[20px]">delete</span>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" class="text-center py-10 text-secondary font-body-lg">
+            <span class="material-symbols-outlined block mx-auto mb-2 text-[40px] text-secondary/50">inbox</span>
+            لا يوجد عملاء مطابقون
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ CARDS (Mobile) ============ -->
+  <div class="lg:hidden space-y-3">
+    {% for customer in page_obj %}
+    <div class="bg-white border border-secondary-container/60 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="min-w-0">
+          <a href="{% url 'customer_detail' customer.pk %}" class="font-title-md text-primary hover:underline block truncate">
+            {{ customer.full_name }}
+          </a>
+          <p class="font-body-sm text-secondary mt-0.5">
+            {{ customer.phone|default:"-" }} • {{ customer.city|default:"-" }}
+          </p>
+        </div>
+        <span class="shrink-0 px-2 py-1 rounded-lg text-[11px] font-label-sm
+          {% if customer.debt_balance > 0 %}bg-error/10 text-error{% else %}bg-success/10 text-success{% endif %}">
+          {% if customer.debt_balance > 0 %}عليه دين{% else %}لا دين{% endif %}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3 text-center">
+        <div class="bg-background rounded-lg p-2">
+          <p class="font-label-sm text-secondary">الطلبات</p>
+          <p class="font-title-md text-on-surface">{{ customer.get_total_orders_count }}</p>
+        </div>
+        <div class="bg-background rounded-lg p-2">
+          <p class="font-label-sm text-secondary">المشتريات</p>
+          <p class="font-title-md text-on-surface">{{ customer.get_total_spent|floatformat:0 }} د.ل</p>
+        </div>
+        <div class="bg-background rounded-lg p-2">
+          <p class="font-label-sm text-secondary">المستحق</p>
+          <p class="font-title-md {% if customer.debt_balance > 0 %}text-error{% else %}text-success{% endif %}">
+            {{ customer.debt_balance|floatformat:0 }} د.ل
+          </p>
+        </div>
+        <div class="bg-background rounded-lg p-2">
+          <p class="font-label-sm text-secondary">آخر طلب</p>
+          <p class="font-title-md text-on-surface">
+            {% with last=customer.get_last_order_date %}
+              {% if last %}{{ last|date:"j M Y" }}{% else %}-{% endif %}
+            {% endwith %}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t border-secondary-container/40">
+        <a href="{% url 'customer_detail' customer.pk %}"
+           class="flex-1 flex items-center justify-center gap-1 text-primary bg-primary/5 hover:bg-primary/10 py-2 rounded-lg font-label-md transition-colors">
+          <span class="material-symbols-outlined text-[18px]">visibility</span> عرض
+        </a>
+        <a href="{% url 'customer_edit' customer.pk %}"
+           class="flex-1 flex items-center justify-center gap-1 text-primary bg-primary/5 hover:bg-primary/10 py-2 rounded-lg font-label-md transition-colors">
+          <span class="material-symbols-outlined text-[18px]">edit</span> تعديل
+        </a>
+        <a href="{% url 'customer_delete' customer.pk %}"
+           onclick="return confirm('هل أنت متأكد من حذف العميل {{ customer.full_name }}؟');"
+           class="flex-1 flex items-center justify-center gap-1 text-error bg-error/5 hover:bg-error/10 py-2 rounded-lg font-label-md transition-colors">
+          <span class="material-symbols-outlined text-[18px]">delete</span> حذف
+        </a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-10 text-secondary font-body-lg">
+      <span class="material-symbols-outlined block mx-auto mb-2 text-[40px] text-secondary/50">inbox</span>
+      لا يوجد عملاء مطابقون
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ============ PAGINATION ============ -->
+  {% if page_obj.has_other_pages %}
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-stack-lg pt-4 border-t border-secondary-container/40">
+
+    <!-- عدد النتائج -->
+    <p class="font-body-sm text-secondary order-2 sm:order-1">
+      عرض {{ page_obj.start_index }}–{{ page_obj.end_index }}
+      من {{ page_obj.paginator.count }} عميلاً
+    </p>
+
+    <!-- أرقام الصفحات -->
+    <nav class="flex items-center gap-1 order-1 sm:order-2" aria-label="التنقل بين الصفحات">
+
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_debt %}&filter_debt={{ filter_debt }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+         class="w-9 h-9 flex items-center justify-center rounded-lg border border-secondary-container hover:border-primary hover:text-primary transition-colors"
+         aria-label="الصفحة السابقة">
+        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+      </a>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+          <span class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-on-primary font-label-md" aria-current="page">{{ num }}</span>
+        {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_debt %}&filter_debt={{ filter_debt }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+             class="w-9 h-9 flex items-center justify-center rounded-lg border border-secondary-container hover:border-primary hover:text-primary transition-colors font-label-md">
+            {{ num }}
+          </a>
+        {% elif num == 1 or num == page_obj.paginator.num_pages %}
+          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_debt %}&filter_debt={{ filter_debt }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+             class="w-9 h-9 flex items-center justify-center rounded-lg border border-secondary-container hover:border-primary hover:text-primary transition-colors font-label-md">
+            {{ num }}
+          </a>
+        {% elif num == page_obj.number|add:-3 or num == page_obj.number|add:3 %}
+          <span class="w-9 h-9 flex items-center justify-center text-secondary">…</span>
         {% endif %}
-        <span class="px-4 py-2 rounded-xl bg-primary text-on-primary">{{ page_obj.number }}</span>
-        {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_debt %}&filter_debt={{ filter_debt }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">التالي</a>
-        {% endif %}
-    </div>
-    {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_debt %}&filter_debt={{ filter_debt }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+         class="w-9 h-9 flex items-center justify-center rounded-lg border border-secondary-container hover:border-primary hover:text-primary transition-colors"
+         aria-label="الصفحة التالية">
+        <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+      </a>
+      {% endif %}
+
+    </nav>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

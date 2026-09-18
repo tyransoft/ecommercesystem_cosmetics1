@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}نسخة من {{ product.name }} - Glamour{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-6">
+  <h2 class="text-xl font-bold text-gray-800 mb-4">إنشاء نسخة من المنتج</h2>
+  <p class="text-sm text-gray-500 mb-6">الأصل: <strong>{{ product.name }}</strong></p>
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">اسم المنتج الجديد</label>
+      <input type="text" name="name" value="{{ product.name }} - " required
+             class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:border-pink-500 focus:outline-none">
+    </div>
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">اللون / الدرجة الجديدة</label>
+      <input type="text" name="color" placeholder="مثال: أحمر، وردي، 50ml..."
+             class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:border-pink-500 focus:outline-none">
+    </div>
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">الباركود </label>
+      <input type="text" name="barcode" placeholder="تلقائي"
+             class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:border-pink-500 focus:outline-none">
+    </div>
+
+    <div class="flex gap-3 pt-4">
+      <button type="submit" class="bg-pink-600 text-white px-6 py-2 rounded-xl font-semibold hover:bg-pink-700">
+        إنشاء النسخة
+      </button>
+      <a href="{% url 'product_list' %}" class="px-6 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50">
+        إلغاء
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}
