@@ -32,7 +32,9 @@ ALLOWED_HOSTS = ['glamour.tip2.libyanspider.cloud']
 
 CSRF_TRUSTED_ORIGINS = [
     "https://glamour.tip2.libyanspider.cloud",
-    ]
+    "https://www.glamour.tip2.libyanspider.cloud",
+
+]
 
 # Application definition
 
