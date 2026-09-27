@@ -254,19 +254,148 @@
         margin-bottom: 3px;
         font-weight: 600;
     }
+
+    /* Order page visual treatment */
+    .order-page {
+        direction: rtl;
+        background: #fffafd;
+        border: 1px solid #f8e3ef;
+    }
+    .order-titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+    .order-titlebar h2 {
+        margin: 0;
+        color: #242124;
+        font-size: 22px;
+        font-weight: 800;
+    }
+    .order-titlebar .last-updated {
+        color: #9d9299;
+        font-size: 12px;
+    }
+    .step-indicator {
+        direction: rtl;
+        width: min(720px, 100%);
+        margin: 0 auto 22px;
+    }
+    .step {
+        min-width: 112px;
+        justify-content: center;
+        padding: 0 10px;
+        color: #aaa1a7;
+        font-size: 12px;
+    }
+    .step.active {
+        color: #d51f86;
+    }
+    .step-num {
+        width: 25px;
+        height: 25px;
+        font-size: 12px;
+    }
+    .step-line {
+        max-width: none;
+        height: 1px;
+        background: #eadfe5;
+    }
+    .step-line.active {
+        background: #efabd0;
+    }
+    .panel {
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 3px 14px rgba(213, 31, 134, 0.045);
+    }
+    .panel-header {
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        font-size: 14px;
+    }
+    .panel-header .material-symbols-outlined {
+        color: #d51f86;
+    }
+    .order-grid {
+        gap: 12px;
+    }
+    .product-table th {
+        padding: 8px 5px;
+        font-size: 11px;
+    }
+    .product-table td {
+        padding: 6px 5px;
+    }
+    .product-table input,
+    .product-table select {
+        padding: 5px 6px;
+        border-radius: 6px;
+        font-size: 11px;
+    }
+    .summary-row {
+        padding: 7px 0;
+        font-size: 12px;
+    }
+    .summary-row.total {
+        font-size: 14px;
+    }
+    .payment-panel {
+        margin-top: 12px !important;
+    }
+    .payment-panel .panel-header {
+        margin-bottom: 10px;
+    }
+    @media (max-width: 700px) {
+        .order-titlebar {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .step {
+            min-width: 0;
+            padding: 0 4px;
+            font-size: 10px;
+        }
+        .step-num {
+            width: 22px;
+            height: 22px;
+        }
+        .step-line {
+            max-width: 32px;
+        }
+    }
 </style>
 
-<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
+<div class="order-page bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
 
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="font-headline-md text-headline-md text-on-background">إنشاء طلبية جديدة</h2>
-        <div class="text-sm text-secondary">آخر تحديث: {% now "Y-m-d" %}</div>
+    <div class="order-titlebar">
+        <h2>إنشاء طلبية جديدة</h2>
+        <div class="last-updated">آخر تحديث: {% now "Y-m-d" %}</div>
     </div>
 
-    
+    <div class="step-indicator" aria-label="مراحل إنشاء الطلبية">
+        <div class="step active">
+            <span class="step-num">1</span>
+            <span>بيانات العميل</span>
+        </div>
+        <span class="step-line active"></span>
+        <div class="step active">
+            <span class="step-num">2</span>
+            <span>المنتجات</span>
+        </div>
+        <span class="step-line"></span>
+        <div class="step">
+            <span class="step-num">3</span>
+            <span>تأكيد الطلبية</span>
+        </div>
+    </div>
 
     <form method="post" id="orderForm">
         {% csrf_token %}
+        <input type="hidden" name="status" value="confirmed">
         <input type="hidden" name="customer_mode" id="customerMode" value="existing">
 
         <div class="order-grid">
@@ -421,10 +550,6 @@
                     <span class="text-secondary">الخصم</span>
                     <span id="summaryDiscount">0.00 ل.ل</span>
                 </div>
-                <div class="summary-row">
-                    <span class="text-secondary">التوصيل</span>
-                    <span id="summaryDelivery">0.00 ل.ل</span>
-                </div>
                 <div class="summary-row total">
                     <span>الإجمالي النهائي</span>
                     <span id="summaryTotal">0.00 ل.ل</span>
@@ -455,7 +580,6 @@
                 </div>
 
                 <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
-                    
                     <button type="button" onclick="saveOrder('confirmed')"
                             class="bg-primary text-on-primary px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md w-full">
                         حفظ الطلبية
@@ -468,26 +592,26 @@
             </div>
         </div>
 
-        <div class="panel" style="margin-top: 20px;">
-            
+        <div class="panel payment-panel">
+            <div class="panel-header">
+                <span class="material-symbols-outlined">payments</span>
+                <span>تفاصيل الدفع</span>
+            </div>
 
-           
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block font-label-md text-secondary mb-1">المبلغ المدفوع</label>
                     <input type="number" id="paidAmountVisible" step="0.01" value="0"
                            onchange="document.getElementById('paidAmount').value=this.value; calculateTotals();"
                            class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
                 </div>
+
                 <div>
                     <label class="block font-label-md text-secondary mb-1">الخصم العام</label>
                     <input type="number" id="discountVisible" step="0.01" value="0"
                            onchange="document.getElementById('discount').value=this.value; calculateTotals();"
                            class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
                 </div>
-               
             </div>
         </div>
 
@@ -521,14 +645,17 @@
                 <label class="block font-label-md text-secondary mb-stack-sm">الاسم الكامل *</label>
                 {{ new_customer_form.full_name }}
             </div>
+
             <div>
                 <label class="block font-label-md text-secondary mb-stack-sm">رقم الهاتف *</label>
                 {{ new_customer_form.phone }}
             </div>
+
             <div>
                 <label class="block font-label-md text-secondary mb-stack-sm">المدينة</label>
                 {{ new_customer_form.city }}
             </div>
+
             <div>
                 <label class="block font-label-md text-secondary mb-stack-sm">عرفتنا من</label>
                 {{ new_customer_form.known_us_from }}
@@ -541,6 +668,7 @@
                         class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md flex-1">
                     إضافة العميل
                 </button>
+
                 <button type="button" onclick="closeCustomerModal()"
                         class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">
                     إلغاء
@@ -553,24 +681,37 @@
 <script>
 const ALL_CUSTOMERS = [
     {% for c in customers %}
-    { id: {{ c.id }}, name: "{{ c.full_name|escapejs }}", phone: "{{ c.phone|escapejs }}", city: "{{ c.city|default:''|escapejs }}" },
+    {
+        id: {{ c.id }},
+        name: "{{ c.full_name|escapejs }}",
+        phone: "{{ c.phone|escapejs }}",
+        city: "{{ c.city|default:''|escapejs }}"
+    },
     {% endfor %}
 ];
 
 const ALL_PRODUCTS = [
     {% for p in products %}
-    { id: {{ p.id }},
-      name: "{{ p.name|escapejs }}",
-      color: "{{ p.color|default:''|escapejs }}",
-      barcode: "{{ p.barcode|default:''|escapejs }}",
-      price: "{{ p.lyd_sell_price|default:0 }}",
-      image: "{% if p.image %}{{ p.image.url }}{% endif %}" },
+    {
+        id: {{ p.id }},
+        name: "{{ p.name|escapejs }}",
+        color: "{{ p.color|default:''|escapejs }}",
+        barcode: "{{ p.barcode|default:''|escapejs }}",
+        price: "{{ p.lyd_sell_price|default:0 }}",
+        image: "{% if p.image %}{{ p.image.url }}{% endif %}"
+    },
     {% endfor %}
 ];
 
 function normalize(str) {
-    return (str || '').toString().toLowerCase().replace(/\s+/g, ' ').trim()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’'`]/g, "'");
+    return (str || '')
+        .toString()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’'`]/g, "'");
 }
 
 const customerSearch = document.getElementById('customerSearch');
@@ -578,35 +719,58 @@ const customerSug = document.getElementById('customerSuggestions');
 
 customerSearch.addEventListener('input', function () {
     const q = normalize(this.value);
-    if (!q) { customerSug.classList.add('hidden'); return; }
-    const matches = ALL_CUSTOMERS.filter(c =>
-        normalize(c.name).includes(q) || normalize(c.phone).includes(q) || normalize(c.city).includes(q)
-    ).slice(0, 8);
-    if (!matches.length) { customerSug.classList.add('hidden'); return; }
+
+    if (!q) {
+        customerSug.classList.add('hidden');
+        return;
+    }
+
+    const matches = ALL_CUSTOMERS
+        .filter(c =>
+            normalize(c.name).includes(q) ||
+            normalize(c.phone).includes(q) ||
+            normalize(c.city).includes(q)
+        )
+        .slice(0, 8);
+
+    if (!matches.length) {
+        customerSug.classList.add('hidden');
+        return;
+    }
+
     customerSug.innerHTML = matches.map(c =>
         `<li data-id="${c.id}">${c.name} — ${c.phone} — ${c.city}</li>`
     ).join('');
+
     customerSug.classList.remove('hidden');
 });
 
 customerSug.addEventListener('click', function (e) {
     const li = e.target.closest('li');
-    if (!li) return;
+
+    if (!li) {
+        return;
+    }
+
     const select = document.getElementById('customerSelect');
+
     select.value = li.dataset.id;
     select.dispatchEvent(new Event('change'));
+
     customerSearch.value = '';
     customerSug.classList.add('hidden');
 });
 
 document.getElementById('customerSelect').addEventListener('change', function () {
     const opt = this.options[this.selectedIndex];
+
     if (!this.value) {
         document.getElementById('ciName').value = '';
         document.getElementById('ciPhone').value = '';
         document.getElementById('ciCity').value = '';
         return;
     }
+
     document.getElementById('ciName').value = opt.dataset.name || '';
     document.getElementById('ciPhone').value = opt.dataset.phone || '';
     document.getElementById('ciCity').value = opt.dataset.city || '';
@@ -617,59 +781,95 @@ const productSug = document.getElementById('productSuggestions');
 
 productSearch.addEventListener('input', function () {
     const q = normalize(this.value);
-    if (!q) { productSug.classList.add('hidden'); return; }
-    const matches = ALL_PRODUCTS.filter(p =>
-        normalize(p.name).includes(q) || normalize(p.barcode).includes(q) || normalize(p.color).includes(q)
-    ).slice(0, 8);
-    if (!matches.length) { productSug.classList.add('hidden'); return; }
+
+    if (!q) {
+        productSug.classList.add('hidden');
+        return;
+    }
+
+    const matches = ALL_PRODUCTS
+        .filter(p =>
+            normalize(p.name).includes(q) ||
+            normalize(p.barcode).includes(q) ||
+            normalize(p.color).includes(q)
+        )
+        .slice(0, 8);
+
+    if (!matches.length) {
+        productSug.classList.add('hidden');
+        return;
+    }
+
     productSug.innerHTML = matches.map(p =>
         `<li data-id="${p.id}">${p.name} — ${p.color} ${p.barcode ? '— ' + p.barcode : ''}</li>`
     ).join('');
+
     productSug.classList.remove('hidden');
 });
 
 productSug.addEventListener('click', function (e) {
     const li = e.target.closest('li');
-    if (!li) return;
-    const productId = li.dataset.id;
 
+    if (!li) {
+        return;
+    }
+
+    const productId = li.dataset.id;
     let targetSelect = null;
+
     document.querySelectorAll('.product-select').forEach(sel => {
-        if (!sel.value && !targetSelect) targetSelect = sel;
+        if (!sel.value && !targetSelect) {
+            targetSelect = sel;
+        }
     });
+
     if (!targetSelect) {
         addProductRow();
+
         const selects = document.querySelectorAll('.product-select');
         targetSelect = selects[selects.length - 1];
     }
+
     targetSelect.value = productId;
     targetSelect.dispatchEvent(new Event('change'));
+
     productSearch.value = '';
     productSug.classList.add('hidden');
 });
 
 document.addEventListener('click', function (e) {
-    if (!e.target.closest('#customerSearch') && !e.target.closest('#customerSuggestions')) {
+    if (
+        !e.target.closest('#customerSearch') &&
+        !e.target.closest('#customerSuggestions')
+    ) {
         customerSug.classList.add('hidden');
     }
-    if (!e.target.closest('#productSearch') && !e.target.closest('#productSuggestions')) {
+
+    if (
+        !e.target.closest('#productSearch') &&
+        !e.target.closest('#productSuggestions')
+    ) {
         productSug.classList.add('hidden');
     }
 });
 
 function openCustomerModal() {
     const m = document.getElementById('customerModal');
+
     m.classList.remove('hidden');
     m.classList.add('flex');
 }
+
 function closeCustomerModal() {
     const m = document.getElementById('customerModal');
+
     m.classList.add('hidden');
     m.classList.remove('flex');
 }
 
 function saveNewCustomer() {
     const errorsBox = document.getElementById('customerFormErrors');
+
     errorsBox.classList.add('hidden');
     errorsBox.innerHTML = '';
 
@@ -677,7 +877,7 @@ function saveNewCustomer() {
         full_name: document.getElementById('id_full_name').value.trim(),
         phone: document.getElementById('id_phone').value.trim(),
         city: document.getElementById('id_city').value.trim(),
-        known_us_from: document.getElementById('id_known_us_from').value,
+        known_us_from: document.getElementById('id_known_us_from').value
     };
 
     if (!data.full_name || !data.phone) {
@@ -690,21 +890,37 @@ function saveNewCustomer() {
 
     fetch('{% url "customer_quick_add" %}', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-        body: JSON.stringify(data),
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(data)
     })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
             const select = document.getElementById('customerSelect');
-            const opt = new Option(`${res.customer.full_name} - ${res.customer.city || ''}`, res.customer.id, true, true);
+
+            const opt = new Option(
+                `${res.customer.full_name} - ${res.customer.city || ''}`,
+                res.customer.id,
+                true,
+                true
+            );
+
             opt.dataset.name = res.customer.full_name;
             opt.dataset.phone = res.customer.phone || '';
             opt.dataset.city = res.customer.city || '';
+
             select.add(opt);
             select.dispatchEvent(new Event('change'));
+
             closeCustomerModal();
-            ['id_full_name','id_phone','id_city'].forEach(id => document.getElementById(id).value = '');
+
+            ['id_full_name', 'id_phone', 'id_city'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+
             document.getElementById('id_known_us_from').selectedIndex = 0;
         } else {
             errorsBox.innerHTML = (res.errors || []).join('<br>');
@@ -720,19 +936,35 @@ function saveNewCustomer() {
 function addProductRow() {
     const tbody = document.getElementById('productRows');
     const row = tbody.querySelector('.product-row').cloneNode(true);
+
     row.querySelectorAll('input, select').forEach(el => {
-        if (el.tagName === 'SELECT') el.selectedIndex = 0;
-        else if (el.type !== 'button') el.value = '';
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else if (el.type !== 'button') {
+            el.value = '';
+        }
     });
-    row.querySelectorAll('.inventory-display, .cost-display, .profit-display, .row-total-display').forEach(el => el.value = '');
+
+    row.querySelectorAll(
+        '.inventory-display, .cost-display, .profit-display, .row-total-display'
+    ).forEach(el => {
+        el.value = '';
+    });
+
     const img = row.querySelector('.product-thumb');
-    if (img) { img.src = ''; img.style.display = 'none'; }
+
+    if (img) {
+        img.src = '';
+        img.style.display = 'none';
+    }
+
     tbody.appendChild(row);
     calculateTotals();
 }
 
 function removeRow(btn) {
     const rows = document.querySelectorAll('.product-row');
+
     if (rows.length > 1) {
         btn.closest('.product-row').remove();
         calculateTotals();
@@ -743,6 +975,7 @@ function getProductData(select) {
     const row = select.closest('.product-row');
     const productId = select.value;
     const opt = select.options[select.selectedIndex];
+
     const price = opt.getAttribute('data-price') || 0;
     const image = opt.getAttribute('data-image') || '';
 
@@ -750,7 +983,6 @@ function getProductData(select) {
     const costEl = row.querySelector('.cost-display');
     const profitEl = row.querySelector('.profit-display');
     const unitPrice = row.querySelector('.unit-price-input');
-    const discount = row.querySelector('.discount-input');
     const imgEl = row.querySelector('.product-thumb');
 
     if (imgEl) {
@@ -765,17 +997,20 @@ function getProductData(select) {
 
     if (productId) {
         unitPrice.value = price;
+
         fetch(`/get-product-inventory/${productId}/`)
             .then(r => r.json())
             .then(data => {
                 invEl.value = data.quantity;
                 costEl.value = data.cost;
+
                 if (parseInt(data.quantity) <= 0) {
                     invEl.style.color = '#e53935';
                     invEl.value = 'Sold Out';
                 } else {
                     invEl.style.color = '';
                 }
+
                 calculateTotals();
             });
     } else {
@@ -791,28 +1026,51 @@ function calculateTotals() {
     let totalProfit = 0;
 
     document.querySelectorAll('.product-row').forEach(row => {
-        const qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
-        const price = parseFloat(row.querySelector('.unit-price-input').value) || 0;
-        const disc = parseFloat(row.querySelector('.discount-input').value) || 0;
-        const cost = parseFloat(row.querySelector('.cost-display').value) || 0;
+        const qty = parseFloat(
+            row.querySelector('.quantity-input').value
+        ) || 0;
+
+        const price = parseFloat(
+            row.querySelector('.unit-price-input').value
+        ) || 0;
+
+        const disc = parseFloat(
+            row.querySelector('.discount-input').value
+        ) || 0;
+
+        const cost = parseFloat(
+            row.querySelector('.cost-display').value
+        ) || 0;
 
         const itemTotal = (price - disc) * qty;
         const profit = (price - disc - cost) * qty;
+
         subtotal += itemTotal;
         totalProfit += profit;
 
         const rowTotalEl = row.querySelector('.row-total-display');
-        if (rowTotalEl) rowTotalEl.value = itemTotal.toFixed(2);
+
+        if (rowTotalEl) {
+            rowTotalEl.value = itemTotal.toFixed(2);
+        }
 
         const profitEl = row.querySelector('.profit-display');
+
         profitEl.value = profit.toFixed(2);
         profitEl.classList.toggle('text-success', profit > 0);
         profitEl.classList.toggle('text-error', profit <= 0);
     });
 
-    const generalDiscount = parseFloat(document.getElementById('discountVisible').value) || 0;
-    const paid = parseFloat(document.getElementById('paidAmountVisible').value) || 0;
-    const delivery = parseFloat(document.getElementById('deliveryCost').value) || 0;
+    const generalDiscount = parseFloat(
+        document.getElementById('discountVisible').value
+    ) || 0;
+
+    const paid = parseFloat(
+        document.getElementById('paidAmountVisible').value
+    ) || 0;
+
+    // لا يوجد حقل تكلفة توصيل في التمبليت، لذلك لا نضيفه للحساب.
+    const delivery = 0;
 
     const salesTotal = subtotal - generalDiscount + delivery;
     const debt = salesTotal - paid;
@@ -823,29 +1081,41 @@ function calculateTotals() {
     document.getElementById('salesTotal').value = salesTotal.toFixed(2);
     document.getElementById('debtAmount').value = debt.toFixed(2);
 
-    document.getElementById('summarySubtotal').textContent = subtotal.toFixed(2) + ' ل.ل';
-    document.getElementById('summaryDiscount').textContent = generalDiscount.toFixed(2) + ' ل.ل';
-    document.getElementById('summaryDelivery').textContent = delivery.toFixed(2) + ' ل.ل';
-    document.getElementById('summaryTotal').textContent = salesTotal.toFixed(2) + ' ل.ل';
-    document.getElementById('summaryPaid').textContent = paid.toFixed(2) + ' ل.ل';
-    document.getElementById('summaryDebt').textContent = debt.toFixed(2) + ' ل.ل';
+    document.getElementById('summarySubtotal').textContent =
+        subtotal.toFixed(2) + ' ل.ل';
+
+    document.getElementById('summaryDiscount').textContent =
+        generalDiscount.toFixed(2) + ' ل.ل';
+
+    document.getElementById('summaryTotal').textContent =
+        salesTotal.toFixed(2) + ' ل.ل';
+
+    document.getElementById('summaryPaid').textContent =
+        paid.toFixed(2) + ' ل.ل';
+
+    document.getElementById('summaryDebt').textContent =
+        debt.toFixed(2) + ' ل.ل';
 
     const debtEl = document.getElementById('summaryDebt');
+
     debtEl.classList.toggle('text-error', debt > 0);
     debtEl.classList.toggle('text-success', debt <= 0);
 
     const paidBadge = document.getElementById('paidBadge');
+
     if (salesTotal > 0 && paid >= salesTotal) {
         paidBadge.style.display = 'block';
     } else {
         paidBadge.style.display = 'none';
     }
 
-    document.getElementById('totalProfitLabel').textContent = totalProfit.toFixed(2);
+    document.getElementById('totalProfitLabel').textContent =
+        totalProfit.toFixed(2);
 }
 
 function saveOrder(status) {
     const form = document.getElementById('orderForm');
+
     form.querySelector('[name="status"]').value = status;
     form.submit();
 }
@@ -853,4 +1123,5 @@ function saveOrder(status) {
 document.addEventListener('DOMContentLoaded', calculateTotals);
 document.addEventListener('input', calculateTotals);
 </script>
+
 {% endblock %}
