@@ -3442,7 +3442,6 @@ def get_monthly_new_customers(date_from, date_to):
 
 
 @login_required
-@require_POST
 def customer_quick_add(request):
     try:
         data = json.loads(request.body)
