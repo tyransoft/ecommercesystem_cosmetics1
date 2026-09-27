@@ -80,7 +80,7 @@ urlpatterns = [
     path('purchase-invoices/<int:pk>/cancel/', purchase_invoice_cancel, name='purchase_invoice_cancel'),
     path('purchase-invoices/<int:pk>/delete/', purchase_invoice_delete, name='purchase_invoice_delete'),
     path('get-product-details/<int:product_id>/', get_product_details, name='get_product_details'),
-    
+    path('customer/quick-add/', customer_quick_add, name='customer_quick_add'),
     path('external-commissions/', external_commission_list, name='external_commission_list'),
     path('external-commissions/add/', external_commission_add, name='external_commission_add'),
     path('external-commissions/<int:pk>/edit/', external_commission_edit, name='external_commission_edit'),

@@ -3439,3 +3439,30 @@ def get_monthly_new_customers(date_from, date_to):
         }
         for month in sorted_months
     ]
+
+
+@login_required
+@require_POST
+def customer_quick_add(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'errors': ['بيانات غير صالحة']}, status=400)
+
+    form = CustomerForm(data)
+    if form.is_valid():
+        customer = form.save()
+        return JsonResponse({
+            'success': True,
+            'customer': {
+                'id': customer.id,
+                'full_name': customer.full_name,
+                'city': customer.city or '',
+            }
+        })
+    else:
+        errors = []
+        for field, errs in form.errors.items():
+            for e in errs:
+                errors.append(f'{field}: {e}')
+        return JsonResponse({'success': False, 'errors': errors}, status=400)
