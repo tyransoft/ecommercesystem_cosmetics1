@@ -8,11 +8,13 @@
         grid-template-columns: 1fr;
         gap: 20px;
     }
+
     @media (min-width: 1024px) {
         .order-grid {
             grid-template-columns: 360px 1fr 320px;
         }
     }
+
     .panel {
         background: #fff;
         border-radius: 20px;
@@ -20,6 +22,7 @@
         box-shadow: 0 2px 12px rgba(213, 31, 134, 0.06);
         border: 1px solid #fce4ef;
     }
+
     .panel-header {
         display: flex;
         align-items: center;
@@ -30,12 +33,19 @@
         font-weight: 700;
         color: #d51f86;
     }
+
     .panel-header .material-symbols-outlined {
         font-size: 22px;
     }
 
-    .search-box { position: relative; }
-    .search-box input { padding-right: 40px; }
+    .search-box {
+        position: relative;
+    }
+
+    .search-box input {
+        padding-right: 40px;
+    }
+
     .search-box .material-symbols-outlined {
         position: absolute;
         right: 12px;
@@ -45,6 +55,7 @@
         font-size: 20px;
         pointer-events: none;
     }
+
     .suggestions {
         position: absolute;
         top: 100%;
@@ -56,16 +67,20 @@
         max-height: 220px;
         overflow-y: auto;
         z-index: 60;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
         margin-top: 4px;
     }
+
     .suggestions li {
         padding: 10px 14px;
         cursor: pointer;
         font-size: 14px;
         transition: background 0.15s;
     }
-    .suggestions li:hover { background: #fce4ef; }
+
+    .suggestions li:hover {
+        background: #fce4ef;
+    }
 
     .summary-row {
         display: flex;
@@ -73,6 +88,7 @@
         padding: 8px 0;
         font-size: 14px;
     }
+
     .summary-row.total {
         border-top: 1px dashed #fce4ef;
         margin-top: 8px;
@@ -87,6 +103,7 @@
         border-collapse: collapse;
         font-size: 13px;
     }
+
     .product-table th {
         text-align: right;
         padding: 10px 6px;
@@ -95,11 +112,13 @@
         border-bottom: 1px solid #fce4ef;
         white-space: nowrap;
     }
+
     .product-table td {
         padding: 8px 6px;
         border-bottom: 1px solid #f9f2f6;
         vertical-align: middle;
     }
+
     .product-table input,
     .product-table select {
         width: 100%;
@@ -108,11 +127,13 @@
         border: 1px solid #f0d6e3;
         font-size: 13px;
     }
+
     .product-table input:focus,
     .product-table select:focus {
         outline: none;
         border-color: #d51f86;
     }
+
     .product-thumb {
         width: 36px;
         height: 36px;
@@ -123,15 +144,18 @@
         vertical-align: middle;
         margin-left: 6px;
     }
+
     .product-cell {
         display: flex;
         align-items: center;
         gap: 6px;
     }
+
     .product-info {
         display: flex;
         flex-direction: column;
     }
+
     .product-info .name {
         font-weight: 600;
         font-size: 12px;
@@ -141,10 +165,12 @@
         text-overflow: ellipsis;
         max-width: 140px;
     }
+
     .product-info .sub {
         font-size: 10px;
         color: #999;
     }
+
     .badge-soldout {
         display: inline-block;
         background: #ffebee;
@@ -165,8 +191,14 @@
         border-radius: 50%;
         transition: background 0.15s;
     }
-    .btn-icon:hover { background: #fce4ef; }
-    .btn-icon.danger { color: #e53935; }
+
+    .btn-icon:hover {
+        background: #fce4ef;
+    }
+
+    .btn-icon.danger {
+        color: #e53935;
+    }
 
     .step-indicator {
         display: flex;
@@ -175,6 +207,7 @@
         gap: 0;
         margin-bottom: 24px;
     }
+
     .step {
         display: flex;
         align-items: center;
@@ -184,7 +217,11 @@
         font-weight: 600;
         padding: 0 20px;
     }
-    .step.active { color: #d51f86; }
+
+    .step.active {
+        color: #d51f86;
+    }
+
     .step-num {
         width: 30px;
         height: 30px;
@@ -196,17 +233,22 @@
         font-weight: 700;
         color: #999;
     }
+
     .step.active .step-num {
         background: #d51f86;
         color: #fff;
     }
+
     .step-line {
         flex: 1;
         height: 2px;
         background: #f0f0f0;
         max-width: 80px;
     }
-    .step-line.active { background: #d51f86; }
+
+    .step-line.active {
+        background: #d51f86;
+    }
 
     .status-paid {
         display: inline-flex;
@@ -223,16 +265,22 @@
     }
 
     .customer-fields {
-        display: flex;
+        display: none;
         flex-direction: column;
         gap: 10px;
         margin-top: 12px;
     }
+
+    .customer-fields.is-visible {
+        display: flex;
+    }
+
     .customer-fields .field-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
     }
+
     .customer-fields input,
     .customer-fields select {
         width: 100%;
@@ -241,12 +289,14 @@
         border: 1px solid #f0d6e3;
         font-size: 13px;
     }
+
     .customer-fields input:focus,
     .customer-fields select:focus {
         outline: none;
         border-color: #d51f86;
-        box-shadow: 0 0 0 2px rgba(213,31,134,0.1);
+        box-shadow: 0 0 0 2px rgba(213, 31, 134, 0.1);
     }
+
     .customer-fields label {
         display: block;
         font-size: 11px;
@@ -255,12 +305,12 @@
         font-weight: 600;
     }
 
-    /* Order page visual treatment */
     .order-page {
         direction: rtl;
         background: #fffafd;
         border: 1px solid #f8e3ef;
     }
+
     .order-titlebar {
         display: flex;
         align-items: center;
@@ -268,21 +318,25 @@
         gap: 16px;
         margin-bottom: 18px;
     }
+
     .order-titlebar h2 {
         margin: 0;
         color: #242124;
         font-size: 22px;
         font-weight: 800;
     }
+
     .order-titlebar .last-updated {
         color: #9d9299;
         font-size: 12px;
     }
+
     .step-indicator {
         direction: rtl;
         width: min(720px, 100%);
         margin: 0 auto 22px;
     }
+
     .step {
         min-width: 112px;
         justify-content: center;
@@ -290,79 +344,119 @@
         color: #aaa1a7;
         font-size: 12px;
     }
+
     .step.active {
         color: #d51f86;
     }
+
     .step-num {
         width: 25px;
         height: 25px;
         font-size: 12px;
     }
+
     .step-line {
         max-width: none;
         height: 1px;
         background: #eadfe5;
     }
+
     .step-line.active {
         background: #efabd0;
     }
+
     .panel {
         border-radius: 12px;
         padding: 14px;
         box-shadow: 0 3px 14px rgba(213, 31, 134, 0.045);
     }
+
     .panel-header {
         margin-bottom: 12px;
         padding-bottom: 10px;
         font-size: 14px;
     }
+
     .panel-header .material-symbols-outlined {
         color: #d51f86;
     }
+
     .order-grid {
         gap: 12px;
     }
+
+    @media (min-width: 801px) and (max-width: 1199px) {
+        .order-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        }
+
+        .order-grid > .panel:nth-child(2) {
+            grid-column: 1 / -1;
+            grid-row: 2;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        .order-grid {
+            grid-template-columns: 280px minmax(0, 1fr) 280px;
+        }
+    }
+
+    .product-table {
+        min-width: 760px;
+    }
+
     .product-table th {
         padding: 8px 5px;
         font-size: 11px;
     }
+
     .product-table td {
         padding: 6px 5px;
     }
+
     .product-table input,
     .product-table select {
         padding: 5px 6px;
         border-radius: 6px;
         font-size: 11px;
     }
+
     .summary-row {
         padding: 7px 0;
         font-size: 12px;
     }
+
     .summary-row.total {
         font-size: 14px;
     }
+
     .payment-panel {
         margin-top: 12px !important;
     }
+
     .payment-panel .panel-header {
         margin-bottom: 10px;
     }
+
     @media (max-width: 700px) {
         .order-titlebar {
             align-items: flex-start;
             flex-direction: column;
             gap: 4px;
         }
+
         .step {
             min-width: 0;
             padding: 0 4px;
             font-size: 10px;
         }
+
         .step-num {
             width: 22px;
             height: 22px;
         }
+
         .step-line {
             max-width: 32px;
         }
@@ -381,12 +475,16 @@
             <span class="step-num">1</span>
             <span>بيانات العميل</span>
         </div>
+
         <span class="step-line active"></span>
+
         <div class="step active">
             <span class="step-num">2</span>
             <span>المنتجات</span>
         </div>
+
         <span class="step-line"></span>
+
         <div class="step">
             <span class="step-num">3</span>
             <span>تأكيد الطلبية</span>
@@ -395,6 +493,7 @@
 
     <form method="post" id="orderForm">
         {% csrf_token %}
+
         <input type="hidden" name="status" value="confirmed">
         <input type="hidden" name="customer_mode" id="customerMode" value="existing">
 
@@ -407,27 +506,42 @@
                 </div>
 
                 <div class="search-box" style="margin-bottom: 10px;">
-                    <input type="text" id="customerSearch" placeholder="ابحث بالاسم أو رقم الهاتف..."
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                           autocomplete="off">
+                    <input
+                        type="text"
+                        id="customerSearch"
+                        placeholder="ابحث بالاسم أو رقم الهاتف..."
+                        class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        autocomplete="off"
+                    >
+
                     <span class="material-symbols-outlined">search</span>
                     <ul id="customerSuggestions" class="suggestions hidden"></ul>
                 </div>
 
-                <button type="button" onclick="openCustomerModal()"
-                        class="w-full bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md mb-3">
+                <button
+                    type="button"
+                    onclick="openCustomerModal()"
+                    class="w-full bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md mb-3"
+                >
                     <span class="material-symbols-outlined text-[18px] align-middle">person_add</span>
                     عميل جديد
                 </button>
 
-                <select name="customer" id="customerSelect" required
-                        class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                <select
+                    name="customer"
+                    id="customerSelect"
+                    required
+                    class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                >
                     <option value="">اختر العميل</option>
+
                     {% for customer in customers %}
-                    <option value="{{ customer.id }}"
-                            data-phone="{{ customer.phone }}"
-                            data-city="{{ customer.city }}"
-                            data-name="{{ customer.full_name }}">
+                    <option
+                        value="{{ customer.id }}"
+                        data-phone="{{ customer.phone }}"
+                        data-city="{{ customer.city }}"
+                        data-name="{{ customer.full_name }}"
+                    >
                         {{ customer.full_name }} - {{ customer.city }}
                     </option>
                     {% endfor %}
@@ -438,11 +552,13 @@
                         <label>الاسم الكامل</label>
                         <input type="text" id="ciName" readonly placeholder="-">
                     </div>
+
                     <div class="field-row">
                         <div>
                             <label>رقم الهاتف</label>
                             <input type="text" id="ciPhone" readonly placeholder="-">
                         </div>
+
                         <div>
                             <label>المدينة</label>
                             <input type="text" id="ciCity" readonly placeholder="-">
@@ -451,9 +567,15 @@
                 </div>
 
                 <div style="margin-top: 14px;">
-                    <label class="block font-label-md text-secondary mb-1">عنوان التوصيل</label>
-                    <input type="text" name="delivery_address"
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <label class="block font-label-md text-secondary mb-1">
+                        عنوان التوصيل
+                    </label>
+
+                    <input
+                        type="text"
+                        name="delivery_address"
+                        class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    >
                 </div>
             </div>
 
@@ -464,9 +586,14 @@
                 </div>
 
                 <div class="search-box" style="margin-bottom: 14px;">
-                    <input type="text" id="productSearch" placeholder="ابحث باسم المنتج أو الباركود..."
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                           autocomplete="off">
+                    <input
+                        type="text"
+                        id="productSearch"
+                        placeholder="ابحث باسم المنتج أو الباركود..."
+                        class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        autocomplete="off"
+                    >
+
                     <span class="material-symbols-outlined">search</span>
                     <ul id="productSuggestions" class="suggestions hidden"></ul>
                 </div>
@@ -486,23 +613,36 @@
                                 <th></th>
                             </tr>
                         </thead>
+
                         <tbody id="productRows">
                             <tr class="product-row">
                                 <td>
                                     <div class="product-cell">
-                                        <img class="product-thumb" src="" alt="" style="display:none;">
+                                        <img
+                                            class="product-thumb"
+                                            src=""
+                                            alt=""
+                                            style="display:none;"
+                                        >
+
                                         <div class="product-info" style="flex:1;">
-                                            <select name="product_ids[]" required
-                                                    class="product-select"
-                                                    onchange="getProductData(this)">
+                                            <select
+                                                name="product_ids[]"
+                                                required
+                                                class="product-select"
+                                                onchange="getProductData(this)"
+                                            >
                                                 <option value="">اختر المنتج</option>
+
                                                 {% for product in products %}
-                                                <option value="{{ product.id }}"
-                                                        data-price="{{ product.lyd_sell_price }}"
-                                                        data-barcode="{{ product.barcode }}"
-                                                        data-name="{{ product.name }}"
-                                                        data-color="{{ product.color }}"
-                                                        data-image="{% if product.image %}{{ product.image.url }}{% endif %}">
+                                                <option
+                                                    value="{{ product.id }}"
+                                                    data-price="{{ product.lyd_sell_price }}"
+                                                    data-barcode="{{ product.barcode }}"
+                                                    data-name="{{ product.name }}"
+                                                    data-color="{{ product.color }}"
+                                                    data-image="{% if product.image %}{{ product.image.url }}{% endif %}"
+                                                >
                                                     {{ product.name }}-{{ product.color }}
                                                 </option>
                                                 {% endfor %}
@@ -510,19 +650,81 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td><input type="number" name="quantities[]" min="1" required
-                                           class="quantity-input" onchange="calculateTotals()"></td>
-                                <td><input type="number" name="unit_prices[]" step="0.01" required
-                                           class="unit-price-input" onchange="calculateTotals()"></td>
-                                <td><input type="number" name="unit_discounts[]" step="0.01" value="0"
-                                           class="discount-input" onchange="calculateTotals()"></td>
-                                <td><input type="text" class="row-total-display" readonly></td>
-                                <td><input type="text" class="inventory-display" readonly></td>
-                                <td><input type="text" class="cost-display" readonly></td>
-                                <td><input type="text" class="profit-display text-success" readonly></td>
+
                                 <td>
-                                    <button type="button" class="btn-icon danger" onclick="removeRow(this)">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                                    <input
+                                        type="number"
+                                        name="quantities[]"
+                                        min="1"
+                                        required
+                                        class="quantity-input"
+                                        onchange="calculateTotals()"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="unit_prices[]"
+                                        step="0.01"
+                                        required
+                                        class="unit-price-input"
+                                        onchange="calculateTotals()"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="unit_discounts[]"
+                                        step="0.01"
+                                        value="0"
+                                        class="discount-input"
+                                        onchange="calculateTotals()"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="row-total-display"
+                                        readonly
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="inventory-display"
+                                        readonly
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="cost-display"
+                                        readonly
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="profit-display text-success"
+                                        readonly
+                                    >
+                                </td>
+
+                                <td>
+                                    <button
+                                        type="button"
+                                        class="btn-icon danger"
+                                        onclick="removeRow(this)"
+                                    >
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">
+                                            delete
+                                        </span>
                                     </button>
                                 </td>
                             </tr>
@@ -530,9 +732,15 @@
                     </table>
                 </div>
 
-                <button type="button" onclick="addProductRow()"
-                        class="mt-4 bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md">
-                    <span class="material-symbols-outlined text-[18px] align-middle">add</span> إضافة منتج
+                <button
+                    type="button"
+                    onclick="addProductRow()"
+                    class="mt-4 bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md"
+                >
+                    <span class="material-symbols-outlined text-[18px] align-middle">
+                        add
+                    </span>
+                    إضافة منتج
                 </button>
             </div>
 
@@ -546,10 +754,12 @@
                     <span class="text-secondary">إجمالي المنتجات</span>
                     <span id="summarySubtotal">0.00 ل.ل</span>
                 </div>
+
                 <div class="summary-row">
                     <span class="text-secondary">الخصم</span>
                     <span id="summaryDiscount">0.00 ل.ل</span>
                 </div>
+
                 <div class="summary-row total">
                     <span>الإجمالي النهائي</span>
                     <span id="summaryTotal">0.00 ل.ل</span>
@@ -560,6 +770,7 @@
                         <span class="text-secondary">المدفوع</span>
                         <span id="summaryPaid" class="text-success">0.00 ل.ل</span>
                     </div>
+
                     <div class="summary-row">
                         <span class="text-secondary">المتبقي</span>
                         <span id="summaryDebt" class="text-error">0.00 ل.ل</span>
@@ -568,26 +779,40 @@
 
                 <div id="paidBadge" style="margin-top: 14px; display:none;">
                     <div class="status-paid">
-                        <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
+                        <span class="material-symbols-outlined" style="font-size:18px;">
+                            check_circle
+                        </span>
                         تم استلام المبلغ
                     </div>
                 </div>
 
                 <div style="margin-top: 16px;">
-                    <label class="block font-label-md text-secondary mb-1">ملاحظات</label>
-                    <textarea name="notes" rows="3"
-                              class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"></textarea>
+                    <label class="block font-label-md text-secondary mb-1">
+                        ملاحظات
+                    </label>
+
+                    <textarea
+                        name="notes"
+                        rows="3"
+                        class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    ></textarea>
                 </div>
 
                 <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
-                    <button type="button" onclick="saveOrder('confirmed')"
-                            class="bg-primary text-on-primary px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md w-full">
+                    <button
+                        type="button"
+                        onclick="saveOrder('confirmed')"
+                        class="bg-primary text-on-primary px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md w-full"
+                    >
                         حفظ الطلبية
                     </button>
                 </div>
 
                 <div class="text-sm text-secondary" style="margin-top: 12px; text-align: center;">
-                    إجمالي الربح: <span id="totalProfitLabel" class="text-success font-bold">0.00</span>
+                    إجمالي الربح:
+                    <span id="totalProfitLabel" class="text-success font-bold">
+                        0.00
+                    </span>
                 </div>
             </div>
         </div>
@@ -600,17 +825,33 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block font-label-md text-secondary mb-1">المبلغ المدفوع</label>
-                    <input type="number" id="paidAmountVisible" step="0.01" value="0"
-                           onchange="document.getElementById('paidAmount').value=this.value; calculateTotals();"
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <label class="block font-label-md text-secondary mb-1">
+                        المبلغ المدفوع
+                    </label>
+
+                    <input
+                        type="number"
+                        id="paidAmountVisible"
+                        step="0.01"
+                        value="0"
+                        onchange="document.getElementById('paidAmount').value=this.value; calculateTotals();"
+                        class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    >
                 </div>
 
                 <div>
-                    <label class="block font-label-md text-secondary mb-1">الخصم العام</label>
-                    <input type="number" id="discountVisible" step="0.01" value="0"
-                           onchange="document.getElementById('discount').value=this.value; calculateTotals();"
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <label class="block font-label-md text-secondary mb-1">
+                        الخصم العام
+                    </label>
+
+                    <input
+                        type="number"
+                        id="discountVisible"
+                        step="0.01"
+                        value="0"
+                        onchange="document.getElementById('discount').value=this.value; calculateTotals();"
+                        class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    >
                 </div>
             </div>
         </div>
@@ -622,55 +863,83 @@
         <input type="hidden" name="debt_amount" id="debtAmount">
 
         <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-secondary-container">
-            <a href="{% url 'internal_order_list' %}"
-               class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">
+            <a
+                href="{% url 'internal_order_list' %}"
+                class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md"
+            >
                 إلغاء
             </a>
         </div>
     </form>
 </div>
 
-<div id="customerModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center">
+<div
+    id="customerModal"
+    class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center"
+>
     <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-stack-md">
-            <h3 class="font-headline-md text-headline-md text-on-background">إضافة عميل جديد</h3>
-            <button type="button" onclick="closeCustomerModal()"
-                    class="text-secondary hover:bg-secondary-container/50 p-2 rounded-full">
+            <h3 class="font-headline-md text-headline-md text-on-background">
+                إضافة عميل جديد
+            </h3>
+
+            <button
+                type="button"
+                onclick="closeCustomerModal()"
+                class="text-secondary hover:bg-secondary-container/50 p-2 rounded-full"
+            >
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
 
         <div class="space-y-stack-md">
             <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">الاسم الكامل *</label>
+                <label class="block font-label-md text-secondary mb-stack-sm">
+                    الاسم الكامل *
+                </label>
                 {{ new_customer_form.full_name }}
             </div>
 
             <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">رقم الهاتف *</label>
+                <label class="block font-label-md text-secondary mb-stack-sm">
+                    رقم الهاتف *
+                </label>
                 {{ new_customer_form.phone }}
             </div>
 
             <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">المدينة</label>
+                <label class="block font-label-md text-secondary mb-stack-sm">
+                    المدينة
+                </label>
                 {{ new_customer_form.city }}
             </div>
 
             <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">عرفتنا من</label>
+                <label class="block font-label-md text-secondary mb-stack-sm">
+                    عرفتنا من
+                </label>
                 {{ new_customer_form.known_us_from }}
             </div>
 
-            <div id="customerFormErrors" class="hidden bg-error/10 text-error rounded-xl p-3 font-label-sm"></div>
+            <div
+                id="customerFormErrors"
+                class="hidden bg-error/10 text-error rounded-xl p-3 font-label-sm"
+            ></div>
 
             <div class="flex gap-stack-md pt-stack-md">
-                <button type="button" onclick="saveNewCustomer()"
-                        class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md flex-1">
+                <button
+                    type="button"
+                    onclick="saveNewCustomer()"
+                    class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md flex-1"
+                >
                     إضافة العميل
                 </button>
 
-                <button type="button" onclick="closeCustomerModal()"
-                        class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">
+                <button
+                    type="button"
+                    onclick="closeCustomerModal()"
+                    class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md"
+                >
                     إلغاء
                 </button>
             </div>
@@ -738,9 +1007,9 @@ customerSearch.addEventListener('input', function () {
         return;
     }
 
-    customerSug.innerHTML = matches.map(c =>
-        `<li data-id="${c.id}">${c.name} — ${c.phone} — ${c.city}</li>`
-    ).join('');
+    customerSug.innerHTML = matches
+        .map(c => `<li data-id="${c.id}">${c.name} — ${c.phone} — ${c.city}</li>`)
+        .join('');
 
     customerSug.classList.remove('hidden');
 });
@@ -763,17 +1032,20 @@ customerSug.addEventListener('click', function (e) {
 
 document.getElementById('customerSelect').addEventListener('change', function () {
     const opt = this.options[this.selectedIndex];
+    const customerFields = document.querySelector('.customer-fields');
 
     if (!this.value) {
         document.getElementById('ciName').value = '';
         document.getElementById('ciPhone').value = '';
         document.getElementById('ciCity').value = '';
+        customerFields.classList.remove('is-visible');
         return;
     }
 
     document.getElementById('ciName').value = opt.dataset.name || '';
     document.getElementById('ciPhone').value = opt.dataset.phone || '';
     document.getElementById('ciCity').value = opt.dataset.city || '';
+    customerFields.classList.add('is-visible');
 });
 
 const productSearch = document.getElementById('productSearch');
@@ -800,9 +1072,11 @@ productSearch.addEventListener('input', function () {
         return;
     }
 
-    productSug.innerHTML = matches.map(p =>
-        `<li data-id="${p.id}">${p.name} — ${p.color} ${p.barcode ? '— ' + p.barcode : ''}</li>`
-    ).join('');
+    productSug.innerHTML = matches
+        .map(p =>
+            `<li data-id="${p.id}">${p.name} — ${p.color} ${p.barcode ? '— ' + p.barcode : ''}</li>`
+        )
+        .join('');
 
     productSug.classList.remove('hidden');
 });
@@ -866,7 +1140,6 @@ function closeCustomerModal() {
     m.classList.add('hidden');
     m.classList.remove('flex');
 }
-
 function saveNewCustomer() {
     const errorsBox = document.getElementById('customerFormErrors');
 
@@ -1069,7 +1342,6 @@ function calculateTotals() {
         document.getElementById('paidAmountVisible').value
     ) || 0;
 
-    // لا يوجد حقل تكلفة توصيل في التمبليت، لذلك لا نضيفه للحساب.
     const delivery = 0;
 
     const salesTotal = subtotal - generalDiscount + delivery;
