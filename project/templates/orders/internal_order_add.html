@@ -1,154 +1,452 @@
 {% extends 'base.html' %}
 {% block title %}إضافة طلبية - Glamour{% endblock %}
 {% block content %}
+
+<style>
+    /* ستايلات إضافية للتصميم الجديد */
+    .order-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    @media (min-width: 1024px) {
+        .order-grid {
+            grid-template-columns: 320px 1fr 360px;
+        }
+    }
+    .panel {
+        background: #fff;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 2px 12px rgba(213, 31, 134, 0.06);
+        border: 1px solid #fce4ef;
+    }
+    .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px dashed #fce4ef;
+        font-weight: 700;
+        color: #d51f86;
+    }
+    .panel-header .material-symbols-outlined {
+        font-size: 22px;
+    }
+    .search-box {
+        position: relative;
+    }
+    .search-box input {
+        padding-right: 40px;
+    }
+    .search-box .material-symbols-outlined {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #d51f86;
+        font-size: 20px;
+        pointer-events: none;
+    }
+    .suggestions {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        background: #fff;
+        border: 1px solid #fce4ef;
+        border-radius: 12px;
+        max-height: 220px;
+        overflow-y: auto;
+        z-index: 60;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        margin-top: 4px;
+    }
+    .suggestions li {
+        padding: 10px 14px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.15s;
+    }
+    .suggestions li:hover {
+        background: #fce4ef;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 14px;
+    }
+    .summary-row.total {
+        border-top: 1px dashed #fce4ef;
+        margin-top: 8px;
+        padding-top: 12px;
+        font-weight: 700;
+        color: #d51f86;
+        font-size: 16px;
+    }
+    .product-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .product-table th {
+        text-align: right;
+        padding: 10px 6px;
+        color: #888;
+        font-weight: 600;
+        border-bottom: 1px solid #fce4ef;
+        white-space: nowrap;
+    }
+    .product-table td {
+        padding: 8px 6px;
+        border-bottom: 1px solid #f9f2f6;
+        vertical-align: middle;
+    }
+    .product-table input,
+    .product-table select {
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid #f0d6e3;
+        font-size: 13px;
+    }
+    .product-table input:focus,
+    .product-table select:focus {
+        outline: none;
+        border-color: #d51f86;
+    }
+    .btn-icon {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #d51f86;
+        padding: 4px;
+        border-radius: 50%;
+        transition: background 0.15s;
+    }
+    .btn-icon:hover {
+        background: #fce4ef;
+    }
+    .btn-icon.danger {
+        color: #e53935;
+    }
+    .step-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        margin-bottom: 24px;
+    }
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #bbb;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .step.active {
+        color: #d51f86;
+    }
+    .step-num {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #999;
+    }
+    .step.active .step-num {
+        background: #d51f86;
+        color: #fff;
+    }
+    .status-paid {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 14px;
+    }
+</style>
+
 <div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">إضافة طلبية جديدة</h2>
 
-    <form method="post" id="orderForm" class="space-y-stack-lg">
-        {% csrf_token %}
+    <!-- عنوان -->
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="font-headline-md text-headline-md text-on-background">إنشاء طلبية جديدة</h2>
+        <div class="text-sm text-secondary">آخر تحديث: {% now "Y-m-d" %}</div>
+    </div>
 
-        <!-- ============ بيانات العميل ============ -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">العميل</label>
-                <div class="flex gap-2">
-                    <select name="customer" id="customerSelect"
-                            class="flex-1 px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                        <option value="">اختر العميل</option>
-                        {% for customer in customers %}
-                        <option value="{{ customer.id }}">{{ customer.full_name }} - {{ customer.city }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="button" onclick="openCustomerModal()"
-                            class="bg-primary text-on-primary px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md whitespace-nowrap">
-                        <span class="material-symbols-outlined text-[18px] align-middle">person_add</span>
-                        عميل جديد
-                    </button>
-                </div>
-                <!-- حقل مخفي يحدد الوضع -->
-                <input type="hidden" name="customer_mode" id="customerMode" value="existing">
-            </div>
-
-            <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">عنوان التوصيل</label>
-                <input type="text" name="delivery_address"
-                       class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-            </div>
-
-            <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">الحالة</label>
-                <select name="status"
-                        class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                    <option value="draft">مسودة</option>
-                    <option value="confirmed">تأكيد مباشر</option>
-                </select>
-            </div>
+    <!-- شريط الخطوات -->
+    <div class="step-indicator">
+        <div class="step active">
+            <span class="step-num">1</span>
+            <span>بيانات العميل</span>
         </div>
+        <div class="step active">
+            <span class="step-num">2</span>
+            <span>المنتجات</span>
+        </div>
+        <div class="step">
+            <span class="step-num">3</span>
+            <span>الدفع والتوصيل</span>
+        </div>
+    </div>
 
-        <!-- ============ المنتجات ============ -->
-        <div class="border-t border-secondary-container pt-stack-lg">
-            <div class="flex justify-between items-center mb-stack-md">
-                <h3 class="font-headline-md text-headline-md text-on-background">المنتجات</h3>
+    <form method="post" id="orderForm">
+        {% csrf_token %}
+        <input type="hidden" name="customer_mode" id="customerMode" value="existing">
+
+        <div class="order-grid">
+
+            <!-- ============ العمود الأيسر: ملخص الطلب ============ -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <span>ملخص الطلب</span>
+                </div>
+
+                <div class="summary-row">
+                    <span class="text-secondary">إجمالي المنتجات</span>
+                    <span id="summarySubtotal">0.00 ل.ل</span>
+                </div>
+                <div class="summary-row">
+                    <span class="text-secondary">الخصم</span>
+                    <span id="summaryDiscount">0.00 ل.ل</span>
+                </div>
+                <div class="summary-row">
+                    <span class="text-secondary">التوصيل</span>
+                    <span id="summaryDelivery">0.00 ل.ل</span>
+                </div>
+                <div class="summary-row total">
+                    <span>الإجمالي النهائي</span>
+                    <span id="summaryTotal">0.00 ل.ل</span>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div class="summary-row">
+                        <span class="text-secondary">المدفوع</span>
+                        <span id="summaryPaid" class="text-success">0.00 ل.ل</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-secondary">المتبقي</span>
+                        <span id="summaryDebt" class="text-error">0.00 ل.ل</span>
+                    </div>
+                </div>
+
+                <!-- حقل كلفة التوصيل (حقل أصلي) -->
+                <div style="margin-top: 16px;">
+                    <label class="block font-label-md text-secondary mb-1">كلفة التوصيل</label>
+                    <input type="number" name="delivery_cost" id="deliveryCost" step="0.01" value="0"
+                           onchange="calculateTotals()"
+                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+
+                <!-- حالة الدفع -->
+                <div style="margin-top: 16px;">
+                    <label class="block font-label-md text-secondary mb-1">حالة الدفع</label>
+                    <select name="payment_status"
+                            class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                        <option value="unpaid">غير مدفوع</option>
+                        <option value="partial">مدفوع جزئياً</option>
+                        <option value="paid">مدفوع بالكامل</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <label class="block font-label-md text-secondary mb-1">ملاحظات</label>
+                    <textarea name="notes" rows="3"
+                              class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"></textarea>
+                </div>
+            </div>
+
+            <!-- ============ العمود الأوسط: المنتجات ============ -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    <span>المنتجات</span>
+                </div>
+
+                <!-- بحث المنتجات -->
+                <div class="search-box" style="margin-bottom: 14px;">
+                    <input type="text" id="productSearch" placeholder="ابحث باسم المنتج أو الباركود..."
+                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                           autocomplete="off">
+                    <span class="material-symbols-outlined">search</span>
+                    <ul id="productSuggestions" class="suggestions hidden"></ul>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="product-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">المنتج</th>
+                                <th>الكمية</th>
+                                <th>سعر البيع</th>
+                                <th>خصم الوحدة</th>
+                                <th>المخزون</th>
+                                <th>التكلفة</th>
+                                <th>الربح</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="productRows">
+                            <tr class="product-row">
+                                <td>
+                                    <select name="product_ids[]" required
+                                            class="product-select"
+                                            onchange="getProductData(this)">
+                                        <option value="">اختر المنتج</option>
+                                        {% for product in products %}
+                                        <option value="{{ product.id }}"
+                                                data-price="{{ product.lyd_sell_price }}"
+                                                data-barcode="{{ product.barcode }}"
+                                                data-name="{{ product.name }}"
+                                                data-color="{{ product.color }}">
+                                            {{ product.name }}-{{ product.color }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" name="quantities[]" min="1" required
+                                           class="quantity-input" onchange="calculateTotals()"></td>
+                                <td><input type="number" name="unit_prices[]" step="0.01" required
+                                           class="unit-price-input" onchange="calculateTotals()"></td>
+                                <td><input type="number" name="unit_discounts[]" step="0.01" value="0"
+                                           class="discount-input" onchange="calculateTotals()"></td>
+                                <td><input type="text" class="inventory-display" readonly></td>
+                                <td><input type="text" class="cost-display" readonly></td>
+                                <td><input type="text" class="profit-display text-success" readonly></td>
+                                <td>
+                                    <button type="button" class="btn-icon danger" onclick="removeRow(this)">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <button type="button" onclick="addProductRow()"
-                        class="bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md">
+                        class="mt-4 bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md">
                     <span class="material-symbols-outlined text-[18px] align-middle">add</span> إضافة منتج
                 </button>
             </div>
 
-            <div id="productRows" class="space-y-stack-md">
-                <div class="product-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end bg-background rounded-xl p-4">
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">المنتج</label>
-                        <select name="product_ids[]" required
-                                class="product-select w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                                onchange="getProductData(this)">
-                            <option value="">اختر المنتج</option>
-                            {% for product in products %}
-                            <option value="{{ product.id }}" data-price="{{ product.lyd_sell_price }}">{{ product.name }}-{{ product.color }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">الكمية</label>
-                        <input type="number" name="quantities[]" min="1" required
-                               class="quantity-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                               onchange="calculateTotals()">
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">سعر البيع</label>
-                        <input type="number" name="unit_prices[]" step="0.01" required
-                               class="unit-price-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                               onchange="calculateTotals()">
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">خصم للوحدة</label>
-                        <input type="number" name="unit_discounts[]" step="0.01" value="0"
-                               class="discount-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                               onchange="calculateTotals()">
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">المخزون</label>
-                        <input type="text" class="inventory-display w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-secondary" readonly>
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">التكلفة</label>
-                        <input type="text" class="cost-display w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-secondary" readonly>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <div class="flex-1">
-                            <label class="block font-label-sm text-secondary mb-1">الربح</label>
-                            <input type="text" class="profit-display w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-success" readonly>
-                        </div>
-                        <button type="button" onclick="removeRow(this)"
-                                class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
-                            <span class="material-symbols-outlined">delete</span>
-                        </button>
-                    </div>
+            <!-- ============ العمود الأيمن: بيانات العميل ============ -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="material-symbols-outlined">person</span>
+                    <span>بيانات العميل</span>
+                </div>
+
+                <!-- بحث العملاء -->
+                <div class="search-box" style="margin-bottom: 10px;">
+                    <input type="text" id="customerSearch" placeholder="ابحث بالاسم أو رقم الهاتف..."
+                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                           autocomplete="off">
+                    <span class="material-symbols-outlined">search</span>
+                    <ul id="customerSuggestions" class="suggestions hidden"></ul>
+                </div>
+
+                <!-- اختيار العميل -->
+                <div style="margin-bottom: 12px;">
+                    <label class="block font-label-md text-secondary mb-1">العميل المحدد</label>
+                    <select name="customer" id="customerSelect" required
+                            class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                        <option value="">اختر العميل</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}"
+                                data-phone="{{ customer.phone }}"
+                                data-city="{{ customer.city }}"
+                                data-name="{{ customer.full_name }}">
+                            {{ customer.full_name }} - {{ customer.city }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- بيانات العميل (للعرض) -->
+                <div id="customerInfo" class="hidden" style="background: #fdf5f9; border-radius: 12px; padding: 12px; margin-bottom: 12px; font-size: 13px;">
+                    <div class="summary-row"><span class="text-secondary">الاسم:</span><span id="ciName">-</span></div>
+                    <div class="summary-row"><span class="text-secondary">الهاتف:</span><span id="ciPhone">-</span></div>
+                    <div class="summary-row"><span class="text-secondary">المدينة:</span><span id="ciCity">-</span></div>
+                </div>
+
+                <!-- زر إضافة عميل جديد -->
+                <button type="button" onclick="openCustomerModal()"
+                        class="w-full bg-primary text-on-primary px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">
+                    <span class="material-symbols-outlined text-[18px] align-middle">person_add</span>
+                    إضافة عميل جديد
+                </button>
+
+                <!-- حقول أصلية: العنوان والحالة -->
+                <div style="margin-top: 14px;">
+                    <label class="block font-label-md text-secondary mb-1">عنوان التوصيل</label>
+                    <input type="text" name="delivery_address"
+                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+
+                <div style="margin-top: 14px;">
+                    <label class="block font-label-md text-secondary mb-1">الحالة</label>
+                    <select name="status"
+                            class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                        <option value="draft">مسودة</option>
+                        <option value="confirmed">تأكيد مباشر</option>
+                    </select>
+                </div>
+
+                <!-- الإجماليات الأصلية (مخفية بصرياً لكن تُرسل) -->
+                <input type="hidden" name="subtotal" id="subtotal">
+                <input type="hidden" name="discount" id="discount" value="0">
+                <input type="hidden" name="paid_amount" id="paidAmount" value="0">
+                <input type="hidden" name="sales_total" id="salesTotal">
+                <input type="hidden" name="debt_amount" id="debtAmount">
+
+                <!-- حقول المدفوع (ظاهرة) -->
+                <div style="margin-top: 14px;">
+                    <label class="block font-label-md text-secondary mb-1">المبلغ المدفوع</label>
+                    <input type="number" id="paidAmountVisible" step="0.01" value="0"
+                           onchange="document.getElementById('paidAmount').value=this.value; calculateTotals();"
+                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                </div>
+
+                <div style="margin-top: 14px;">
+                    <label class="block font-label-md text-secondary mb-1">الخصم العام</label>
+                    <input type="number" id="discountVisible" step="0.01" value="0"
+                           onchange="document.getElementById('discount').value=this.value; calculateTotals();"
+                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
                 </div>
             </div>
         </div>
 
-        <!-- ============ الإجماليات ============ -->
-        <div class="border-t border-secondary-container pt-stack-lg">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">الخصم العام</label>
-                    <input type="number" name="discount" step="0.01" value="0" id="discount" onchange="calculateTotals()"
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">المبلغ المدفوع</label>
-                    <input type="number" name="paid_amount" step="0.01" value="0" id="paidAmount" onchange="calculateTotals()"
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي</label>
-                    <input type="text" name="subtotal" id="subtotal" readonly
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">إجمالي الربح</label>
-                    <input type="text" id="totalProfit" readonly
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-success">
-                </div>
+        <!-- ============ شريط الأزرار السفلي ============ -->
+        <div class="flex justify-between items-center gap-3 mt-6 pt-6 border-t border-secondary-container">
+            <div class="text-sm text-secondary">
+                إجمالي الربح: <span id="totalProfitLabel" class="text-success font-bold">0.00</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي بعد الخصم</label>
-                    <input type="text" name="sales_total" id="salesTotal" readonly
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background font-bold text-primary">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">المتبقي</label>
-                    <input type="text" name="debt_amount" id="debtAmount" readonly
-                           class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
-                </div>
-                <div class="flex items-end">
-                    <button type="submit"
-                            class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full">
-                        حفظ الطلبية
-                    </button>
-                </div>
+            <div class="flex gap-3">
+                <a href="{% url 'internal_order_list' %}"
+                   class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">
+                    إلغاء
+                </a>
+                <button type="button" onclick="saveOrder('draft')"
+                        class="border border-primary text-primary px-6 py-2 rounded-xl hover:bg-primary/10 transition-all duration-200 font-label-md">
+                    حفظ كمسودة
+                </button>
+                <button type="button" onclick="saveOrder('confirmed')"
+                        class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md">
+                    حفظ الطلبية
+                </button>
             </div>
         </div>
     </form>
@@ -200,20 +498,139 @@
 </div>
 
 <script>
+// ============ بيانات للبحث ============
+const ALL_CUSTOMERS = [
+    {% for c in customers %}
+    { id: {{ c.id }}, name: "{{ c.full_name|escapejs }}", phone: "{{ c.phone|escapejs }}", city: "{{ c.city|default:''|escapejs }}" },
+    {% endfor %}
+];
+
+const ALL_PRODUCTS = [
+    {% for p in products %}
+    { id: {{ p.id }}, name: "{{ p.name|escapejs }}", color: "{{ p.color|default:''|escapejs }}", barcode: "{{ p.barcode|default:''|escapejs }}", price: "{{ p.lyd_sell_price|default:0 }}" },
+    {% endfor %}
+];
+
+// ============ دالة تطبيع ============
+function normalize(str) {
+    return (str || '').toString()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’'`]/g, "'");
+}
+
+// ============ بحث العملاء ============
+const customerSearch = document.getElementById('customerSearch');
+const customerSug = document.getElementById('customerSuggestions');
+
+customerSearch.addEventListener('input', function () {
+    const q = normalize(this.value);
+    if (!q) { customerSug.classList.add('hidden'); return; }
+
+    const matches = ALL_CUSTOMERS.filter(c =>
+        normalize(c.name).includes(q) || normalize(c.phone).includes(q) || normalize(c.city).includes(q)
+    ).slice(0, 8);
+
+    if (!matches.length) { customerSug.classList.add('hidden'); return; }
+
+    customerSug.innerHTML = matches.map(c =>
+        `<li data-id="${c.id}">${c.name} — ${c.phone} — ${c.city}</li>`
+    ).join('');
+    customerSug.classList.remove('hidden');
+});
+
+customerSug.addEventListener('click', function (e) {
+    const li = e.target.closest('li');
+    if (!li) return;
+    const id = li.dataset.id;
+    const select = document.getElementById('customerSelect');
+    select.value = id;
+    select.dispatchEvent(new Event('change'));
+    customerSearch.value = '';
+    customerSug.classList.add('hidden');
+});
+
+// إظهار بيانات العميل عند اختياره
+document.getElementById('customerSelect').addEventListener('change', function () {
+    const opt = this.options[this.selectedIndex];
+    const info = document.getElementById('customerInfo');
+    if (!this.value) { info.classList.add('hidden'); return; }
+    document.getElementById('ciName').textContent = opt.dataset.name || '-';
+    document.getElementById('ciPhone').textContent = opt.dataset.phone || '-';
+    document.getElementById('ciCity').textContent = opt.dataset.city || '-';
+    info.classList.remove('hidden');
+});
+
+// ============ بحث المنتجات ============
+const productSearch = document.getElementById('productSearch');
+const productSug = document.getElementById('productSuggestions');
+
+productSearch.addEventListener('input', function () {
+    const q = normalize(this.value);
+    if (!q) { productSug.classList.add('hidden'); return; }
+
+    const matches = ALL_PRODUCTS.filter(p =>
+        normalize(p.name).includes(q) || normalize(p.barcode).includes(q) || normalize(p.color).includes(q)
+    ).slice(0, 8);
+
+    if (!matches.length) { productSug.classList.add('hidden'); return; }
+
+    productSug.innerHTML = matches.map(p =>
+        `<li data-id="${p.id}">${p.name} — ${p.color} ${p.barcode ? '— ' + p.barcode : ''}</li>`
+    ).join('');
+    productSug.classList.remove('hidden');
+});
+
+productSug.addEventListener('click', function (e) {
+    const li = e.target.closest('li');
+    if (!li) return;
+    const productId = li.dataset.id;
+
+    // ابحث عن صف فاضي أو أضف صف جديد
+    let targetSelect = null;
+    document.querySelectorAll('.product-select').forEach(sel => {
+        if (!sel.value && !targetSelect) targetSelect = sel;
+    });
+
+    if (!targetSelect) {
+        addProductRow();
+        const selects = document.querySelectorAll('.product-select');
+        targetSelect = selects[selects.length - 1];
+    }
+
+    targetSelect.value = productId;
+    targetSelect.dispatchEvent(new Event('change'));
+
+    productSearch.value = '';
+    productSug.classList.add('hidden');
+});
+
+// إخفاء الاقتراحات عند النقر خارجها
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('#customerSearch') && !e.target.closest('#customerSuggestions')) {
+        customerSug.classList.add('hidden');
+    }
+    if (!e.target.closest('#productSearch') && !e.target.closest('#productSuggestions')) {
+        productSug.classList.add('hidden');
+    }
+});
+
 // ============ Modal ============
 function openCustomerModal() {
-    const modal = document.getElementById('customerModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    const m = document.getElementById('customerModal');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
 }
 function closeCustomerModal() {
-    const modal = document.getElementById('customerModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    const m = document.getElementById('customerModal');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
 }
 
 function saveNewCustomer() {
-    const modal = document.getElementById('customerModal');
     const errorsBox = document.getElementById('customerFormErrors');
     errorsBox.classList.add('hidden');
     errorsBox.innerHTML = '';
@@ -225,7 +642,6 @@ function saveNewCustomer() {
         known_us_from: document.getElementById('id_known_us_from').value,
     };
 
-    // التحقق من الحقول المطلوبة
     if (!data.full_name || !data.phone) {
         errorsBox.textContent = 'يرجى إدخال الاسم ورقم الهاتف';
         errorsBox.classList.remove('hidden');
@@ -236,31 +652,25 @@ function saveNewCustomer() {
 
     fetch('{% url "customer_quick_add" %}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
         body: JSON.stringify(data),
     })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            // أضف العميل للقائمة
             const select = document.getElementById('customerSelect');
-            const opt = new Option(`${res.customer.full_name} - ${res.customer.city}`, res.customer.id, true, true);
+            const opt = new Option(`${res.customer.full_name} - ${res.customer.city || ''}`, res.customer.id, true, true);
+            opt.dataset.name = res.customer.full_name;
+            opt.dataset.phone = res.customer.phone || '';
+            opt.dataset.city = res.customer.city || '';
             select.add(opt);
-
-            // فعّل وضع "عميل جديد" (اختياري - لو تبي)
-            document.getElementById('customerMode').value = 'existing';
+            select.dispatchEvent(new Event('change'));
 
             closeCustomerModal();
-            // إعادة تعيين الفورم
-            document.getElementById('id_full_name').value = '';
-            document.getElementById('id_phone').value = '';
-            document.getElementById('id_city').value = '';
+            ['id_full_name','id_phone','id_city'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('id_known_us_from').selectedIndex = 0;
         } else {
-            errorsBox.innerHTML = res.errors.join('<br>');
+            errorsBox.innerHTML = (res.errors || []).join('<br>');
             errorsBox.classList.remove('hidden');
         }
     })
@@ -270,15 +680,16 @@ function saveNewCustomer() {
     });
 }
 
-// ============ المنتجات ============
+// ============ صفوف المنتجات ============
 function addProductRow() {
-    const row = document.querySelector('.product-row').cloneNode(true);
+    const tbody = document.getElementById('productRows');
+    const row = tbody.querySelector('.product-row').cloneNode(true);
     row.querySelectorAll('input, select').forEach(el => {
         if (el.tagName === 'SELECT') el.selectedIndex = 0;
         else if (el.type !== 'button') el.value = '';
     });
     row.querySelectorAll('.inventory-display, .cost-display, .profit-display').forEach(el => el.value = '');
-    document.getElementById('productRows').appendChild(row);
+    tbody.appendChild(row);
     calculateTotals();
 }
 
@@ -293,12 +704,12 @@ function removeRow(btn) {
 function getProductData(select) {
     const row = select.closest('.product-row');
     const productId = select.value;
-    const selectedOption = select.options[select.selectedIndex];
-    const price = selectedOption.getAttribute('data-price') || 0;
+    const opt = select.options[select.selectedIndex];
+    const price = opt.getAttribute('data-price') || 0;
 
-    const inventoryDisplay = row.querySelector('.inventory-display');
-    const costDisplay = row.querySelector('.cost-display');
-    const profitDisplay = row.querySelector('.profit-display');
+    const invEl = row.querySelector('.inventory-display');
+    const costEl = row.querySelector('.cost-display');
+    const profitEl = row.querySelector('.profit-display');
     const unitPrice = row.querySelector('.unit-price-input');
     const discount = row.querySelector('.discount-input');
 
@@ -307,78 +718,80 @@ function getProductData(select) {
         fetch(`/get-product-inventory/${productId}/`)
             .then(r => r.json())
             .then(data => {
-                inventoryDisplay.value = data.quantity;
-                costDisplay.value = data.cost;
-                if (unitPrice.value && costDisplay.value) {
-                    const profit = parseFloat(unitPrice.value) - parseFloat(discount.value || 0) - parseFloat(data.cost);
-                    profitDisplay.value = profit.toFixed(2);
-                    if (profit > 0) {
-                        profitDisplay.classList.add('text-success');
-                        profitDisplay.classList.remove('text-error');
-                    } else {
-                        profitDisplay.classList.remove('text-success');
-                        profitDisplay.classList.add('text-error');
-                    }
-                }
+                invEl.value = data.quantity;
+                costEl.value = data.cost;
                 calculateTotals();
             });
     } else {
         unitPrice.value = '';
-        inventoryDisplay.value = '';
-        costDisplay.value = '';
-        profitDisplay.value = '';
+        invEl.value = '';
+        costEl.value = '';
+        profitEl.value = '';
     }
 }
 
+// ============ الحسابات ============
 function calculateTotals() {
     let subtotal = 0;
     let totalProfit = 0;
-    const rows = document.querySelectorAll('.product-row');
 
-    rows.forEach(row => {
-        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-        const unitPrice = parseFloat(row.querySelector('.unit-price-input').value) || 0;
-        const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+    document.querySelectorAll('.product-row').forEach(row => {
+        const qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const price = parseFloat(row.querySelector('.unit-price-input').value) || 0;
+        const disc = parseFloat(row.querySelector('.discount-input').value) || 0;
         const cost = parseFloat(row.querySelector('.cost-display').value) || 0;
-        const profitDisplay = row.querySelector('.profit-display');
 
-        const itemTotal = (unitPrice - discount) * quantity;
-        const profit = (unitPrice - discount - cost) * quantity;
+        const itemTotal = (price - disc) * qty;
+        const profit = (price - disc - cost) * qty;
         subtotal += itemTotal;
         totalProfit += profit;
 
-        profitDisplay.value = profit.toFixed(2);
-        if (profit > 0) {
-            profitDisplay.classList.add('text-success');
-            profitDisplay.classList.remove('text-error');
-        } else {
-            profitDisplay.classList.remove('text-success');
-            profitDisplay.classList.add('text-error');
-        }
+        const profitEl = row.querySelector('.profit-display');
+        profitEl.value = profit.toFixed(2);
+        profitEl.classList.toggle('text-success', profit > 0);
+        profitEl.classList.toggle('text-error', profit <= 0);
     });
 
-    const discount = parseFloat(document.getElementById('discount').value) || 0;
-    const paidAmount = parseFloat(document.getElementById('paidAmount').value) || 0;
+    const generalDiscount = parseFloat(document.getElementById('discountVisible').value) || 0;
+    const paid = parseFloat(document.getElementById('paidAmountVisible').value) || 0;
+    const delivery = parseFloat(document.getElementById('deliveryCost').value) || 0;
 
-    const salesTotal = subtotal - discount;
-    const debtAmount = salesTotal - paidAmount;
+    const salesTotal = subtotal - generalDiscount + delivery;
+    const debt = salesTotal - paid;
 
+    // تحديث الحقول المخفية
     document.getElementById('subtotal').value = subtotal.toFixed(2);
+    document.getElementById('discount').value = generalDiscount.toFixed(2);
+    document.getElementById('paidAmount').value = paid.toFixed(2);
     document.getElementById('salesTotal').value = salesTotal.toFixed(2);
-    document.getElementById('debtAmount').value = debtAmount.toFixed(2);
-    document.getElementById('totalProfit').value = totalProfit.toFixed(2);
+    document.getElementById('debtAmount').value = debt.toFixed(2);
 
-    const debtEl = document.getElementById('debtAmount');
-    if (debtAmount > 0) {
-        debtEl.classList.add('text-error');
-        debtEl.classList.remove('text-success');
-    } else {
-        debtEl.classList.remove('text-error');
-        debtEl.classList.add('text-success');
-    }
+    // تحديث الملخص
+    document.getElementById('summarySubtotal').textContent = subtotal.toFixed(2) + ' ل.ل';
+    document.getElementById('summaryDiscount').textContent = generalDiscount.toFixed(2) + ' ل.ل';
+    document.getElementById('summaryDelivery').textContent = delivery.toFixed(2) + ' ل.ل';
+    document.getElementById('summaryTotal').textContent = salesTotal.toFixed(2) + ' ل.ل';
+    document.getElementById('summaryPaid').textContent = paid.toFixed(2) + ' ل.ل';
+    document.getElementById('summaryDebt').textContent = debt.toFixed(2) + ' ل.ل';
+
+    const debtEl = document.getElementById('summaryDebt');
+    debtEl.classList.toggle('text-error', debt > 0);
+    debtEl.classList.toggle('text-success', debt <= 0);
+
+    document.getElementById('totalProfitLabel').textContent = totalProfit.toFixed(2);
 }
 
+// ============ حفظ الطلبية ============
+function saveOrder(status) {
+    const form = document.getElementById('orderForm');
+    // غير قيمة الحالة
+    const statusSelect = form.querySelector('[name="status"]');
+    statusSelect.value = status;
+    form.submit();
+}
+
+// تشغيل الحسابات عند التحميل
+document.addEventListener('DOMContentLoaded', calculateTotals);
 document.addEventListener('input', calculateTotals);
-document.addEventListener('change', calculateTotals);
 </script>
 {% endblock %}
