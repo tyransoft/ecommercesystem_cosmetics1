@@ -103,18 +103,21 @@ class ProductForm(forms.ModelForm):
         fields = ['name', 'barcode', 'category', 'image', 'brand', 'color',
                   'made_in', 'usd_sell_price', 'lyd_sell_price']
         widgets = {
-            'name': forms.TextInput(attrs={'class': '...'}),
-            'barcode': forms.TextInput(attrs={'class': '...'}),
-            'category': forms.Select(attrs={'class': '...'}),
-                'brand': forms.TextInput(attrs={
+            'brand': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200',
                 'placeholder': 'اختر أو اكتب اسم البراند',
                 'autocomplete': 'off',
             }),
-            'color': forms.TextInput(attrs={'class': '...'}),
-            'made_in': forms.TextInput(attrs={'class': '...'}),
-            'usd_sell_price': forms.NumberInput(attrs={'class': '...', 'step': '0.1'}),
-            'lyd_sell_price': forms.NumberInput(attrs={'class': '...', 'step': '0.1'}),
+             'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'barcode': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'category': forms.Select(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'color': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'made_in': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
+            'usd_sell_price': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200', 'step': '0.1'}),
+
+            'lyd_sell_price': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200', 'step': '0.1'}),
+
+
         }
 
     def __init__(self, *args, **kwargs):

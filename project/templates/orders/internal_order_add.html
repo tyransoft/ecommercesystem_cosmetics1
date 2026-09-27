@@ -467,29 +467,9 @@
 
     <div class="order-titlebar">
         <h2>إنشاء طلبية جديدة</h2>
-        <div class="last-updated">آخر تحديث: {% now "Y-m-d" %}</div>
     </div>
 
-    <div class="step-indicator" aria-label="مراحل إنشاء الطلبية">
-        <div class="step active">
-            <span class="step-num">1</span>
-            <span>بيانات العميل</span>
-        </div>
-
-        <span class="step-line active"></span>
-
-        <div class="step active">
-            <span class="step-num">2</span>
-            <span>المنتجات</span>
-        </div>
-
-        <span class="step-line"></span>
-
-        <div class="step">
-            <span class="step-num">3</span>
-            <span>تأكيد الطلبية</span>
-        </div>
-    </div>
+   
 
     <form method="post" id="orderForm">
         {% csrf_token %}

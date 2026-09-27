@@ -1,173 +1,702 @@
-<!-- templates/orders/external_order_add.html -->
 {% extends 'base.html' %}
 {% block title %}إضافة طلبية خارجية - Glamour{% endblock %}
 {% block content %}
-<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">إضافة طلبية خارجية</h2>
-    
-    <form method="post" id="orderForm" class="space-y-stack-lg" enctype="multipart/form-data">
-        {% csrf_token %}
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">العميل</label>
-                <select name="customer" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                    <option value="">اختر العميل</option>
-                    {% for customer in customers %}
-                    <option value="{{ customer.id }}">{{ customer.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">المورد</label>
-                <select name="supply" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                    <option value="">اختر المورد</option>
-                    <option value="alibaba">علي بابا</option>
-                    <option value="amazon">أمازون</option>
-                    <option value="noon">نون</option>
-                    <option value="shein">شي إن</option>
-                    <option value="1168">1168</option>
-                    <option value="others">أخرى</option>
-                </select>
-            </div>
-            <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">سعر الصرف</label>
-                <input type="number" name="exchange_rate" step="0.01" value="1.00" id="exchangeRate" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
-            </div>
-            <div>
-                <label class="block font-label-md text-secondary mb-stack-sm">الحالة</label>
-                <select name="status" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                    <option value="draft">مسودة</option>
-                    <option value="confirmed">تأكيد مباشر</option>
-                </select>
-            </div>
-        </div>
-        
-        <div>
-            <label class="block font-label-md text-secondary mb-stack-sm">عنوان التوصيل</label>
-            <input type="text" name="delivery_address" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-        </div>
-        
-        <div class="border-t border-secondary-container pt-stack-lg">
-            <div class="flex justify-between items-center mb-stack-md">
-                <h3 class="font-headline-md text-headline-md text-on-background">المنتجات</h3>
-                <button type="button" onclick="addProductRow()" class="bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md">
-                    <span class="material-symbols-outlined text-[18px] align-middle">add</span> إضافة منتج
-                </button>
-            </div>
-            
-            <div id="productRows" class="space-y-stack-md">
-                <div class="product-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end bg-background rounded-xl p-4">
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">اسم المنتج</label>
-                        <input type="text" name="product_names[]" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">الكمية</label>
-                        <input type="number" name="quantities[]" min="1" required class="quantity-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">سعر الوحدة ($)</label>
-                        <input type="number" name="unit_prices_usd[]" step="0.01" required class="unit-price-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">خصم للوحدة ($)</label>
-                        <input type="number" name="unit_discounts_usd[]" step="0.01" value="0" class="discount-input w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="calculateTotals()">
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-secondary mb-1">رابط المنتج</label>
-                        <input type="url" name="product_links[]" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <div class="flex-1">
-                            <label class="block font-label-sm text-secondary mb-1">الإجمالي ($)</label>
-                            <input type="text" class="item-total-usd w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-primary" readonly>
-                        </div>
-                        <button type="button" onclick="removeRow(this)" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
-                            <span class="material-symbols-outlined">delete</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="border-t border-secondary-container pt-stack-lg">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">الخصم ($)</label>
-                    <input type="number" name="discount_usd" step="0.01" value="0" id="discount" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">تكلفة الشحن ($)</label>
-                    <input type="number" name="shipping_cost_usd" step="0.01" value="0" id="shippingCostUsd" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">تكلفة الشحن (دينار)</label>
-                    <input type="text" id="shippingCostLyd" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
-                </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">المبلغ المدفوع (دينار)</label>
-                    <input type="number" name="paid_amount_lyd" step="0.01" value="0" id="paidAmount" onchange="calculateTotals()" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                </div>
-            </div>
-        </div>
 
-        <div class="border-t border-secondary-container pt-stack-lg">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي ($)</label>
-                    <input type="text" name="subtotal_usd" id="subtotalUsd" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي (دينار)</label>
-                    <input type="text" id="subtotalLyd" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">الإجمالي بالشحن (دينار)</label>
-                    <input type="text" name="sales_total" id="salesTotal" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background font-bold text-primary">
+<style>
+    .external-order-page {
+        direction: rtl;
+        max-width: 1280px;
+        margin: 0 auto;
+        color: #5e5b61;
+    }
+
+    .external-section {
+        background: #fff;
+        border: 1px solid #f3dce8;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 14px;
+        box-shadow: 0 3px 14px rgba(213, 31, 134, 0.04);
+    }
+
+    .external-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 48px;
+        padding: 10px 14px;
+        background: linear-gradient(90deg, #fff6fa, #ffedf5);
+        border-bottom: 1px solid #f5dce8;
+    }
+
+    .external-section-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #9d326d;
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+    .external-section-title .material-symbols-outlined {
+        font-size: 21px;
+        color: #c32b86;
+    }
+
+    .external-section-body {
+        padding: 14px;
+    }
+
+    .external-field {
+        min-width: 0;
+    }
+
+    .external-field label {
+        display: block;
+        margin-bottom: 5px;
+        color: #666169;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .external-field input,
+    .external-field select,
+    .external-field textarea {
+        width: 100%;
+        min-height: 38px;
+        padding: 8px 11px;
+        border: 1px solid #e6dce2;
+        border-radius: 8px;
+        background: #fff;
+        color: #514c52;
+        font-family: inherit;
+        font-size: 12px;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .external-field textarea {
+        min-height: 82px;
+        resize: vertical;
+    }
+
+    .external-field input:focus,
+    .external-field select:focus,
+    .external-field textarea:focus {
+        outline: none;
+        border-color: #c32b86;
+        box-shadow: 0 0 0 3px rgba(195, 43, 134, .10);
+    }
+
+    .external-field input[readonly] {
+        background: #fffafb;
+        color: #a23770;
+        font-weight: 700;
+    }
+
+    .external-details-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .external-address {
+        margin-top: 12px;
+    }
+
+    .product-section-header {
+        align-items: center;
+    }
+
+    .add-product-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 34px;
+        padding: 6px 14px;
+        border: 0;
+        border-radius: 7px;
+        background: #c32b86;
+        color: #fff;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .add-product-button:hover {
+        background: #aa216f;
+    }
+
+    .product-table-wrap {
+        overflow-x: auto;
+    }
+
+    .external-product-table {
+        width: 100%;
+        min-width: 860px;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .external-product-table th {
+        padding: 11px 8px;
+        background: #fff2f7;
+        border-bottom: 1px solid #f4dce7;
+        color: #7e5269;
+        font-size: 11px;
+        font-weight: 800;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .external-product-table th:first-child {
+        border-radius: 0 8px 0 0;
+    }
+
+    .external-product-table th:last-child {
+        border-radius: 8px 0 0 0;
+    }
+
+    .external-product-table td {
+        padding: 8px;
+        border-bottom: 1px solid #f4edf1;
+        vertical-align: middle;
+    }
+
+    .external-product-table td input {
+        width: 100%;
+        min-height: 35px;
+        padding: 7px 9px;
+        border: 1px solid #e6dce2;
+        border-radius: 7px;
+        background: #fff;
+        color: #514c52;
+        font-family: inherit;
+        font-size: 12px;
+    }
+
+    .external-product-table td input:focus {
+        outline: none;
+        border-color: #c32b86;
+        box-shadow: 0 0 0 3px rgba(195, 43, 134, .10);
+    }
+
+    .external-product-table td input[readonly] {
+        background: #fffafb;
+        color: #9d326d;
+        font-weight: 700;
+    }
+
+    .delete-product-button {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #c54870;
+        cursor: pointer;
+    }
+
+    .delete-product-button:hover {
+        background: #fff0f4;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .summary-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 72px;
+        padding: 10px 12px;
+        border: 1px solid #f0e2e8;
+        border-radius: 9px;
+        background: #fff;
+    }
+
+    .summary-card-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .summary-card-label {
+        color: #746c73;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .summary-card-value {
+        color: #9d326d;
+        font-size: 17px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .summary-card-icon {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: #fff0f6;
+        color: #c32b86;
+    }
+
+    .calculation-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 13px;
+        padding-top: 13px;
+        border-top: 1px dashed #efd9e4;
+    }
+
+    .external-actions {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .external-action {
+        min-width: 150px;
+        min-height: 42px;
+        padding: 9px 18px;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .external-action.primary {
+        border: 1px solid #c32b86;
+        background: #c32b86;
+        color: #fff;
+    }
+
+    .external-action.primary:hover {
+        background: #aa216f;
+    }
+
+    .external-action.secondary {
+        border: 1px solid #d59ab9;
+        background: #fff;
+        color: #a04373;
+    }
+
+    .external-action.secondary:hover {
+        background: #fff5f9;
+    }
+
+    .empty-product-space {
+        display: none;
+    }
+
+    @media (max-width: 1050px) {
+        .external-details-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .summary-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .calculation-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 700px) {
+        .external-section-body {
+            padding: 11px;
+        }
+
+        .external-details-grid,
+        .summary-grid,
+        .calculation-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .external-section-title {
+            font-size: 16px;
+        }
+
+        .external-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .external-action {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="external-order-page">
+    <form method="post" id="orderForm" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <section class="external-section">
+            <div class="external-section-header">
+                <div class="external-section-title">
+                    <span class="material-symbols-outlined">description</span>
+                    <span>بيانات الطلبية</span>
                 </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">المتبقي (دينار)</label>
-                    <input type="text" name="debt_amount" id="debtAmount" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
+
+            <div class="external-section-body">
+                <div class="external-details-grid">
+                    <div class="external-field">
+                        <label>العميل</label>
+                        <select name="customer" required>
+                            <option value="">اختر العميل</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}">
+                                {{ customer.full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="external-field">
+                        <label>المورد</label>
+                        <select name="supply" required>
+                            <option value="">اختر المورد</option>
+                            <option value="alibaba">علي بابا</option>
+                            <option value="amazon">أمازون</option>
+                            <option value="noon">نون</option>
+                            <option value="shein">شي إن</option>
+                            <option value="1168">1168</option>
+                            <option value="others">أخرى</option>
+                        </select>
+                    </div>
+
+                    <div class="external-field">
+                        <label>سعر الصرف</label>
+                        <input
+                            type="number"
+                            name="exchange_rate"
+                            step="0.01"
+                            value="1.00"
+                            id="exchangeRate"
+                            required
+                            onchange="calculateTotals()"
+                        >
+                    </div>
+
+                    <div class="external-field">
+                        <label>الحالة</label>
+                        <select name="status">
+                            <option value="draft">مسودة</option>
+                            <option value="confirmed">تأكيد مباشر</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">نسبة العمولة</label>
-                    <input type="text" id="commissionPercentage" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-on-background">
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">قيمة العمولة (دينار)</label>
-                    <input type="text" id="commissionAmount" readonly class="w-full px-4 py-2 rounded-xl border border-secondary-container bg-background text-success">
+
+                <div class="external-field external-address">
+                    <label>عنوان التوصيل</label>
+                    <input type="text" name="delivery_address">
                 </div>
             </div>
-            <div class="mt-4">
-                <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full sm:w-auto">
-                    حفظ الطلبية
+        </section>
+
+        <section class="external-section">
+            <div class="external-section-header product-section-header">
+                <div class="external-section-title">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    <span>إضافة المنتجات</span>
+                </div>
+
+                <button
+                    type="button"
+                    onclick="addProductRow()"
+                    class="add-product-button"
+                >
+                    <span class="material-symbols-outlined">add</span>
+                    إضافة منتج
                 </button>
             </div>
-        </div>
+
+            <div class="external-section-body">
+                <div class="product-table-wrap">
+                    <table class="external-product-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 22%;">اسم المنتج</th>
+                                <th>الكمية</th>
+                                <th>سعر الوحدة $</th>
+                                <th>خصم للوحدة $</th>
+                                <th>رابط المنتج</th>
+                                <th>الإجمالي $</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="productRows">
+                            <tr class="product-row">
+                                <td>
+                                    <input
+                                        type="text"
+                                        name="product_names[]"
+                                        required
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="quantities[]"
+                                        min="1"
+                                        required
+                                        class="quantity-input"
+                                        onchange="calculateTotals()"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="unit_prices_usd[]"
+                                        step="0.01"
+                                        required
+                                        class="unit-price-input"
+                                        onchange="calculateTotals()"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="unit_discounts_usd[]"
+                                        step="0.01"
+                                        value="0"
+                                        class="discount-input"
+                                        onchange="calculateTotals()"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="url"
+                                        name="product_links[]"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="item-total-usd"
+                                        readonly
+                                    >
+                                </td>
+
+                                <td>
+                                    <button
+                                        type="button"
+                                        onclick="removeRow(this)"
+                                        class="delete-product-button"
+                                    >
+                                        <span class="material-symbols-outlined">
+                                            delete
+                                        </span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="external-section">
+            <div class="external-section-header">
+                <div class="external-section-title">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <span>ملخص الطلبية</span>
+                </div>
+            </div>
+
+            <div class="external-section-body">
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-card-copy">
+                            <span class="summary-card-label">عدد القطع</span>
+                            <span class="summary-card-value" id="summaryProductCount">0</span>
+                        </div>
+                        <span class="summary-card-icon material-symbols-outlined">inventory_2</span>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-card-copy">
+                            <span class="summary-card-label">إجمالي المنتجات</span>
+                            <span class="summary-card-value">
+                                $<span id="summaryProductsTotal">0.00</span>
+                            </span>
+                        </div>
+                        <span class="summary-card-icon material-symbols-outlined">sell</span>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-card-copy">
+                            <span class="summary-card-label">الشحن والعمولة</span>
+                            <span class="summary-card-value">
+                                <span id="summaryShippingCommission">0.00</span> د.ل
+                            </span>
+                        </div>
+                        <span class="summary-card-icon material-symbols-outlined">local_shipping</span>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-card-copy">
+                            <span class="summary-card-label">الإجمالي</span>
+                            <span class="summary-card-value">
+                                <span id="summaryTotalLyd">0.00</span> د.ل
+                            </span>
+                        </div>
+                        <span class="summary-card-icon material-symbols-outlined">calculate</span>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-card-copy">
+                            <span class="summary-card-label">المتبقي</span>
+                            <span class="summary-card-value">
+                                <span id="summaryDebtLyd">0.00</span> د.ل
+                            </span>
+                        </div>
+                        <span class="summary-card-icon material-symbols-outlined">account_balance_wallet</span>
+                    </div>
+                </div>
+
+                <div class="calculation-grid">
+                    <div class="external-field">
+                        <label>الخصم $</label>
+                        <input
+                            type="number"
+                            name="discount_usd"
+                            step="0.01"
+                            value="0"
+                            id="discount"
+                            onchange="calculateTotals()"
+                        >
+                    </div>
+
+                    <div class="external-field">
+                        <label>تكلفة الشحن $</label>
+                        <input
+                            type="number"
+                            name="shipping_cost_usd"
+                            step="0.01"
+                            value="0"
+                            id="shippingCostUsd"
+                            onchange="calculateTotals()"
+                        >
+                    </div>
+
+                    <div class="external-field">
+                        <label>تكلفة الشحن دينار</label>
+                        <input type="text" id="shippingCostLyd" readonly>
+                    </div>
+
+                    <div class="external-field">
+                        <label>المبلغ المدفوع دينار</label>
+                        <input
+                            type="number"
+                            name="paid_amount_lyd"
+                            step="0.01"
+                            value="0"
+                            id="paidAmount"
+                            onchange="calculateTotals()"
+                        >
+                    </div>
+
+                    <div class="external-field">
+                        <label>الإجمالي $</label>
+                        <input type="text" name="subtotal_usd" id="subtotalUsd" readonly>
+                    </div>
+
+                    <div class="external-field">
+                        <label>الإجمالي دينار</label>
+                        <input type="text" id="subtotalLyd" readonly>
+                    </div>
+
+                    <div class="external-field">
+                        <label>الإجمالي بالشحن دينار</label>
+                        <input type="text" name="sales_total" id="salesTotal" readonly>
+                    </div>
+
+                    <div class="external-field">
+                        <label>المتبقي دينار</label>
+                        <input type="text" name="debt_amount" id="debtAmount" readonly>
+                    </div>
+
+                    <div class="external-field">
+                        <label>نسبة العمولة</label>
+                        <input type="text" id="commissionPercentage" readonly>
+                    </div>
+
+                    <div class="external-field">
+                        <label>قيمة العمولة دينار</label>
+                        <input type="text" id="commissionAmount" readonly>
+                    </div>
+                </div>
+
+                <div class="external-actions">
+                    <button
+                        type="submit"
+                        class="external-action primary"
+                    >
+                        حفظ الطلبية
+                    </button>
+
+                    <button
+                        type="button"
+                        class="external-action secondary"
+                        onclick="window.history.back()"
+                    >
+                        إلغاء
+                    </button>
+                </div>
+            </div>
+        </section>
     </form>
 </div>
 
 <script>
 function addProductRow() {
     const row = document.querySelector('.product-row').cloneNode(true);
+
     row.querySelectorAll('input').forEach(el => {
         if (el.type !== 'button') {
             el.value = '';
         }
     });
-    row.querySelectorAll('.discount-input').forEach(el => el.value = '0');
-    row.querySelectorAll('.item-total-usd').forEach(el => el.value = '');
+
+    row.querySelectorAll('.discount-input').forEach(el => {
+        el.value = '0';
+    });
+
+    row.querySelectorAll('.item-total-usd').forEach(el => {
+        el.value = '';
+    });
+
     document.getElementById('productRows').appendChild(row);
     calculateTotals();
 }
 
 function removeRow(btn) {
     const rows = document.querySelectorAll('.product-row');
+
     if (rows.length > 1) {
         btn.closest('.product-row').remove();
         calculateTotals();
@@ -176,36 +705,82 @@ function removeRow(btn) {
 
 function calculateTotals() {
     let subtotalUsd = 0;
+    let productCount = 0;
+
     const rows = document.querySelectorAll('.product-row');
-    const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
-    
+    const exchangeRate =
+        parseFloat(document.getElementById('exchangeRate').value) || 1;
+
     rows.forEach(row => {
-        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-        const unitPrice = parseFloat(row.querySelector('.unit-price-input').value) || 0;
-        const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        const quantity =
+            parseFloat(row.querySelector('.quantity-input').value) || 0;
+
+        const unitPrice =
+            parseFloat(row.querySelector('.unit-price-input').value) || 0;
+
+        const discount =
+            parseFloat(row.querySelector('.discount-input').value) || 0;
+
         const itemTotalUsd = row.querySelector('.item-total-usd');
-        
         const total = (unitPrice - discount) * quantity;
+
+        productCount += quantity;
         subtotalUsd += total;
         itemTotalUsd.value = total.toFixed(2);
     });
-    
-    const discountUsd = parseFloat(document.getElementById('discount').value) || 0;
-    const shippingCostUsd = parseFloat(document.getElementById('shippingCostUsd').value) || 0;
+
+    const discountUsd =
+        parseFloat(document.getElementById('discount').value) || 0;
+
+    const shippingCostUsd =
+        parseFloat(document.getElementById('shippingCostUsd').value) || 0;
+
     const shippingCostLyd = shippingCostUsd * exchangeRate;
-    const paidAmountLyd = parseFloat(document.getElementById('paidAmount').value) || 0;
-    
-    const salesTotalUsd = subtotalUsd - discountUsd + shippingCostUsd;
-    const salesTotalLyd = salesTotalUsd * exchangeRate;
-    const debtAmountLyd = salesTotalLyd - paidAmountLyd;
-    
-    document.getElementById('shippingCostLyd').value = shippingCostLyd.toFixed(2);
-    document.getElementById('subtotalUsd').value = subtotalUsd.toFixed(2);
-    document.getElementById('subtotalLyd').value = (subtotalUsd * exchangeRate).toFixed(2);
-    document.getElementById('salesTotal').value = salesTotalLyd.toFixed(2);
-    document.getElementById('debtAmount').value = debtAmountLyd.toFixed(2);
-    
+
+    const paidAmountLyd =
+        parseFloat(document.getElementById('paidAmount').value) || 0;
+
+    const salesTotalUsd =
+        subtotalUsd - discountUsd + shippingCostUsd;
+
+    const salesTotalLyd =
+        salesTotalUsd * exchangeRate;
+
+    const debtAmountLyd =
+        salesTotalLyd - paidAmountLyd;
+
+    document.getElementById('shippingCostLyd').value =
+        shippingCostLyd.toFixed(2);
+
+    document.getElementById('subtotalUsd').value =
+        subtotalUsd.toFixed(2);
+
+    document.getElementById('subtotalLyd').value =
+        (subtotalUsd * exchangeRate).toFixed(2);
+
+    document.getElementById('salesTotal').value =
+        salesTotalLyd.toFixed(2);
+
+    document.getElementById('debtAmount').value =
+        debtAmountLyd.toFixed(2);
+
+    document.getElementById('summaryProductCount').textContent =
+        productCount;
+
+    document.getElementById('summaryProductsTotal').textContent =
+        subtotalUsd.toFixed(2);
+
+    document.getElementById('summaryShippingCommission').textContent =
+        shippingCostLyd.toFixed(2);
+
+    document.getElementById('summaryTotalLyd').textContent =
+        salesTotalLyd.toFixed(2);
+
+    document.getElementById('summaryDebtLyd').textContent =
+        debtAmountLyd.toFixed(2);
+
     const debtEl = document.getElementById('debtAmount');
+
     if (debtAmountLyd > 0) {
         debtEl.classList.add('text-error');
         debtEl.classList.remove('text-success');
@@ -213,52 +788,77 @@ function calculateTotals() {
         debtEl.classList.remove('text-error');
         debtEl.classList.add('text-success');
     }
-    
+
     calculateCommission(salesTotalUsd, exchangeRate);
 }
 
 function calculateCommission(amountUsd, exchangeRate) {
     if (!amountUsd) {
-        amountUsd = parseFloat(document.getElementById('subtotalUsd').value) || 0;
-        const discountUsd = parseFloat(document.getElementById('discount').value) || 0;
-        const shippingCostUsd = parseFloat(document.getElementById('shippingCostUsd').value) || 0;
-        amountUsd = amountUsd - discountUsd + shippingCostUsd;
+        amountUsd =
+            parseFloat(document.getElementById('subtotalUsd').value) || 0;
+
+        const discountUsd =
+            parseFloat(document.getElementById('discount').value) || 0;
+
+        const shippingCostUsd =
+            parseFloat(document.getElementById('shippingCostUsd').value) || 0;
+
+        amountUsd =
+            amountUsd - discountUsd + shippingCostUsd;
     }
-    
+
     if (!exchangeRate) {
-        exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
+        exchangeRate =
+            parseFloat(document.getElementById('exchangeRate').value) || 1;
     }
-    
+
     fetch(`/get-commission-rule/?amount=${amountUsd}&exchange_rate=${exchangeRate}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
+
             return response.json();
         })
         .then(data => {
-            console.log('Commission data:', data); 
-            
             if (data && data.percentage !== undefined) {
-                document.getElementById('commissionPercentage').value = data.percentage > 0 ? data.percentage + '%' : '0%';
+                document.getElementById('commissionPercentage').value =
+                    data.percentage > 0
+                        ? data.percentage + '%'
+                        : '0%';
             } else {
                 document.getElementById('commissionPercentage').value = '0%';
             }
-            
+
             if (data && data.commission_lyd !== undefined) {
-                document.getElementById('commissionAmount').value = Number(data.commission_lyd).toFixed(2);
+                const shippingCostLyd =
+                    parseFloat(document.getElementById('shippingCostLyd').value) || 0;
+
+                const commissionLyd = Number(data.commission_lyd) || 0;
+
+                document.getElementById('commissionAmount').value =
+                    commissionLyd.toFixed(2);
+
+                document.getElementById('summaryShippingCommission').textContent =
+                    (shippingCostLyd + commissionLyd).toFixed(2);
             } else {
                 document.getElementById('commissionAmount').value = '0.00';
+
+                document.getElementById('summaryShippingCommission').textContent =
+                    document.getElementById('shippingCostLyd').value || '0.00';
             }
         })
-        .catch(error => {
-            console.error('Error fetching commission:', error);
+        .catch(() => {
             document.getElementById('commissionPercentage').value = '0%';
             document.getElementById('commissionAmount').value = '0.00';
+            document.getElementById('summaryShippingCommission').textContent =
+                document.getElementById('shippingCostLyd').value || '0.00';
         });
 }
 
 document.addEventListener('input', calculateTotals);
 document.addEventListener('change', calculateTotals);
+document.addEventListener('DOMContentLoaded', calculateTotals);
 </script>
+
 {% endblock %}
