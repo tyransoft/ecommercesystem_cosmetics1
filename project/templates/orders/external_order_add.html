@@ -791,25 +791,11 @@ function calculateTotals() {
 
     calculateCommission(salesTotalUsd, exchangeRate);
 }
-
 function calculateCommission(amountUsd, exchangeRate) {
-    if (!amountUsd) {
-        amountUsd =
-            parseFloat(document.getElementById('subtotalUsd').value) || 0;
-
-        const discountUsd =
-            parseFloat(document.getElementById('discount').value) || 0;
-
-        const shippingCostUsd =
-            parseFloat(document.getElementById('shippingCostUsd').value) || 0;
-
-        amountUsd =
-            amountUsd - discountUsd + shippingCostUsd;
-    }
-
-    if (!exchangeRate) {
-        exchangeRate =
-            parseFloat(document.getElementById('exchangeRate').value) || 1;
+    if (!amountUsd || amountUsd <= 0) {
+        document.getElementById('commissionPercentage').value = '0%';
+        document.getElementById('commissionAmount').value = '0.00';
+        return;
     }
 
     fetch(`/get-commission-rule/?amount=${amountUsd}&exchange_rate=${exchangeRate}`)
@@ -843,16 +829,11 @@ function calculateCommission(amountUsd, exchangeRate) {
                     (shippingCostLyd + commissionLyd).toFixed(2);
             } else {
                 document.getElementById('commissionAmount').value = '0.00';
-
-                document.getElementById('summaryShippingCommission').textContent =
-                    document.getElementById('shippingCostLyd').value || '0.00';
             }
         })
         .catch(() => {
             document.getElementById('commissionPercentage').value = '0%';
             document.getElementById('commissionAmount').value = '0.00';
-            document.getElementById('summaryShippingCommission').textContent =
-                document.getElementById('shippingCostLyd').value || '0.00';
         });
 }
 
