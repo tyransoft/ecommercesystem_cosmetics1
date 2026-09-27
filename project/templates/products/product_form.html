@@ -5,6 +5,9 @@
     <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">{{ title }}</h2>
     <form method="post" enctype="multipart/form-data" class="space-y-stack-md">
         {% csrf_token %}
+
+        {{ form.brand_choices|json_script:"brand-data" }}
+
         {% for field in form %}
         <div>
             <label for="{{ field.id_for_label }}" class="block font-label-md text-secondary mb-stack-sm">{{ field.label }}</label>
@@ -14,10 +17,99 @@
             {% endif %}
         </div>
         {% endfor %}
+
         <div class="flex gap-stack-md pt-stack-md">
             <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 font-label-md">حفظ</button>
             <a href="{% url 'product_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">إلغاء</a>
         </div>
     </form>
 </div>
+
+<ul id="brand-suggestions"
+    class="hidden absolute z-50 bg-white border border-secondary-container rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1">
+</ul>
+
+<script>
+(function () {
+    const brands = JSON.parse(document.getElementById('brand-data').textContent);
+    const input = document.getElementById('{{ form.brand.id_for_label }}');
+    const list = document.getElementById('brand-suggestions');
+
+    function normalize(str) {
+        return str
+            .toLowerCase()
+            .replace(/\s+/g, ' ')        
+            .trim()                           
+            .normalize('NFD')            
+            .replace(/[\u0300-\u036f]/g, '') 
+            .replace(/[’'`]/g, "'");      
+    }
+
+    function filterBrands(query) {
+        const q = normalize(query);
+        if (!q) return [];
+
+        const startsWith = [];
+        const contains = [];
+
+        for (const brand of brands) {
+            const nb = normalize(brand);
+            if (nb.startsWith(q)) startsWith.push(brand);
+            else if (nb.includes(q)) contains.push(brand);
+        }
+        return [...startsWith, ...contains].slice(0, 10);
+    }
+
+    function render(items) {
+        if (!items.length) {
+            list.classList.add('hidden');
+            list.innerHTML = '';
+            return;
+        }
+        list.innerHTML = items
+            .map(b => `<li class="px-4 py-2 cursor-pointer hover:bg-secondary-container/40 font-label-md">${b}</li>`)
+            .join('');
+        list.classList.remove('hidden');
+    }
+
+    function positionList() {
+        const rect = input.getBoundingClientRect();
+        list.style.position = 'absolute';
+        list.style.left = rect.left + window.scrollX + 'px';
+        list.style.top = rect.bottom + window.scrollY + 'px';
+        list.style.width = rect.width + 'px';
+    }
+
+    input.addEventListener('input', function () {
+        const items = filterBrands(this.value);
+        render(items);
+        positionList();
+    });
+
+    input.addEventListener('focus', function () {
+        if (this.value.trim()) {
+            render(filterBrands(this.value));
+            positionList();
+        }
+    });
+
+    list.addEventListener('mousedown', function (e) {
+        if (e.target.tagName === 'LI') {
+            input.value = e.target.textContent;
+            list.classList.add('hidden');
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target !== input && !list.contains(e.target)) {
+            list.classList.add('hidden');
+        }
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') list.classList.add('hidden');
+    });
+})();
+</script>
 {% endblock %}

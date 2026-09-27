@@ -2071,35 +2071,55 @@ def internal_order_list(request):
         'stats_total_debt': stats_total_debt,
     })
 
+
 @login_required
 def internal_order_add(request):
     if request.method == 'POST':
+        customer_mode = request.POST.get('customer_mode', 'existing')  
         customer_id = request.POST.get('customer')
-        subtotal = Decimal(request.POST.get('subtotal', 0))
-        discount = Decimal(request.POST.get('discount', 0))
-        paid_amount = Decimal(request.POST.get('paid_amount', 0))
+        new_customer_form = CustomerForm()
+
+        if customer_mode == 'new':
+            new_customer_form = CustomerForm(request.POST)
+            if not new_customer_form.is_valid():
+                customers = Customer.objects.all().order_by('full_name')
+                products = Product.objects.all().order_by('name')
+                messages.error(request, 'يرجى تصحيح بيانات العميل الجديد')
+                return render(request, 'orders/internal_order_add.html', {
+                    'customers': customers,
+                    'products': products,
+                    'new_customer_form': new_customer_form,
+                    'open_customer_modal': True,
+                    'posted_data': request.POST,
+                })
+            customer = new_customer_form.save()
+            customer_id = customer.id
+        else:
+            if not customer_id:
+                messages.error(request, 'يرجى اختيار العميل أو إضافة عميل جديد')
+                return redirect('internal_order_add')
+
+        subtotal = Decimal(request.POST.get('subtotal', 0) or 0)
+        discount = Decimal(request.POST.get('discount', 0) or 0)
+        paid_amount = Decimal(request.POST.get('paid_amount', 0) or 0)
         delivery_address = request.POST.get('delivery_address', '')
         status = request.POST.get('status', 'draft')
-        
+
         product_ids = request.POST.getlist('product_ids[]')
         quantities = request.POST.getlist('quantities[]')
         unit_prices = request.POST.getlist('unit_prices[]')
         unit_discounts = request.POST.getlist('unit_discounts[]')
-        
-        if not customer_id:
-            messages.error(request, 'يرجى اختيار العميل')
-            return redirect('internal_order_add')
-        
+
         if not product_ids:
             messages.error(request, 'يرجى إضافة منتج واحد على الأقل')
             return redirect('internal_order_add')
-        
+
         with transaction.atomic():
             sales_total = subtotal - discount
             debt_amount = sales_total - paid_amount
             if debt_amount < 0:
                 debt_amount = Decimal('0')
-            
+
             order = InternalOrder.objects.create(
                 customer_id=customer_id,
                 subtotal=subtotal,
@@ -2109,24 +2129,24 @@ def internal_order_add(request):
                 debt_amount=debt_amount,
                 delivery_address=delivery_address,
                 status=status,
-                total_profit=Decimal('0')
+                total_profit=Decimal('0'),
             )
-            
+
             total_profit = Decimal('0')
-            
+
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
                 quantity = int(quantities[i])
                 unit_price = Decimal(unit_prices[i]) if unit_prices[i] else Decimal('0')
                 unit_discount = Decimal(unit_discounts[i]) if unit_discounts[i] else Decimal('0')
-                
+
                 inventory = Inventory.objects.filter(product_id=product_id).first()
                 unit_cost = inventory.lyd_total_cost if inventory else Decimal('0')
                 unit_profit = unit_price - unit_discount - unit_cost
                 total_price = (unit_price - unit_discount) * quantity
                 item_total_profit = unit_profit * quantity
                 total_profit += item_total_profit
-                
+
                 InternalOrderItem.objects.create(
                     order=order,
                     product_id=product_id,
@@ -2135,24 +2155,26 @@ def internal_order_add(request):
                     unit_price=unit_price,
                     total_price=total_price,
                     unit_profit=unit_profit,
-                    total_profit=item_total_profit
+                    total_profit=item_total_profit,
                 )
-            
+
             order.total_profit = total_profit
             order.save()
-            
+
             if status == 'confirmed':
                 confirm_internal_order(order)
-            
+
             messages.success(request, f'تم إنشاء الطلبية رقم {order.order_number} بنجاح')
             return redirect('internal_order_list')
-    
+
     customers = Customer.objects.all().order_by('full_name')
     products = Product.objects.all().order_by('name')
     return render(request, 'orders/internal_order_add.html', {
         'customers': customers,
-        'products': products
+        'products': products,
+        'new_customer_form': CustomerForm(),
     })
+
 
 @login_required
 def internal_order_edit(request, pk):

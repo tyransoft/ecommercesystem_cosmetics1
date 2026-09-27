@@ -76,24 +76,50 @@ class CategoryForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
         }
-
 class ProductForm(forms.ModelForm):
+    BRAND_CHOICES = [
+        'Anastasia Beverly Hills', 'Beauty of Joseon', 'Benefit Cosmetics',
+        'Biodance', 'BYOMA', 'Caudalie', 'Chanel', 'Charlotte Tilbury',
+        'Clinique', 'Color Wow', 'Danessa Myricks Beauty', 'Dior',
+        'Dolce & Gabbana', 'e.l.f. Cosmetics', 'Estée Lauder',
+        'Fable & Mane', 'Fenty Beauty', 'Gisou', 'Givenchy',
+        'Glow Recipe', 'Grande Cosmetics', 'Gucci', 'Haus Labs',
+        'Hourglass Cosmetics', 'Huda Beauty', 'ICONIC London',
+        'ILIA Beauty', 'IT Cosmetics', 'K18 Hair', 'Kérastase',
+        'Kiehl’s', 'Kosas', 'Lancôme', 'LANEIGE', 'Laura Geller Beauty',
+        'Laura Mercier', 'L’Occitane en Provence', 'L’Oréal Paris',
+        'LYS Beauty', 'MAC Cosmetics', 'MAKE UP FOR EVER',
+        'Makeup by Mario', 'MERIT Beauty', 'Milk Makeup', 'NARS Cosmetics',
+        'Natasha Denona', 'OLAPLEX', 'ONE/SIZE by Patrick Starrr',
+        'Patrick Ta Beauty', 'Paula’s Choice', 'Prada Beauty',
+        'Rare Beauty', 'REFY', 'Rhode', 'Saie', 'SEPHORA COLLECTION',
+        'Sol de Janeiro', 'Supergoop!', 'Tarte Cosmetics',
+        'The INKEY List', 'The Ordinary', 'Too Faced', 'Tower 28 Beauty',
+        'Urban Decay', 'YSL Beauty',
+    ]
+
     class Meta:
         model = Product
-        fields = ['name', 'barcode', 'category', 'image', 'brand', 'color', 'made_in','usd_sell_price','lyd_sell_price']
+        fields = ['name', 'barcode', 'category', 'image', 'brand', 'color',
+                  'made_in', 'usd_sell_price', 'lyd_sell_price']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
-            'barcode': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
-            'category': forms.Select(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
-            'brand': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
-            'color': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
-            'made_in': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
-            'usd_sell_price': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200', 'step': '0.1'}),
-
-            'lyd_sell_price': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200', 'step': '0.1'}),
-
-
+            'name': forms.TextInput(attrs={'class': '...'}),
+            'barcode': forms.TextInput(attrs={'class': '...'}),
+            'category': forms.Select(attrs={'class': '...'}),
+                'brand': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200',
+                'placeholder': 'اختر أو اكتب اسم البراند',
+                'autocomplete': 'off',
+            }),
+            'color': forms.TextInput(attrs={'class': '...'}),
+            'made_in': forms.TextInput(attrs={'class': '...'}),
+            'usd_sell_price': forms.NumberInput(attrs={'class': '...', 'step': '0.1'}),
+            'lyd_sell_price': forms.NumberInput(attrs={'class': '...', 'step': '0.1'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.brand_choices = self.BRAND_CHOICES
 
 class CustomerForm(forms.ModelForm):
     class Meta:
@@ -105,7 +131,16 @@ class CustomerForm(forms.ModelForm):
             'city': forms.TextInput(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
             'known_us_from': forms.Select(attrs={'class': 'w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200'}),
         }
-
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone', '').strip()
+        if not phone:
+            raise forms.ValidationError('رقم الهاتف مطلوب')
+        qs = Customer.objects.filter(phone=phone)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError('رقم الهاتف مسجل من قبل')
+        return phone
 class CustomerPaymentForm(forms.ModelForm):
     class Meta:
         model = CustomerPayment
