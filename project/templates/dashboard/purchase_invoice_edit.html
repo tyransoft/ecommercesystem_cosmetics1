@@ -334,10 +334,15 @@
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="field-label">البراند</label>
-          <input type="text" id="np_brand" class="field-input" autocomplete="off"
-                 placeholder="اكتب اسم البراند">
-        </div>
+  <label class="field-label">البراند</label>
+  <div style="position:relative;">
+    <input type="text" id="np_brand" class="field-input" autocomplete="off"
+           placeholder="اكتب اسم البراند">
+    <ul id="np-brand-suggestions"
+        class="hidden absolute z-50 bg-white border border-secondary-container rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1">
+    </ul>
+  </div>
+</div>
         <div>
           <label class="field-label">بلد المنشأ</label>
           <input type="text" id="np_made_in" class="field-input">
@@ -377,7 +382,7 @@
     </div>
   </div>
 </div>
-
+{{ brand_choices|json_script:"brand-data" }}
 {{ products_json|json_script:"products-data" }}
 <script>
 const ALL_PRODUCTS = JSON.parse(document.getElementById('products-data').textContent);
@@ -692,6 +697,7 @@ function saveNewProduct() {
             document.getElementById('np_category').selectedIndex = 0;
             document.getElementById('np_usd_sell_price').value = '0';
             document.getElementById('np_lyd_sell_price').value = '0';
+            document.getElementById('np-brand-suggestions').classList.add('hidden');
         } else {
             errorsBox.innerHTML = Object.values(res.errors || {})
                 .flat().map(e => e.message || e).join('<br>');
@@ -714,6 +720,79 @@ document.addEventListener('change', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     calculateTotals();
 });
+(function () {
+    const brandDataEl = document.getElementById('brand-data');
+    if (!brandDataEl) return;
+
+    const brands = JSON.parse(brandDataEl.textContent);
+    const input = document.getElementById('np_brand');
+    const list = document.getElementById('np-brand-suggestions');
+    if (!input || !list) return;
+
+    function normalizeBrand(str) {
+        return (str || '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .trim()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[’'`]/g, "'");
+    }
+
+    function filterBrands(query) {
+        const q = normalizeBrand(query);
+        if (!q) return [];
+
+        const startsWith = [];
+        const contains = [];
+
+        for (const brand of brands) {
+            const nb = normalizeBrand(brand);
+            if (nb.startsWith(q)) startsWith.push(brand);
+            else if (nb.includes(q)) contains.push(brand);
+        }
+        return [...startsWith, ...contains].slice(0, 10);
+    }
+
+    function renderBrands(items) {
+        if (!items.length) {
+            list.classList.add('hidden');
+            list.innerHTML = '';
+            return;
+        }
+        list.innerHTML = items
+            .map(b => `<li class="px-4 py-2 cursor-pointer hover:bg-pink-50 text-sm">${b}</li>`)
+            .join('');
+        list.classList.remove('hidden');
+    }
+
+    input.addEventListener('input', function () {
+        renderBrands(filterBrands(this.value));
+    });
+
+    input.addEventListener('focus', function () {
+        if (this.value.trim()) {
+            renderBrands(filterBrands(this.value));
+        }
+    });
+
+    list.addEventListener('mousedown', function (e) {
+        if (e.target.tagName === 'LI') {
+            input.value = e.target.textContent;
+            list.classList.add('hidden');
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target !== input && !list.contains(e.target)) {
+            list.classList.add('hidden');
+        }
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') list.classList.add('hidden');
+    });
+})();
 </script>
 
 {% endblock %}

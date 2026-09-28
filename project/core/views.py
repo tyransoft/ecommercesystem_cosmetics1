@@ -1770,6 +1770,7 @@ def purchase_invoice_add(request):
         'suppliers': suppliers,
         'products': products,
         'products_json': products_json,
+    'brand_choices': ProductForm.BRAND_CHOICES,
 
         'categories': Category.objects.all(),
     })
@@ -1888,6 +1889,7 @@ def purchase_invoice_edit(request, pk):
         'invoice': invoice,
         'suppliers': suppliers,
         'products_json': products_json,
+    'brand_choices': ProductForm.BRAND_CHOICES,
 
         'products': products,
         'categories': Category.objects.all(),
