@@ -15,6 +15,8 @@ from django.utils import timezone
 from .models import *
 from collections import defaultdict
 from django.db.models.functions import Coalesce
+from django.views.decorators.http import require_POST
+
 @login_required
 def home(request):
 
@@ -1700,7 +1702,7 @@ def purchase_invoice_add(request):
             shipping_per_unit_usd = shipping_cost / total_quantity if total_quantity > 0 else 0
             
             invoice = PurchaseInvoice.objects.create(
-                supplier_id=supplier_id,
+                supplier=Supplier.objects.get(id=supplier_id),
                 subtotal=subtotal,
                 discount=discount,
                 total=subtotal - discount + shipping_cost,
@@ -1754,7 +1756,8 @@ def purchase_invoice_add(request):
     products = Product.objects.all().order_by('name')
     return render(request, 'dashboard/purchase_invoice_add.html', {
         'suppliers': suppliers,
-        'products': products
+        'products': products,
+        'categories': Category.objects.all(),
     })
 
 @login_required
@@ -1799,7 +1802,7 @@ def purchase_invoice_edit(request, pk):
             total_quantity = sum(int(q) for q in quantities)
             shipping_per_unit_usd = shipping_cost / total_quantity if total_quantity > 0 else 0
             
-            invoice.supplier_id = supplier_id
+            invoice.supplier = Supplier.objects.get(id=supplier_id)
             invoice.subtotal = subtotal
             invoice.discount = discount
             invoice.total = subtotal - discount + shipping_cost
@@ -1858,7 +1861,9 @@ def purchase_invoice_edit(request, pk):
     return render(request, 'dashboard/purchase_invoice_edit.html', {
         'invoice': invoice,
         'suppliers': suppliers,
-        'products': products
+        'products': products,
+                'categories': Category.objects.all(),
+
     })
 
 @login_required
@@ -2565,53 +2570,55 @@ def external_order_receive(request, pk):
 def external_order_add(request):
     if request.method == 'POST':
         customer_id = request.POST.get('customer')
-        subtotal_usd = Decimal(request.POST.get('subtotal_usd', 0))
-        discount_usd = Decimal(request.POST.get('discount_usd', 0))
-        shipping_cost_usd = Decimal(request.POST.get('shipping_cost_usd', 0))
-        exchange_rate = Decimal(request.POST.get('exchange_rate', 1))
-        paid_amount_lyd = Decimal(request.POST.get('paid_amount_lyd', 0))
+        subtotal_usd = Decimal(request.POST.get('subtotal_usd', 0) or 0)
+        discount_usd = Decimal(request.POST.get('discount_usd', 0) or 0)
+        shipping_cost_usd = Decimal(request.POST.get('shipping_cost_usd', 0) or 0)
+        exchange_rate = Decimal(request.POST.get('exchange_rate', 1) or 1)
+        paid_amount_lyd = Decimal(request.POST.get('paid_amount_lyd', 0) or 0)
         delivery_address = request.POST.get('delivery_address', '')
         supply = request.POST.get('supply')
         status = request.POST.get('status', 'draft')
-        
+
         product_names = request.POST.getlist('product_names[]')
         quantities = request.POST.getlist('quantities[]')
         unit_prices_usd = request.POST.getlist('unit_prices_usd[]')
         unit_discounts_usd = request.POST.getlist('unit_discounts_usd[]')
         product_links = request.POST.getlist('product_links[]')
-        
+
         if not customer_id:
             messages.error(request, 'يرجى اختيار العميل')
             return redirect('external_order_add')
-        
+
         if not product_names:
             messages.error(request, 'يرجى إضافة منتج واحد على الأقل')
             return redirect('external_order_add')
-        
+
         shipping_cost_lyd = shipping_cost_usd * exchange_rate
-        
+
         sales_total_usd = subtotal_usd - discount_usd + shipping_cost_usd
         sales_total_lyd = sales_total_usd * exchange_rate
-        
-        commission_rule = None
-        commission_percentage = 0
-        commission_amount_lyd = 0
-        
+
         commission_rule = ExternalOrderCommission.objects.filter(
             min_amount__lte=sales_total_usd
         ).filter(
             Q(max_amount__isnull=True) | Q(max_amount__gte=sales_total_usd)
         ).first()
-        
+
+        commission_percentage = Decimal(0)
+        commission_amount_lyd = Decimal(0)
+
         if commission_rule:
             commission_percentage = commission_rule.percentage
-            commission_data = commission_rule.calculate_commission(sales_total_usd, exchange_rate)
-            commission_amount_lyd = commission_data['lyd']
-        
-        debt_amount_lyd = sales_total_lyd - paid_amount_lyd
+            commission_data = commission_rule.calculate_commission(
+                sales_total_usd, exchange_rate
+            )
+            commission_amount_lyd = Decimal(commission_data['lyd'])
+
+        total_lyd_with_commission = sales_total_lyd + commission_amount_lyd
+        debt_amount_lyd = total_lyd_with_commission - paid_amount_lyd
         if debt_amount_lyd < 0:
             debt_amount_lyd = 0
-        
+
         with transaction.atomic():
             order = ExternalOrder.objects.create(
                 customer=Customer.objects.get(id=customer_id),
@@ -2630,21 +2637,21 @@ def external_order_add(request):
                 lyd_commission_amount=commission_amount_lyd,
                 usd_shipping_cost=shipping_cost_usd,
                 lyd_shipping_cost=shipping_cost_lyd,
-                total_profit=commission_amount_lyd
+                total_profit=commission_amount_lyd,
             )
-            
+
             for i in range(len(product_names)):
                 product_name = product_names[i]
-                quantity = int(quantities[i])
-                unit_price_usd = Decimal(unit_prices_usd[i]) if unit_prices_usd[i] else 0
-                unit_discount_usd = Decimal(unit_discounts_usd[i]) if unit_discounts_usd[i] else 0
+                quantity = int(quantities[i] or 0)
+                unit_price_usd = Decimal(unit_prices_usd[i]) if unit_prices_usd[i] else Decimal(0)
+                unit_discount_usd = Decimal(unit_discounts_usd[i]) if unit_discounts_usd[i] else Decimal(0)
                 product_link = product_links[i] if product_links[i] else ''
-                
+
                 unit_price_lyd = unit_price_usd * exchange_rate
                 unit_discount_lyd = unit_discount_usd * exchange_rate
                 total_usd = (unit_price_usd - unit_discount_usd) * quantity
                 total_lyd = total_usd * exchange_rate
-                
+
                 ExternalOrderItem.objects.create(
                     order=order,
                     product_name=product_name,
@@ -2654,17 +2661,16 @@ def external_order_add(request):
                     lyd_unit_price=unit_price_lyd,
                     lyd_total_price=total_lyd,
                     usd_unit_price=unit_price_usd,
-                    usd_total_price=total_usd
+                    usd_total_price=total_usd,
                 )
-            
+
             messages.success(request, f'تم إنشاء الطلبية الخارجية رقم {order.order_number} بنجاح')
             return redirect('external_order_list')
-    
+
     customers = Customer.objects.all().order_by('full_name')
     return render(request, 'orders/external_order_add.html', {
-        'customers': customers
+        'customers': customers,
     })
-
 
 @login_required
 def external_order_edit(request, pk):
@@ -3465,3 +3471,29 @@ def customer_quick_add(request):
             for e in errs:
                 errors.append(f'{field}: {e}')
         return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+
+
+@require_POST
+def product_quick_add(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'errors': ['بيانات غير صحيحة']}, status=400)
+
+    form = ProductForm(data)
+    if form.is_valid():
+        product = form.save()
+        return JsonResponse({
+            'success': True,
+            'product': {
+                'id': product.id,
+                'name': product.name,
+                'color': product.color or '',
+                'barcode': product.barcode or '',
+                'price': str(product.lyd_sell_price or 0),
+                'usd_price': str(product.usd_sell_price or 0),
+                'image': product.image.url if product.image else '',
+            }
+        })
+    return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)        

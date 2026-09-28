@@ -71,7 +71,7 @@ urlpatterns = [
     path('internal-orders/<int:pk>/cancel/', internal_order_cancel, name='internal_order_cancel'),
     path('internal-orders/<int:pk>/delete/', internal_order_delete, name='internal_order_delete'),
     path('get-product-inventory/<int:product_id>/', get_product_inventory, name='get_product_inventory'),
-
+    path('products/quick-add/', product_quick_add, name='product_quick_add'),
     path('purchase-invoices/', purchase_invoice_list, name='purchase_invoice_list'),
     path('purchase-invoices/add/', purchase_invoice_add, name='purchase_invoice_add'),
     path('purchase-invoices/<int:pk>/edit/', purchase_invoice_edit, name='purchase_invoice_edit'),

@@ -3,343 +3,68 @@
 {% block content %}
 
 <style>
-    .external-order-page {
-        direction: rtl;
-        max-width: 1280px;
-        margin: 0 auto;
-        color: #5e5b61;
-    }
+    .external-order-page { direction: rtl; max-width: 1280px; margin: 0 auto; color: #5e5b61; }
+    .external-section { background: #fff; border: 1px solid #f3dce8; border-radius: 12px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 3px 14px rgba(213, 31, 134, 0.04); }
+    .external-section-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 10px 14px; background: linear-gradient(90deg, #fff6fa, #ffedf5); border-bottom: 1px solid #f5dce8; }
+    .external-section-title { display: flex; align-items: center; gap: 7px; color: #9d326d; font-size: 18px; font-weight: 800; }
+    .external-section-title .material-symbols-outlined { font-size: 21px; color: #c32b86; }
+    .external-section-body { padding: 14px; }
+    .external-field { min-width: 0; }
+    .external-field label { display: block; margin-bottom: 5px; color: #666169; font-size: 12px; font-weight: 700; }
+    .external-field input, .external-field select, .external-field textarea { width: 100%; min-height: 38px; padding: 8px 11px; border: 1px solid #e6dce2; border-radius: 8px; background: #fff; color: #514c52; font-family: inherit; font-size: 12px; transition: border-color .15s ease, box-shadow .15s ease; }
+    .external-field textarea { min-height: 82px; resize: vertical; }
+    .external-field input:focus, .external-field select:focus, .external-field textarea:focus { outline: none; border-color: #c32b86; box-shadow: 0 0 0 3px rgba(195, 43, 134, .10); }
+    .external-field input[readonly] { background: #fffafb; color: #a23770; font-weight: 700; }
+    .external-details-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .external-address { margin-top: 12px; }
+    .product-section-header { align-items: center; }
+    .add-product-button { display: inline-flex; align-items: center; gap: 4px; min-height: 34px; padding: 6px 14px; border: 0; border-radius: 7px; background: #c32b86; color: #fff; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; }
+    .add-product-button:hover { background: #aa216f; }
+    .product-table-wrap { overflow-x: auto; }
+    .external-product-table { width: 100%; min-width: 1050px; border-collapse: separate; border-spacing: 0; }
+    .external-product-table th { padding: 11px 8px; background: #fff2f7; border-bottom: 1px solid #f4dce7; color: #7e5269; font-size: 11px; font-weight: 800; text-align: right; white-space: nowrap; }
+    .external-product-table th:first-child { border-radius: 0 8px 0 0; }
+    .external-product-table th:last-child { border-radius: 8px 0 0 0; }
+    .external-product-table td { padding: 8px; border-bottom: 1px solid #f4edf1; vertical-align: middle; }
+    .external-product-table td input { width: 100%; min-height: 35px; padding: 7px 9px; border: 1px solid #e6dce2; border-radius: 7px; background: #fff; color: #514c52; font-family: inherit; font-size: 12px; }
+    .external-product-table td input:focus { outline: none; border-color: #c32b86; box-shadow: 0 0 0 3px rgba(195, 43, 134, .10); }
+    .external-product-table td input[readonly] { background: #fffafb; color: #9d326d; font-weight: 700; }
+    .delete-product-button { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: #c54870; cursor: pointer; }
+    .delete-product-button:hover { background: #fff0f4; }
+    .summary-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+    .summary-card { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 72px; padding: 10px 12px; border: 1px solid #f0e2e8; border-radius: 9px; background: #fff; }
+    .summary-card-copy { display: flex; flex-direction: column; gap: 4px; }
+    .summary-card-label { color: #746c73; font-size: 11px; font-weight: 700; }
+    .summary-card-value { color: #9d326d; font-size: 17px; font-weight: 800; white-space: nowrap; }
+    .summary-card-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: #fff0f6; color: #c32b86; }
+    .calculation-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 13px; padding-top: 13px; border-top: 1px dashed #efd9e4; }
+    .external-actions { display: flex; justify-content: flex-start; align-items: center; gap: 10px; margin-top: 15px; }
+    .external-action { min-width: 150px; min-height: 42px; padding: 9px 18px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+    .external-action.primary { border: 1px solid #c32b86; background: #c32b86; color: #fff; }
+    .external-action.primary:hover { background: #aa216f; }
+    .external-action.secondary { border: 1px solid #d59ab9; background: #fff; color: #a04373; }
+    .external-action.secondary:hover { background: #fff5f9; }
+    .empty-product-space { display: none; }
 
-    .external-section {
-        background: #fff;
-        border: 1px solid #f3dce8;
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 14px;
-        box-shadow: 0 3px 14px rgba(213, 31, 134, 0.04);
-    }
-
-    .external-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        min-height: 48px;
-        padding: 10px 14px;
-        background: linear-gradient(90deg, #fff6fa, #ffedf5);
-        border-bottom: 1px solid #f5dce8;
-    }
-
-    .external-section-title {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        color: #9d326d;
-        font-size: 18px;
-        font-weight: 800;
-    }
-
-    .external-section-title .material-symbols-outlined {
-        font-size: 21px;
-        color: #c32b86;
-    }
-
-    .external-section-body {
-        padding: 14px;
-    }
-
-    .external-field {
-        min-width: 0;
-    }
-
-    .external-field label {
-        display: block;
-        margin-bottom: 5px;
-        color: #666169;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .external-field input,
-    .external-field select,
-    .external-field textarea {
-        width: 100%;
-        min-height: 38px;
-        padding: 8px 11px;
-        border: 1px solid #e6dce2;
-        border-radius: 8px;
-        background: #fff;
-        color: #514c52;
-        font-family: inherit;
-        font-size: 12px;
-        transition: border-color .15s ease, box-shadow .15s ease;
-    }
-
-    .external-field textarea {
-        min-height: 82px;
-        resize: vertical;
-    }
-
-    .external-field input:focus,
-    .external-field select:focus,
-    .external-field textarea:focus {
-        outline: none;
-        border-color: #c32b86;
-        box-shadow: 0 0 0 3px rgba(195, 43, 134, .10);
-    }
-
-    .external-field input[readonly] {
-        background: #fffafb;
-        color: #a23770;
-        font-weight: 700;
-    }
-
-    .external-details-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-    }
-
-    .external-address {
-        margin-top: 12px;
-    }
-
-    .product-section-header {
-        align-items: center;
-    }
-
-    .add-product-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        min-height: 34px;
-        padding: 6px 14px;
-        border: 0;
-        border-radius: 7px;
-        background: #c32b86;
-        color: #fff;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .add-product-button:hover {
-        background: #aa216f;
-    }
-
-    .product-table-wrap {
-        overflow-x: auto;
-    }
-
-    .external-product-table {
-        width: 100%;
-        min-width: 860px;
-        border-collapse: separate;
-        border-spacing: 0;
-    }
-
-    .external-product-table th {
-        padding: 11px 8px;
-        background: #fff2f7;
-        border-bottom: 1px solid #f4dce7;
-        color: #7e5269;
-        font-size: 11px;
-        font-weight: 800;
-        text-align: right;
-        white-space: nowrap;
-    }
-
-    .external-product-table th:first-child {
-        border-radius: 0 8px 0 0;
-    }
-
-    .external-product-table th:last-child {
-        border-radius: 8px 0 0 0;
-    }
-
-    .external-product-table td {
-        padding: 8px;
-        border-bottom: 1px solid #f4edf1;
-        vertical-align: middle;
-    }
-
-    .external-product-table td input {
-        width: 100%;
-        min-height: 35px;
-        padding: 7px 9px;
-        border: 1px solid #e6dce2;
-        border-radius: 7px;
-        background: #fff;
-        color: #514c52;
-        font-family: inherit;
-        font-size: 12px;
-    }
-
-    .external-product-table td input:focus {
-        outline: none;
-        border-color: #c32b86;
-        box-shadow: 0 0 0 3px rgba(195, 43, 134, .10);
-    }
-
-    .external-product-table td input[readonly] {
-        background: #fffafb;
-        color: #9d326d;
-        font-weight: 700;
-    }
-
-    .delete-product-button {
-        display: grid;
-        place-items: center;
-        width: 32px;
-        height: 32px;
-        border: 0;
-        border-radius: 50%;
-        background: transparent;
-        color: #c54870;
-        cursor: pointer;
-    }
-
-    .delete-product-button:hover {
-        background: #fff0f4;
-    }
-
-    .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 9px;
-    }
-
-    .summary-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        min-height: 72px;
-        padding: 10px 12px;
-        border: 1px solid #f0e2e8;
-        border-radius: 9px;
-        background: #fff;
-    }
-
-    .summary-card-copy {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .summary-card-label {
-        color: #746c73;
-        font-size: 11px;
-        font-weight: 700;
-    }
-
-    .summary-card-value {
-        color: #9d326d;
-        font-size: 17px;
-        font-weight: 800;
-        white-space: nowrap;
-    }
-
-    .summary-card-icon {
-        display: grid;
-        place-items: center;
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
-        background: #fff0f6;
-        color: #c32b86;
-    }
-
-    .calculation-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-        margin-top: 13px;
-        padding-top: 13px;
-        border-top: 1px dashed #efd9e4;
-    }
-
-    .external-actions {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 10px;
-        margin-top: 15px;
-    }
-
-    .external-action {
-        min-width: 150px;
-        min-height: 42px;
-        padding: 9px 18px;
-        border-radius: 8px;
-        font-family: inherit;
-        font-size: 13px;
-        font-weight: 800;
-        cursor: pointer;
-    }
-
-    .external-action.primary {
-        border: 1px solid #c32b86;
-        background: #c32b86;
-        color: #fff;
-    }
-
-    .external-action.primary:hover {
-        background: #aa216f;
-    }
-
-    .external-action.secondary {
-        border: 1px solid #d59ab9;
-        background: #fff;
-        color: #a04373;
-    }
-
-    .external-action.secondary:hover {
-        background: #fff5f9;
-    }
-
-    .empty-product-space {
-        display: none;
-    }
+    .search-box { position: relative; }
+    .search-box .material-symbols-outlined { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #c32b86; font-size: 20px; pointer-events: none; }
+    .search-box input { padding-right: 36px !important; }
+    .suggestions { position: absolute; top: 100%; right: 0; left: 0; background: #fff; border: 1px solid #f3dce8; border-radius: 10px; max-height: 220px; overflow-y: auto; z-index: 60; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); margin-top: 4px; list-style: none; padding: 0; }
+    .suggestions li { padding: 10px 14px; cursor: pointer; font-size: 13px; transition: background .15s; }
+    .suggestions li:hover { background: #fff0f6; }
+    .suggestions.hidden { display: none; }
 
     @media (max-width: 1050px) {
-        .external-details-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .summary-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .calculation-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
+        .external-details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .calculation-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-
     @media (max-width: 700px) {
-        .external-section-body {
-            padding: 11px;
-        }
-
-        .external-details-grid,
-        .summary-grid,
-        .calculation-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .external-section-title {
-            font-size: 16px;
-        }
-
-        .external-actions {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .external-action {
-            width: 100%;
-        }
+        .external-section-body { padding: 11px; }
+        .external-details-grid, .summary-grid, .calculation-grid { grid-template-columns: 1fr; }
+        .external-section-title { font-size: 16px; }
+        .external-actions { flex-direction: column; align-items: stretch; }
+        .external-action { width: 100%; }
     }
 </style>
 
@@ -359,14 +84,34 @@
                 <div class="external-details-grid">
                     <div class="external-field">
                         <label>العميل</label>
-                        <select name="customer" required>
-                            <option value="">اختر العميل</option>
-                            {% for customer in customers %}
-                            <option value="{{ customer.id }}">
-                                {{ customer.full_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+
+                        <div class="search-box" style="margin-bottom:8px;">
+                            <input type="text" id="customerSearch"
+                                   placeholder="ابحث بالاسم أو رقم الهاتف..."
+                                   autocomplete="off">
+                            <span class="material-symbols-outlined">search</span>
+                            <ul id="customerSuggestions" class="suggestions hidden"></ul>
+                        </div>
+
+                        <div style="display:flex; gap:6px;">
+                            <select name="customer" id="customerSelect" required style="flex:1;">
+                                <option value="">اختر العميل</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}"
+                                        data-phone="{{ customer.phone }}"
+                                        data-city="{{ customer.city|default:'' }}"
+                                        data-name="{{ customer.full_name }}">
+                                    {{ customer.full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+
+                            <button type="button" onclick="openCustomerModal()"
+                                    class="add-product-button" style="white-space:nowrap;">
+                                <span class="material-symbols-outlined">person_add</span>
+                                جديد
+                            </button>
+                        </div>
                     </div>
 
                     <div class="external-field">
@@ -384,15 +129,9 @@
 
                     <div class="external-field">
                         <label>سعر الصرف</label>
-                        <input
-                            type="number"
-                            name="exchange_rate"
-                            step="0.01"
-                            value="1.00"
-                            id="exchangeRate"
-                            required
-                            onchange="calculateTotals()"
-                        >
+                        <input type="number" name="exchange_rate" step="0.01"
+                               value="1.00" id="exchangeRate" required
+                               onchange="calculateTotals()">
                     </div>
 
                     <div class="external-field">
@@ -418,11 +157,7 @@
                     <span>إضافة المنتجات</span>
                 </div>
 
-                <button
-                    type="button"
-                    onclick="addProductRow()"
-                    class="add-product-button"
-                >
+                <button type="button" onclick="addProductRow()" class="add-product-button">
                     <span class="material-symbols-outlined">add</span>
                     إضافة منتج
                 </button>
@@ -433,12 +168,14 @@
                     <table class="external-product-table">
                         <thead>
                             <tr>
-                                <th style="width: 22%;">اسم المنتج</th>
+                                <th style="width: 18%;">اسم المنتج</th>
                                 <th>الكمية</th>
                                 <th>سعر الوحدة $</th>
+                                <th>سعر الوحدة د.ل</th>
                                 <th>خصم للوحدة $</th>
                                 <th>رابط المنتج</th>
                                 <th>الإجمالي $</th>
+                                <th>الإجمالي د.ل</th>
                                 <th>الإجراءات</th>
                             </tr>
                         </thead>
@@ -446,70 +183,44 @@
                         <tbody id="productRows">
                             <tr class="product-row">
                                 <td>
-                                    <input
-                                        type="text"
-                                        name="product_names[]"
-                                        required
-                                    >
+                                    <input type="text" name="product_names[]" required>
                                 </td>
 
                                 <td>
-                                    <input
-                                        type="number"
-                                        name="quantities[]"
-                                        min="1"
-                                        required
-                                        class="quantity-input"
-                                        onchange="calculateTotals()"
-                                    >
+                                    <input type="number" name="quantities[]" min="1" required
+                                           class="quantity-input" onchange="calculateTotals()">
                                 </td>
 
                                 <td>
-                                    <input
-                                        type="number"
-                                        name="unit_prices_usd[]"
-                                        step="0.01"
-                                        required
-                                        class="unit-price-input"
-                                        onchange="calculateTotals()"
-                                    >
+                                    <input type="number" name="unit_prices_usd[]" step="0.01" required
+                                           class="unit-price-input" onchange="calculateTotals()">
                                 </td>
 
                                 <td>
-                                    <input
-                                        type="number"
-                                        name="unit_discounts_usd[]"
-                                        step="0.01"
-                                        value="0"
-                                        class="discount-input"
-                                        onchange="calculateTotals()"
-                                    >
+                                    <input type="text" class="unit-price-lyd" readonly>
                                 </td>
 
                                 <td>
-                                    <input
-                                        type="url"
-                                        name="product_links[]"
-                                    >
+                                    <input type="number" name="unit_discounts_usd[]" step="0.01" value="0"
+                                           class="discount-input" onchange="calculateTotals()">
                                 </td>
 
                                 <td>
-                                    <input
-                                        type="text"
-                                        class="item-total-usd"
-                                        readonly
-                                    >
+                                    <input type="url" name="product_links[]">
                                 </td>
 
                                 <td>
-                                    <button
-                                        type="button"
-                                        onclick="removeRow(this)"
-                                        class="delete-product-button"
-                                    >
-                                        <span class="material-symbols-outlined">
-                                            delete
-                                        </span>
+                                    <input type="text" class="item-total-usd" readonly>
+                                </td>
+
+                                <td>
+                                    <input type="text" class="item-total-lyd" readonly>
+                                </td>
+
+                                <td>
+                                    <button type="button" onclick="removeRow(this)"
+                                            class="delete-product-button">
+                                        <span class="material-symbols-outlined">delete</span>
                                     </button>
                                 </td>
                             </tr>
@@ -540,9 +251,7 @@
                     <div class="summary-card">
                         <div class="summary-card-copy">
                             <span class="summary-card-label">إجمالي المنتجات</span>
-                            <span class="summary-card-value">
-                                $<span id="summaryProductsTotal">0.00</span>
-                            </span>
+                            <span class="summary-card-value">$<span id="summaryProductsTotal">0.00</span></span>
                         </div>
                         <span class="summary-card-icon material-symbols-outlined">sell</span>
                     </div>
@@ -550,9 +259,7 @@
                     <div class="summary-card">
                         <div class="summary-card-copy">
                             <span class="summary-card-label">الشحن والعمولة</span>
-                            <span class="summary-card-value">
-                                <span id="summaryShippingCommission">0.00</span> د.ل
-                            </span>
+                            <span class="summary-card-value"><span id="summaryShippingCommission">0.00</span> د.ل</span>
                         </div>
                         <span class="summary-card-icon material-symbols-outlined">local_shipping</span>
                     </div>
@@ -560,9 +267,7 @@
                     <div class="summary-card">
                         <div class="summary-card-copy">
                             <span class="summary-card-label">الإجمالي</span>
-                            <span class="summary-card-value">
-                                <span id="summaryTotalLyd">0.00</span> د.ل
-                            </span>
+                            <span class="summary-card-value"><span id="summaryTotalLyd">0.00</span> د.ل</span>
                         </div>
                         <span class="summary-card-icon material-symbols-outlined">calculate</span>
                     </div>
@@ -570,9 +275,7 @@
                     <div class="summary-card">
                         <div class="summary-card-copy">
                             <span class="summary-card-label">المتبقي</span>
-                            <span class="summary-card-value">
-                                <span id="summaryDebtLyd">0.00</span> د.ل
-                            </span>
+                            <span class="summary-card-value"><span id="summaryDebtLyd">0.00</span> د.ل</span>
                         </div>
                         <span class="summary-card-icon material-symbols-outlined">account_balance_wallet</span>
                     </div>
@@ -581,26 +284,14 @@
                 <div class="calculation-grid">
                     <div class="external-field">
                         <label>الخصم $</label>
-                        <input
-                            type="number"
-                            name="discount_usd"
-                            step="0.01"
-                            value="0"
-                            id="discount"
-                            onchange="calculateTotals()"
-                        >
+                        <input type="number" name="discount_usd" step="0.01" value="0"
+                               id="discount" onchange="calculateTotals()">
                     </div>
 
                     <div class="external-field">
                         <label>تكلفة الشحن $</label>
-                        <input
-                            type="number"
-                            name="shipping_cost_usd"
-                            step="0.01"
-                            value="0"
-                            id="shippingCostUsd"
-                            onchange="calculateTotals()"
-                        >
+                        <input type="number" name="shipping_cost_usd" step="0.01" value="0"
+                               id="shippingCostUsd" onchange="calculateTotals()">
                     </div>
 
                     <div class="external-field">
@@ -610,14 +301,8 @@
 
                     <div class="external-field">
                         <label>المبلغ المدفوع دينار</label>
-                        <input
-                            type="number"
-                            name="paid_amount_lyd"
-                            step="0.01"
-                            value="0"
-                            id="paidAmount"
-                            onchange="calculateTotals()"
-                        >
+                        <input type="number" name="paid_amount_lyd" step="0.01" value="0"
+                               id="paidAmount" onchange="calculateTotals()">
                     </div>
 
                     <div class="external-field">
@@ -649,54 +334,206 @@
                         <label>قيمة العمولة دينار</label>
                         <input type="text" id="commissionAmount" readonly>
                     </div>
+
+                    <div class="external-field">
+                        <label>الإجمالي + العمولة دينار</label>
+                        <input type="text" id="grandTotalLyd" readonly>
+                    </div>
                 </div>
 
                 <div class="external-actions">
-                    <button
-                        type="submit"
-                        class="external-action primary"
-                    >
-                        حفظ الطلبية
-                    </button>
-
-                    <button
-                        type="button"
-                        class="external-action secondary"
-                        onclick="window.history.back()"
-                    >
-                        إلغاء
-                    </button>
+                    <button type="submit" class="external-action primary">حفظ الطلبية</button>
+                    <button type="button" class="external-action secondary"
+                            onclick="window.history.back()">إلغاء</button>
                 </div>
             </div>
         </section>
     </form>
 </div>
 
+<div id="customerModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl p-5 shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-pink-700">إضافة عميل جديد</h3>
+            <button type="button" onclick="closeCustomerModal()"
+                    class="text-gray-400 hover:bg-pink-50 p-2 rounded-full">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <div>
+                <label class="external-field-label block mb-1 text-xs font-bold text-gray-600">الاسم الكامل *</label>
+                <input type="text" id="nc_full_name" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none text-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block mb-1 text-xs font-bold text-gray-600">رقم الهاتف *</label>
+                    <input type="text" id="nc_phone" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block mb-1 text-xs font-bold text-gray-600">المدينة</label>
+                    <input type="text" id="nc_city" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none text-sm">
+                </div>
+            </div>
+
+            <div id="customerFormErrors"
+                 class="hidden bg-red-50 text-red-700 rounded-xl p-3 text-sm"></div>
+
+            <div class="flex gap-3 pt-3">
+                <button type="button" onclick="saveNewCustomer()"
+                        class="flex-1 bg-pink-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-pink-700">
+                    إضافة العميل
+                </button>
+                <button type="button" onclick="closeCustomerModal()"
+                        class="border border-pink-300 text-pink-700 px-4 py-2 rounded-lg font-bold hover:bg-pink-50">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+const ALL_CUSTOMERS = [
+    {% for c in customers %}
+    {
+        id: {{ c.id }},
+        name: "{{ c.full_name|escapejs }}",
+        phone: "{{ c.phone|escapejs }}",
+        city: "{{ c.city|default:''|escapejs }}"
+    },
+    {% endfor %}
+];
+
+function normalize(str) {
+    return (str || '').toString().toLowerCase()
+        .replace(/\s+/g, ' ').trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’'`]/g, "'");
+}
+
+const customerSearch = document.getElementById('customerSearch');
+const customerSug = document.getElementById('customerSuggestions');
+
+customerSearch.addEventListener('input', function () {
+    const q = normalize(this.value);
+    if (!q) { customerSug.classList.add('hidden'); return; }
+
+    const matches = ALL_CUSTOMERS.filter(c =>
+        normalize(c.name).includes(q) ||
+        normalize(c.phone).includes(q) ||
+        normalize(c.city).includes(q)
+    ).slice(0, 8);
+
+    if (!matches.length) { customerSug.classList.add('hidden'); return; }
+
+    customerSug.innerHTML = matches.map(c =>
+        `<li data-id="${c.id}">${c.name} — ${c.phone}${c.city ? ' — ' + c.city : ''}</li>`
+    ).join('');
+    customerSug.classList.remove('hidden');
+});
+
+customerSug.addEventListener('click', function (e) {
+    const li = e.target.closest('li');
+    if (!li) return;
+    const select = document.getElementById('customerSelect');
+    select.value = li.dataset.id;
+    select.dispatchEvent(new Event('change'));
+    customerSearch.value = '';
+    customerSug.classList.add('hidden');
+});
+
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('#customerSearch') && !e.target.closest('#customerSuggestions')) {
+        customerSug.classList.add('hidden');
+    }
+});
+
+function openCustomerModal() {
+    const m = document.getElementById('customerModal');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+}
+function closeCustomerModal() {
+    const m = document.getElementById('customerModal');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+}
+
+function saveNewCustomer() {
+    const errorsBox = document.getElementById('customerFormErrors');
+    errorsBox.classList.add('hidden');
+    errorsBox.innerHTML = '';
+
+    const data = {
+        full_name: document.getElementById('nc_full_name').value.trim(),
+        phone: document.getElementById('nc_phone').value.trim(),
+        city: document.getElementById('nc_city').value.trim(),
+    };
+
+    if (!data.full_name || !data.phone) {
+        errorsBox.textContent = 'يرجى إدخال الاسم ورقم الهاتف';
+        errorsBox.classList.remove('hidden');
+        return;
+    }
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "customer_quick_add" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data),
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            const select = document.getElementById('customerSelect');
+            const opt = new Option(res.customer.full_name, res.customer.id, true, true);
+            opt.dataset.name = res.customer.full_name;
+            opt.dataset.phone = res.customer.phone || '';
+            opt.dataset.city = res.customer.city || '';
+            select.add(opt);
+            select.dispatchEvent(new Event('change'));
+
+            ALL_CUSTOMERS.push({
+                id: res.customer.id,
+                name: res.customer.full_name,
+                phone: res.customer.phone || '',
+                city: res.customer.city || '',
+            });
+
+            closeCustomerModal();
+            document.getElementById('nc_full_name').value = '';
+            document.getElementById('nc_phone').value = '';
+            document.getElementById('nc_city').value = '';
+        } else {
+            errorsBox.innerHTML = (res.errors || []).join('<br>');
+            errorsBox.classList.remove('hidden');
+        }
+    })
+    .catch(() => {
+        errorsBox.textContent = 'حدث خطأ، حاول مرة أخرى';
+        errorsBox.classList.remove('hidden');
+    });
+}
+
 function addProductRow() {
     const row = document.querySelector('.product-row').cloneNode(true);
-
     row.querySelectorAll('input').forEach(el => {
-        if (el.type !== 'button') {
-            el.value = '';
-        }
+        if (el.type !== 'button') el.value = '';
     });
-
-    row.querySelectorAll('.discount-input').forEach(el => {
-        el.value = '0';
-    });
-
-    row.querySelectorAll('.item-total-usd').forEach(el => {
-        el.value = '';
-    });
-
+    row.querySelectorAll('.discount-input').forEach(el => el.value = '0');
     document.getElementById('productRows').appendChild(row);
     calculateTotals();
 }
 
 function removeRow(btn) {
     const rows = document.querySelectorAll('.product-row');
-
     if (rows.length > 1) {
         btn.closest('.product-row').remove();
         calculateTotals();
@@ -708,132 +545,100 @@ function calculateTotals() {
     let productCount = 0;
 
     const rows = document.querySelectorAll('.product-row');
-    const exchangeRate =
-        parseFloat(document.getElementById('exchangeRate').value) || 1;
+    const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
 
     rows.forEach(row => {
-        const quantity =
-            parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const quantity   = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const unitPrice  = parseFloat(row.querySelector('.unit-price-input').value) || 0;
+        const discount   = parseFloat(row.querySelector('.discount-input').value) || 0;
 
-        const unitPrice =
-            parseFloat(row.querySelector('.unit-price-input').value) || 0;
-
-        const discount =
-            parseFloat(row.querySelector('.discount-input').value) || 0;
-
-        const itemTotalUsd = row.querySelector('.item-total-usd');
+        const unitPriceLyd = unitPrice * exchangeRate;
         const total = (unitPrice - discount) * quantity;
+        const totalLyd = total * exchangeRate;
 
         productCount += quantity;
         subtotalUsd += total;
-        itemTotalUsd.value = total.toFixed(2);
+
+        row.querySelector('.unit-price-lyd').value = unitPriceLyd.toFixed(2);
+        row.querySelector('.item-total-usd').value = total.toFixed(2);
+        row.querySelector('.item-total-lyd').value = totalLyd.toFixed(2);
     });
 
-    const discountUsd =
-        parseFloat(document.getElementById('discount').value) || 0;
-
-    const shippingCostUsd =
-        parseFloat(document.getElementById('shippingCostUsd').value) || 0;
-
+    const discountUsd     = parseFloat(document.getElementById('discount').value) || 0;
+    const shippingCostUsd = parseFloat(document.getElementById('shippingCostUsd').value) || 0;
     const shippingCostLyd = shippingCostUsd * exchangeRate;
+    const paidAmountLyd   = parseFloat(document.getElementById('paidAmount').value) || 0;
 
-    const paidAmountLyd =
-        parseFloat(document.getElementById('paidAmount').value) || 0;
+    const salesTotalUsd = subtotalUsd - discountUsd + shippingCostUsd;
+    const salesTotalLyd = salesTotalUsd * exchangeRate;
+    const debtAmountLyd = salesTotalLyd - paidAmountLyd;
 
-    const salesTotalUsd =
-        subtotalUsd - discountUsd + shippingCostUsd;
+    document.getElementById('shippingCostLyd').value = shippingCostLyd.toFixed(2);
+    document.getElementById('subtotalUsd').value = subtotalUsd.toFixed(2);
+    document.getElementById('subtotalLyd').value = (subtotalUsd * exchangeRate).toFixed(2);
+    document.getElementById('salesTotal').value = salesTotalLyd.toFixed(2);
+    document.getElementById('debtAmount').value = debtAmountLyd.toFixed(2);
 
-    const salesTotalLyd =
-        salesTotalUsd * exchangeRate;
-
-    const debtAmountLyd =
-        salesTotalLyd - paidAmountLyd;
-
-    document.getElementById('shippingCostLyd').value =
-        shippingCostLyd.toFixed(2);
-
-    document.getElementById('subtotalUsd').value =
-        subtotalUsd.toFixed(2);
-
-    document.getElementById('subtotalLyd').value =
-        (subtotalUsd * exchangeRate).toFixed(2);
-
-    document.getElementById('salesTotal').value =
-        salesTotalLyd.toFixed(2);
-
-    document.getElementById('debtAmount').value =
-        debtAmountLyd.toFixed(2);
-
-    document.getElementById('summaryProductCount').textContent =
-        productCount;
-
-    document.getElementById('summaryProductsTotal').textContent =
-        subtotalUsd.toFixed(2);
-
-    document.getElementById('summaryShippingCommission').textContent =
-        shippingCostLyd.toFixed(2);
-
-    document.getElementById('summaryTotalLyd').textContent =
-        salesTotalLyd.toFixed(2);
-
-    document.getElementById('summaryDebtLyd').textContent =
-        debtAmountLyd.toFixed(2);
-
-    const debtEl = document.getElementById('debtAmount');
-
-    if (debtAmountLyd > 0) {
-        debtEl.classList.add('text-error');
-        debtEl.classList.remove('text-success');
-    } else {
-        debtEl.classList.remove('text-error');
-        debtEl.classList.add('text-success');
-    }
+    document.getElementById('summaryProductCount').textContent = productCount;
+    document.getElementById('summaryProductsTotal').textContent = subtotalUsd.toFixed(2);
+    document.getElementById('summaryShippingCommission').textContent = shippingCostLyd.toFixed(2);
+    document.getElementById('summaryTotalLyd').textContent = salesTotalLyd.toFixed(2);
+    document.getElementById('summaryDebtLyd').textContent = debtAmountLyd.toFixed(2);
 
     calculateCommission(salesTotalUsd, exchangeRate);
 }
+
 function calculateCommission(amountUsd, exchangeRate) {
     if (!amountUsd || amountUsd <= 0) {
         document.getElementById('commissionPercentage').value = '0%';
         document.getElementById('commissionAmount').value = '0.00';
+        document.getElementById('grandTotalLyd').value =
+            (parseFloat(document.getElementById('salesTotal').value) || 0).toFixed(2);
         return;
     }
 
     fetch(`/get-commission-rule/?amount=${amountUsd}&exchange_rate=${exchangeRate}`)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
+            let percentage = 0;
+            let commissionLyd = 0;
+
             if (data && data.percentage !== undefined) {
-                document.getElementById('commissionPercentage').value =
-                    data.percentage > 0
-                        ? data.percentage + '%'
-                        : '0%';
+                percentage = Number(data.percentage) || 0;
+                document.getElementById('commissionPercentage').value = percentage + '%';
             } else {
                 document.getElementById('commissionPercentage').value = '0%';
             }
 
             if (data && data.commission_lyd !== undefined) {
-                const shippingCostLyd =
-                    parseFloat(document.getElementById('shippingCostLyd').value) || 0;
-
-                const commissionLyd = Number(data.commission_lyd) || 0;
-
-                document.getElementById('commissionAmount').value =
-                    commissionLyd.toFixed(2);
-
-                document.getElementById('summaryShippingCommission').textContent =
-                    (shippingCostLyd + commissionLyd).toFixed(2);
+                commissionLyd = Number(data.commission_lyd) || 0;
+                document.getElementById('commissionAmount').value = commissionLyd.toFixed(2);
             } else {
                 document.getElementById('commissionAmount').value = '0.00';
             }
+
+            const shippingCostLyd = parseFloat(document.getElementById('shippingCostLyd').value) || 0;
+            const salesTotalLyd = parseFloat(document.getElementById('salesTotal').value) || 0;
+            const paidAmountLyd = parseFloat(document.getElementById('paidAmount').value) || 0;
+
+            document.getElementById('summaryShippingCommission').textContent =
+                (shippingCostLyd + commissionLyd).toFixed(2);
+
+            const grandTotalLyd = salesTotalLyd + commissionLyd;
+            document.getElementById('grandTotalLyd').value = grandTotalLyd.toFixed(2);
+
+            const debtWithCommission = grandTotalLyd - paidAmountLyd;
+            document.getElementById('debtAmount').value = debtWithCommission.toFixed(2);
+            document.getElementById('summaryDebtLyd').textContent = debtWithCommission.toFixed(2);
         })
         .catch(() => {
             document.getElementById('commissionPercentage').value = '0%';
             document.getElementById('commissionAmount').value = '0.00';
+            const salesTotalLyd = parseFloat(document.getElementById('salesTotal').value) || 0;
+            document.getElementById('grandTotalLyd').value = salesTotalLyd.toFixed(2);
         });
 }
 

@@ -29,6 +29,11 @@
   .paid-input-wrap input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 15px; font-weight: 600; color: #1f2937; background: #fff; }
   .paid-input-wrap input:focus { outline: none; border-color: #d51f86; box-shadow: 0 0 0 3px rgba(213,31,134,.12); }
   .shipping-cell { background:#fff8f0; }
+  .search-box { position: relative; }
+  .search-box .material-symbols-outlined { position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#d51f86; font-size:20px; pointer-events:none; }
+  .suggestions { position:absolute; top:100%; right:0; left:0; background:#fff; border:1px solid #fce4ef; border-radius:12px; max-height:220px; overflow-y:auto; z-index:60; box-shadow:0 8px 20px rgba(0,0,0,0.08); margin-top:4px; }
+  .suggestions li { padding:10px 14px; cursor:pointer; font-size:13px; transition:background .15s; }
+  .suggestions li:hover { background:#fce4ef; }
 </style>
 
 <form method="post" id="invoiceForm" class="space-y-5">
@@ -102,8 +107,6 @@
         </div>
       </div>
 
-     
-
       <input type="hidden" name="status" id="statusField" value="draft">
       <input type="hidden" name="receive_date" id="receiveDateField">
     </div>
@@ -113,7 +116,16 @@
     <div class="section-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <h3 class="section-title">منتجات الفاتورة</h3>
       <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-       
+        <div class="search-box flex-1 sm:w-64">
+          <input type="text" id="productSearch" placeholder="ابحث باسم المنتج أو الباركود..."
+                 class="field-input" style="padding-right:38px;" autocomplete="off">
+          <span class="material-symbols-outlined">search</span>
+          <ul id="productSuggestions" class="suggestions hidden"></ul>
+        </div>
+        <button type="button" onclick="openProductModal()" class="btn-outline flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-[18px]">add_box</span>
+          منتج جديد
+        </button>
         <button type="button" onclick="addProductRow()" class="btn-outline flex items-center justify-center gap-1">
           <span class="material-symbols-outlined text-[18px]">add</span>
           إضافة منتج
@@ -145,7 +157,11 @@
                 <select name="product_ids[]" required class="product-select field-input" onchange="fillProductPrice(this)">
                   <option value="">اختر المنتج</option>
                   {% for product in products %}
-                  <option value="{{ product.id }}">{{ product.name }}</option>
+                  <option value="{{ product.id }}"
+                          data-price="{{ product.usd_sell_price|default:0 }}"
+                          data-name="{{ product.name }}"
+                          data-color="{{ product.color|default:'' }}"
+                          data-barcode="{{ product.barcode|default:'' }}">{{ product.name }}</option>
                   {% endfor %}
                 </select>
               </td>
@@ -201,8 +217,6 @@
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-    
     <div class="section-card">
       <div class="section-header"><h3 class="section-title">ملخص الفاتورة</h3></div>
       <div class="p-5">
@@ -250,8 +264,7 @@
 
         <div class="paid-input-wrap">
           <label>المبلغ المدفوع (دولار)</label>
-          <input type="number" name="paid_amount" step="0.01" value="0"
-                 id="paidAmount">
+          <input type="number" name="paid_amount" step="0.01" value="0" id="paidAmount">
           <p class="text-xs text-gray-400 mt-2">
             ما يعادل: <span id="paidAmountLydDisplay" class="font-semibold">0.00</span> د.ل
           </p>
@@ -279,7 +292,91 @@
 
 </form>
 
+<div id="productModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl p-5 shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-pink-700">إضافة منتج جديد</h3>
+      <button type="button" onclick="closeProductModal()"
+              class="text-gray-400 hover:bg-pink-50 p-2 rounded-full">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="space-y-3">
+      <div>
+        <label class="field-label">اسم المنتج *</label>
+        <input type="text" id="np_name" class="field-input" required>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label">الباركود</label>
+          <input type="text" id="np_barcode" class="field-input">
+        </div>
+        <div>
+          <label class="field-label">اللون</label>
+          <input type="text" id="np_color" class="field-input">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label">البراند</label>
+          <input type="text" id="np_brand" class="field-input" autocomplete="off"
+                 placeholder="اكتب اسم البراند">
+        </div>
+        <div>
+          <label class="field-label">بلد المنشأ</label>
+          <input type="text" id="np_made_in" class="field-input">
+        </div>
+      </div>
+
+      <div>
+        <label class="field-label">التصنيف</label>
+        <select id="np_category" class="field-input">
+          <option value="">اختر التصنيف</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label">سعر البيع $</label>
+          <input type="number" step="0.01" id="np_usd_sell_price" class="field-input" value="0">
+        </div>
+        <div>
+          <label class="field-label">سعر البيع د.ل</label>
+          <input type="number" step="0.01" id="np_lyd_sell_price" class="field-input" value="0">
+        </div>
+      </div>
+
+      <div id="productFormErrors"
+           class="hidden bg-red-50 text-red-700 rounded-xl p-3 text-sm"></div>
+
+      <div class="flex gap-3 pt-3">
+        <button type="button" onclick="saveNewProduct()"
+                class="btn-primary flex-1">إضافة المنتج</button>
+        <button type="button" onclick="closeProductModal()"
+                class="btn-outline">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ products|json_script:"products-data" }}
+
 <script>
+const ALL_PRODUCTS = JSON.parse(document.getElementById('products-data').textContent);
+
+function normalize(str) {
+    return (str || '').toString().toLowerCase()
+        .replace(/\s+/g, ' ').trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’'`]/g, "'");
+}
+
 function convertCurrency(input, type) {
     const row = input.closest('.product-row');
     const rate = parseFloat(document.getElementById('exchangeRate').value) || 1;
@@ -412,8 +509,6 @@ function calculateTotals() {
 
     setVal('shippingCostLydDisplay', shippingLyd.toFixed(2) + ' د.ل');
     setVal('totalQuantityDisplay', totalQuantity);
-    setText('shippingPerUnitUsdDisplay', shippingPerUnitUsd.toFixed(2) + ' $');
-    setText('shippingPerUnitLydDisplay', shippingPerUnitLyd.toFixed(2) + ' د.ل');
 
     setText('summarySubtotalUsd', subtotalUsd.toFixed(2) + ' $');
     setText('summarySubtotalLyd', subtotalLyd.toFixed(2) + ' د.ل');
@@ -450,6 +545,153 @@ function submitAsDraft() {
     document.getElementById('invoiceForm').submit();
 }
 
+const productSearch = document.getElementById('productSearch');
+const productSug = document.getElementById('productSuggestions');
+
+productSearch.addEventListener('input', function () {
+    const q = normalize(this.value);
+    if (!q) { productSug.classList.add('hidden'); return; }
+
+    const matches = ALL_PRODUCTS.filter(p =>
+        normalize(p.name).includes(q) ||
+        normalize(p.barcode).includes(q) ||
+        normalize(p.color).includes(q)
+    ).slice(0, 8);
+
+    if (!matches.length) { productSug.classList.add('hidden'); return; }
+
+    productSug.innerHTML = matches.map(p =>
+        `<li data-id="${p.id}">${p.name}${p.color ? ' — ' + p.color : ''}${p.barcode ? ' — ' + p.barcode : ''}</li>`
+    ).join('');
+    productSug.classList.remove('hidden');
+});
+
+productSug.addEventListener('click', function (e) {
+    const li = e.target.closest('li');
+    if (!li) return;
+    const productId = li.dataset.id;
+
+    let targetSelect = null;
+    document.querySelectorAll('.product-select').forEach(sel => {
+        if (!sel.value && !targetSelect) targetSelect = sel;
+    });
+    if (!targetSelect) {
+        addProductRow();
+        const sels = document.querySelectorAll('.product-select');
+        targetSelect = sels[sels.length - 1];
+    }
+    targetSelect.value = productId;
+    targetSelect.dispatchEvent(new Event('change'));
+
+    productSearch.value = '';
+    productSug.classList.add('hidden');
+});
+
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('#productSearch') && !e.target.closest('#productSuggestions')) {
+        productSug.classList.add('hidden');
+    }
+});
+
+function openProductModal() {
+    const m = document.getElementById('productModal');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+}
+function closeProductModal() {
+    const m = document.getElementById('productModal');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+}
+
+function saveNewProduct() {
+    const errorsBox = document.getElementById('productFormErrors');
+    errorsBox.classList.add('hidden');
+    errorsBox.innerHTML = '';
+
+    const data = {
+        name:        document.getElementById('np_name').value.trim(),
+        barcode:     document.getElementById('np_barcode').value.trim(),
+        color:       document.getElementById('np_color').value.trim(),
+        brand:       document.getElementById('np_brand').value.trim(),
+        made_in:     document.getElementById('np_made_in').value.trim(),
+        category:    document.getElementById('np_category').value,
+        usd_sell_price: document.getElementById('np_usd_sell_price').value,
+        lyd_sell_price: document.getElementById('np_lyd_sell_price').value,
+    };
+
+    if (!data.name) {
+        errorsBox.textContent = 'يرجى إدخال اسم المنتج';
+        errorsBox.classList.remove('hidden');
+        return;
+    }
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "product_quick_add" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data),
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            const product = res.product;
+
+            document.querySelectorAll('.product-select').forEach(sel => {
+                const opt = new Option(
+                    `${product.name}${product.color ? '-' + product.color : ''}`,
+                    product.id,
+                    false, false
+                );
+                opt.dataset.price = product.usd_price || 0;
+                opt.dataset.name  = product.name;
+                opt.dataset.color = product.color;
+                opt.dataset.image = product.image;
+                sel.add(opt);
+            });
+
+            let targetSelect = null;
+            document.querySelectorAll('.product-select').forEach(sel => {
+                if (!sel.value && !targetSelect) targetSelect = sel;
+            });
+            if (!targetSelect) {
+                addProductRow();
+                const sels = document.querySelectorAll('.product-select');
+                targetSelect = sels[sels.length - 1];
+            }
+            targetSelect.value = product.id;
+            targetSelect.dispatchEvent(new Event('change'));
+
+            ALL_PRODUCTS.push({
+                id: product.id,
+                name: product.name,
+                color: product.color,
+                barcode: product.barcode,
+                price: product.usd_price,
+            });
+
+            closeProductModal();
+            ['np_name','np_barcode','np_color','np_brand','np_made_in']
+                .forEach(id => document.getElementById(id).value = '');
+            document.getElementById('np_category').selectedIndex = 0;
+            document.getElementById('np_usd_sell_price').value = '0';
+            document.getElementById('np_lyd_sell_price').value = '0';
+        } else {
+            errorsBox.innerHTML = Object.values(res.errors || {})
+                .flat().map(e => e.message || e).join('<br>');
+            errorsBox.classList.remove('hidden');
+        }
+    })
+    .catch(() => {
+        errorsBox.textContent = 'حدث خطأ، حاول مرة أخرى';
+        errorsBox.classList.remove('hidden');
+    });
+}
+
 document.addEventListener('input', function(e) {
     if (e.target.closest('#invoiceForm')) calculateTotals();
 });
@@ -459,19 +701,6 @@ document.addEventListener('change', function(e) {
 
 document.addEventListener('DOMContentLoaded', function() {
     calculateTotals();
-
-    const searchEl = document.getElementById('productSearch');
-    if (searchEl) {
-        searchEl.addEventListener('input', function(e) {
-            const q = e.target.value.toLowerCase();
-            document.querySelectorAll('.product-select').forEach(sel => {
-                Array.from(sel.options).forEach(opt => {
-                    if (!opt.value) return;
-                    opt.hidden = q && !opt.text.toLowerCase().includes(q);
-                });
-            });
-        });
-    }
 });
 </script>
 
