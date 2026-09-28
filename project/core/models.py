@@ -809,6 +809,21 @@ class ExternalOrder(models.Model):
         self.total_profit = self.lyd_commission_amount
         super().save(*args, **kwargs)
 
+    @property
+    def lyd_total_with_shipping(self):
+      return (self.lyd_sales_total or 0) + (self.lyd_shipping_cost or 0)
+
+    @property
+    def lyd_grand_total(self):
+      return (self.lyd_sales_total or 0) + (self.lyd_shipping_cost or 0) + (self.lyd_commission_amount or 0)
+
+    @property
+    def lyd_debt_with_commission(self):
+      return self.lyd_grand_total - (self.lyd_paid_amount or 0)
+
+    @property
+    def usd_total_with_shipping(self):
+      return (self.usd_sales_total or 0) + (self.usd_shipping_cost or 0) 
     def __str__(self):
         return f"{self.order_number} - {self.customer.full_name if self.customer else 'عميل غير محدد'}"
 

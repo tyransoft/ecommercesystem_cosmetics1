@@ -108,6 +108,33 @@
             </div>
         </div>
         
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">الإجمالي بالشحن (د.ل)</p>
+                <p class="font-headline-md text-headline-md text-primary">
+                    {{ order.lyd_total_with_shipping|floatformat:2 }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4 border-2 border-primary/40">
+                <p class="font-label-sm text-secondary font-bold">الإجمالي + العمولة (د.ل)</p>
+                <p class="font-headline-md text-headline-md text-primary font-bold">
+                    {{ order.lyd_grand_total|floatformat:2 }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">المتبقي مع العمولة (د.ل)</p>
+                <p class="font-headline-md text-headline-md {% if order.lyd_debt_with_commission > 0 %}text-error{% else %}text-success{% endif %}">
+                    {{ order.lyd_debt_with_commission|floatformat:2 }}
+                </p>
+            </div>
+            <div class="bg-background rounded-xl p-4">
+                <p class="font-label-sm text-secondary">إجمالي بالشحن ($)</p>
+                <p class="font-body-md text-primary">
+                    {{ order.usd_total_with_shipping|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+        
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-stack-lg">
             <div class="bg-background rounded-xl p-4">
                 <p class="font-label-sm text-secondary">عنوان التوصيل</p>
@@ -200,6 +227,30 @@
                         <td class="py-3 px-4">{{ order.lyd_shipping_cost|floatformat:2 }}</td>
                         <td></td>
                     </tr>
+                    <tr class="border-t border-secondary-container/50">
+                        <td colspan="5" class="text-left py-3 px-4 text-secondary">الإجمالي بالشحن</td>
+                        <td class="py-3 px-4 text-primary font-bold">
+                            {{ order.usd_total_with_shipping|floatformat:2 }}
+                        </td>
+                        <td class="py-3 px-4 text-primary font-bold">
+                            {{ order.lyd_total_with_shipping|floatformat:2 }}
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr class="border-t border-secondary-container/50">
+                        <td colspan="5" class="text-left py-3 px-4 text-secondary">العمولة</td>
+                        <td class="py-3 px-4">-</td>
+                        <td class="py-3 px-4 text-success font-bold">{{ order.lyd_commission_amount|floatformat:2 }}</td>
+                        <td></td>
+                    </tr>
+                    <tr class="border-t-2 border-primary">
+                        <td colspan="5" class="text-left py-3 px-4 text-primary font-bold">الإجمالي + العمولة</td>
+                        <td class="py-3 px-4">-</td>
+                        <td class="py-3 px-4 text-primary font-bold text-lg">
+                            {{ order.lyd_grand_total|floatformat:2 }}
+                        </td>
+                        <td></td>
+                    </tr>
                 </tfoot>
             </table>
         </div>
@@ -263,8 +314,18 @@
                         <p class="font-body-md">{{ order.lyd_shipping_cost|floatformat:2 }}</p>
                     </div>
                     <div>
+                        <p class="font-label-sm text-secondary">الإجمالي بالشحن (د.ل)</p>
+                        <p class="font-body-md text-primary font-bold">{{ order.lyd_total_with_shipping|floatformat:2 }}</p>
+                    </div>
+                    <div>
                         <p class="font-label-sm text-secondary">العمولة</p>
                         <p class="font-body-md text-success">{{ order.lyd_commission_amount|floatformat:2 }}</p>
+                    </div>
+                    <div class="col-span-2 border-t border-primary/30 pt-2 mt-2">
+                        <p class="font-label-sm text-secondary font-bold">الإجمالي + العمولة (د.ل)</p>
+                        <p class="font-headline-md text-headline-md text-primary font-bold">
+                            {{ order.lyd_grand_total|floatformat:2 }}
+                        </p>
                     </div>
                     <div>
                         <p class="font-label-sm text-secondary">الربح</p>

@@ -378,8 +378,7 @@
   </div>
 </div>
 
-{{ products|json_script:"products-data" }}
-
+{{ products_json|json_script:"products-data" }}
 <script>
 const ALL_PRODUCTS = JSON.parse(document.getElementById('products-data').textContent);
 

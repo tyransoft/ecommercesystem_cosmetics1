@@ -1754,9 +1754,23 @@ def purchase_invoice_add(request):
     
     suppliers = Supplier.objects.all().order_by('name')
     products = Product.objects.all().order_by('name')
+    products_json = [
+        {
+            'id': p.id,
+            'name': p.name,
+            'color': p.color or '',
+            'barcode': p.barcode or '',
+            'price': float(p.usd_sell_price or 0),
+            'image': p.image.url if p.image else '',
+        }
+        for p in products
+    ]
+
     return render(request, 'dashboard/purchase_invoice_add.html', {
         'suppliers': suppliers,
         'products': products,
+        'products_json': products_json,
+
         'categories': Category.objects.all(),
     })
 
@@ -1858,11 +1872,25 @@ def purchase_invoice_edit(request, pk):
     
     suppliers = Supplier.objects.all().order_by('name')
     products = Product.objects.all().order_by('name')
+    products_json = [
+            {
+                'id': p.id,
+                'name': p.name,
+                'color': p.color or '',
+                'barcode': p.barcode or '',
+                'price': float(p.usd_sell_price or 0),
+                'image': p.image.url if p.image else '',
+            }
+            for p in products
+        ]
+    
     return render(request, 'dashboard/purchase_invoice_edit.html', {
         'invoice': invoice,
         'suppliers': suppliers,
+        'products_json': products_json,
+
         'products': products,
-                'categories': Category.objects.all(),
+        'categories': Category.objects.all(),
 
     })
 
@@ -2670,6 +2698,8 @@ def external_order_add(request):
     customers = Customer.objects.all().order_by('full_name')
     return render(request, 'orders/external_order_add.html', {
         'customers': customers,
+    'new_customer_form': CustomerForm(),
+
     })
 
 @login_required
@@ -3461,6 +3491,7 @@ def customer_quick_add(request):
             'success': True,
             'customer': {
                 'id': customer.id,
+                'phone':customer.phone,
                 'full_name': customer.full_name,
                 'city': customer.city or '',
             }
