@@ -334,6 +334,8 @@ class ProductVariant(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True, verbose_name='نشط')
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'خيار المنتج'
