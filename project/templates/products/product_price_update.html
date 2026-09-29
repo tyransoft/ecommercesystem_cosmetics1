@@ -14,8 +14,6 @@
   .saved-badge { font-size:10px; color:#16a34a; opacity:0; transition:opacity .3s; margin-right:4px; }
   .saved-badge.show { opacity:1; }
   .badge { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-block; }
-  .quick-btn { font-size:11px; background:#f3f4f6; hover:bg:#e5e7eb; padding:3px 8px; border-radius:6px; cursor:pointer; border:none; transition:.2s; }
-  .quick-btn:hover { background:#e5e7eb; }
 </style>
 
 <div class="space-y-5">
@@ -26,11 +24,11 @@
     <span class="text-gray-700">تحديث الأسعار</span>
   </div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 p-5">
-    <h2 class="text-lg font-bold text-gray-800 mb-4">تحديث أسعار البيع</h2>
+  <form method="post" id="priceUpdateForm" class="space-y-5">
+    {% csrf_token %}
 
-    <form method="post" id="priceUpdateForm">
-      {% csrf_token %}
+    <div class="bg-white rounded-2xl border border-gray-100 p-5">
+      <h2 class="text-lg font-bold text-gray-800 mb-4">تحديث أسعار البيع</h2>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
         <div>
@@ -53,195 +51,165 @@
         </div>
       </div>
 
-      <div class="flex flex-wrap gap-2 mb-3">
-        <span class="text-xs text-gray-400 self-center">اختصارات:</span>
-        <button type="button" class="quick-btn" onclick="setQuickValue('percent_add', 10)">+10%</button>
-        <button type="button" class="quick-btn" onclick="setQuickValue('percent_add', 20)">+20%</button>
-        <button type="button" class="quick-btn" onclick="setQuickValue('percent_subtract', 10)">-10%</button>
-        <button type="button" class="quick-btn" onclick="setQuickValue('percent_subtract', 20)">-20%</button>
-        <button type="button" class="quick-btn" onclick="setQuickValue('percent_subtract', 50)">-50%</button>
-      </div>
-
-      <div class="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-        <span id="updateInfo">سيتم إضافة المبلغ المدخل إلى سعر البيع بالدينار للنسخ المحددة</span>
-      </div>
-
       <div id="previewBox" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3 text-xs text-amber-800">
         <strong>معاينة:</strong> <span id="previewText"></span>
       </div>
-    </form>
-  </div>
-
-  <div class="bg-white rounded-2xl border border-gray-100 p-5">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">بحث</label>
-        <input type="text" id="variantSearch" placeholder="اسم المنتج / النسخة / الباركود" class="field-input">
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">الفئة</label>
-        <select id="categoryFilter" class="field-input">
-          <option value="">جميع الفئات</option>
-          {% for category in categories %}
-          <option value="{{ category.id }}">{{ category.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">الماركة</label>
-        <select id="brandFilter" class="field-input">
-          <option value="">جميع الماركات</option>
-          {% for brand in brands %}
-          <option value="{{ brand }}">{{ brand }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">اللون</label>
-        <select id="colorFilter" class="field-input">
-          <option value="">جميع الألوان</option>
-          {% for color in colors %}
-          <option value="{{ color }}">{{ color }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">الحجم</label>
-        <select id="sizeFilter" class="field-input">
-          <option value="">جميع الأحجام</option>
-          {% for size in sizes %}
-          <option value="{{ size }}">{{ size }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">حالة السعر</label>
-        <select id="priceStatusFilter" class="field-input">
-          <option value="">جميعها</option>
-          <option value="has_usd">لها سعر بالدولار</option>
-          <option value="no_usd">بدون سعر بالدولار</option>
-        </select>
-      </div>
-      <div class="flex items-end">
-        <button type="button" onclick="resetFilters()" class="btn-outline w-full">إعادة تعيين</button>
-      </div>
     </div>
-  </div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-      <div class="flex items-center gap-3">
-        <span class="text-sm font-semibold text-gray-700">النسخ</span>
-        <span class="badge" style="background:#fff0f6;color:#d51f86;" id="selectedCount">0</span>
-      </div>
-      <div class="flex gap-2">
-        <button type="button" onclick="selectAll()" class="btn-outline">تحديد الكل</button>
-        <button type="button" onclick="deselectAll()" class="btn-outline">إلغاء الكل</button>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">بحث</label>
+          <input type="text" id="variantSearch" placeholder="اسم المنتج / النسخة / الباركود" class="field-input">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">الفئة</label>
+          <select id="categoryFilter" class="field-input">
+            <option value="">جميع الفئات</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">الماركة</label>
+          <select id="brandFilter" class="field-input">
+            <option value="">جميع الماركات</option>
+            {% for brand in brands %}
+            <option value="{{ brand }}">{{ brand }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">اللون</label>
+          <select id="colorFilter" class="field-input">
+            <option value="">جميع الألوان</option>
+            {% for color in colors %}
+            <option value="{{ color }}">{{ color }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">الحجم</label>
+          <select id="sizeFilter" class="field-input">
+            <option value="">جميع الأحجام</option>
+            {% for size in sizes %}
+            <option value="{{ size }}">{{ size }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">حالة السعر</label>
+          <select id="priceStatusFilter" class="field-input">
+            <option value="">جميعها</option>
+            <option value="has_usd">لها سعر بالدولار</option>
+            <option value="no_usd">بدون سعر بالدولار</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button type="button" onclick="resetFilters()" class="btn-outline w-full">إعادة تعيين</button>
+        </div>
       </div>
     </div>
 
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-pink-50/60">
-          <tr class="text-gray-600">
-            <th class="text-right py-3 px-3 font-semibold w-10">
-              <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes(this)" class="w-4 h-4 accent-primary">
-            </th>
-            <th class="text-right py-3 px-3 font-semibold">المنتج</th>
-            <th class="text-right py-3 px-3 font-semibold">النسخة</th>
-            <th class="text-right py-3 px-3 font-semibold">الباركود</th>
-            <th class="text-right py-3 px-3 font-semibold">شراء $</th>
-            <th class="text-right py-3 px-3 font-semibold">بيع $</th>
-            <th class="text-right py-3 px-3 font-semibold">بيع د.ل</th>
-          </tr>
-        </thead>
-        <tbody id="variantsBody">
-          {% for item in variants_data %}
-          <tr class="variant-row border-b border-gray-100 hover:bg-pink-50/30 transition-colors"
-              data-name="{{ item.variant.product.name|lower }}"
-              data-variant-name="{{ item.variant.name|lower }}"
-              data-barcode="{{ item.variant.barcode|lower }}"
-              data-category="{{ item.variant.product.category.id|default:'' }}"
-              data-brand="{{ item.variant.product.brand|default:''|lower }}"
-              data-color="{{ item.variant.color|default:''|lower }}"
-              data-size="{{ item.variant.size|default:''|lower }}"
-              data-usd-price="{{ item.variant.usd_sell_price }}">
-            <td class="py-3 px-3">
-              <input type="checkbox" name="variant_ids[]" value="{{ item.variant.id }}" class="variant-checkbox w-4 h-4 accent-primary" onchange="updateSelectedCount(); updatePreview();">
-            </td>
-            <td class="py-3 px-3">
-              <div class="flex items-center gap-2">
-                {% if item.variant.product.image %}
-                <img src="{{ item.variant.product.image.url }}" class="w-8 h-8 rounded-lg object-cover">
-                {% else %}
-                <div class="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center">
-                  <span class="material-symbols-outlined text-pink-500 text-[16px]">inventory</span>
+    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-semibold text-gray-700">النسخ</span>
+          <span class="badge" style="background:#fff0f6;color:#d51f86;" id="selectedCount">0</span>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" onclick="selectAll()" class="btn-outline">تحديد الكل</button>
+          <button type="button" onclick="deselectAll()" class="btn-outline">إلغاء الكل</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-pink-50/60">
+            <tr class="text-gray-600">
+              <th class="text-right py-3 px-3 font-semibold w-10">
+                <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes(this)" class="w-4 h-4 accent-primary">
+              </th>
+              <th class="text-right py-3 px-3 font-semibold">المنتج</th>
+              <th class="text-right py-3 px-3 font-semibold">النسخة</th>
+              <th class="text-right py-3 px-3 font-semibold">الباركود</th>
+              <th class="text-right py-3 px-3 font-semibold">شراء $</th>
+              <th class="text-right py-3 px-3 font-semibold">بيع $</th>
+              <th class="text-right py-3 px-3 font-semibold">بيع د.ل</th>
+            </tr>
+          </thead>
+          <tbody id="variantsBody">
+            {% for item in variants_data %}
+            <tr class="variant-row border-b border-gray-100 hover:bg-pink-50/30 transition-colors"
+                data-name="{{ item.variant.product.name|lower }}"
+                data-variant-name="{{ item.variant.name|lower }}"
+                data-barcode="{{ item.variant.barcode|lower }}"
+                data-category="{{ item.variant.product.category.id|default:'' }}"
+                data-brand="{{ item.variant.product.brand|default:''|lower }}"
+                data-color="{{ item.variant.color|default:''|lower }}"
+                data-size="{{ item.variant.size|default:''|lower }}"
+                data-usd-price="{{ item.variant.usd_sell_price }}">
+              <td class="py-3 px-3">
+                <input type="checkbox" name="variant_ids[]" value="{{ item.variant.id }}" class="variant-checkbox w-4 h-4 accent-primary" onchange="updateSelectedCount(); updatePreview();">
+              </td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-2">
+                  {% if item.variant.product.image %}
+                  <img src="{{ item.variant.product.image.url }}" class="w-8 h-8 rounded-lg object-cover">
+                  {% else %}
+                  <div class="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-pink-500 text-[16px]">inventory</span>
+                  </div>
+                  {% endif %}
+                  <span class="font-semibold text-gray-800">{{ item.variant.product.name }}</span>
                 </div>
-                {% endif %}
-                <span class="font-semibold text-gray-800">{{ item.variant.product.name }}</span>
-              </div>
-            </td>
-            <td class="py-3 px-3 text-gray-600">
-              {{ item.variant.name }}
-              {% if item.variant.color %}<span class="text-xs text-gray-400">({{ item.variant.color }})</span>{% endif %}
-            </td>
-            <td class="py-3 px-3 text-gray-500 font-mono text-xs">{{ item.variant.barcode }}</td>
-            <td class="py-3 px-3 text-gray-600">{{ item.usd_buy_coast_price|floatformat:2 }}</td>
-            <td class="py-3 px-3">
-              <div class="flex items-center gap-1">
-                <input type="number" step="0.01" value="{{ item.variant.usd_sell_price }}"
-                       class="price-input usd-price-input"
-                       data-variant-id="{{ item.variant.id }}"
-                       onchange="updatePrice(this, 'usd_sell_price')">
-                <span class="saved-badge" id="saved-usd-{{ item.variant.id }}">✓</span>
-              </div>
-            </td>
-            <td class="py-3 px-3">
-              <div class="flex items-center gap-1">
-                <input type="number" step="0.01" value="{{ item.variant.lyd_sell_price }}"
-                       class="price-input lyd-price-input"
-                       data-variant-id="{{ item.variant.id }}"
-                       onchange="updatePrice(this, 'lyd_sell_price')">
-                <span class="saved-badge" id="saved-lyd-{{ item.variant.id }}">✓</span>
-              </div>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="7" class="text-center py-10 text-gray-400">
-              <span class="material-symbols-outlined block text-[40px] mb-2 text-gray-300">inventory_2</span>
-              لا توجد نسخ
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+              </td>
+              <td class="py-3 px-3 text-gray-600">
+                {{ item.variant.name }}
+                {% if item.variant.color %}<span class="text-xs text-gray-400">({{ item.variant.color }})</span>{% endif %}
+              </td>
+              <td class="py-3 px-3 text-gray-500 font-mono text-xs">{{ item.variant.barcode }}</td>
+              <td class="py-3 px-3 text-gray-600">{{ item.usd_buy_coast_price|floatformat:2 }}</td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-1">
+                  <input type="number" step="0.01" value="{{ item.variant.usd_sell_price }}"
+                         class="price-input usd-price-input"
+                         data-variant-id="{{ item.variant.id }}"
+                         onchange="updatePrice(this, 'usd_sell_price')">
+                  <span class="saved-badge" id="saved-usd-{{ item.variant.id }}">✓</span>
+                </div>
+              </td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-1">
+                  <input type="number" step="0.01" value="{{ item.variant.lyd_sell_price }}"
+                         class="price-input lyd-price-input"
+                         data-variant-id="{{ item.variant.id }}"
+                         onchange="updatePrice(this, 'lyd_sell_price')">
+                  <span class="saved-badge" id="saved-lyd-{{ item.variant.id }}">✓</span>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-10 text-gray-400">
+                <span class="material-symbols-outlined block text-[40px] mb-2 text-gray-300">inventory_2</span>
+                لا توجد نسخ
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div id="noResults" class="hidden text-center py-8 text-gray-400">لا توجد نتائج تطابق بحثك</div>
     </div>
-    <div id="noResults" class="hidden text-center py-8 text-gray-400">لا توجد نتائج تطابق بحثك</div>
-  </div>
+  </form>
 
 </div>
 
 <script>
 function toggleUpdateType() {
-    const type = document.getElementById('updateType').value;
-    const info = document.getElementById('updateInfo');
-    const messages = {
-        'fixed_add': 'سيتم إضافة المبلغ المدخل إلى سعر البيع بالدينار للنسخ المحددة',
-        'fixed_subtract': 'سيتم خصم المبلغ المدخل من سعر البيع بالدينار للنسخ المحددة',
-        'percent_add': 'سيتم زيادة سعر البيع بالدينار بنسبة % للنسخ المحددة',
-        'percent_subtract': 'سيتم خصم نسبة % من سعر البيع بالدينار للنسخ المحددة',
-        'exchange_rate': 'سيتم تحديث سعر البيع بالدينار = سعر البيع بالدولار × سعر الصرف',
-        'set_direct': 'سيتم تعيين سعر البيع بالدينار مباشرة للنسخ المحددة'
-    };
-    if (info) info.textContent = messages[type] || '';
     updatePreview();
-}
-
-function setQuickValue(type, value) {
-    document.getElementById('updateType').value = type;
-    document.getElementById('updateValue').value = value;
-    toggleUpdateType();
 }
 
 function updatePreview() {
@@ -274,17 +242,12 @@ function updatePreview() {
     } else if (type === 'fixed_subtract') {
         const newPrice = Math.max(0, currentLyd - value);
         sampleText = `${currentLyd.toFixed(2)} → ${newPrice.toFixed(2)} د.ل (-${value} د.ل)`;
-    } else if (type === 'percent_add') {
-        const newPrice = currentLyd + (currentLyd * value / 100);
-        sampleText = `${currentLyd.toFixed(2)} → ${newPrice.toFixed(2)} د.ل (+${value}%)`;
     } else if (type === 'percent_subtract') {
         const newPrice = Math.max(0, currentLyd - (currentLyd * value / 100));
         sampleText = `${currentLyd.toFixed(2)} → ${newPrice.toFixed(2)} د.ل (-${value}%)`;
     } else if (type === 'exchange_rate') {
         const newPrice = currentUsd * value;
         sampleText = `${currentUsd.toFixed(2)}$ × ${value} = ${newPrice.toFixed(2)} د.ل`;
-    } else if (type === 'set_direct') {
-        sampleText = `${currentLyd.toFixed(2)} → ${value.toFixed(2)} د.ل (تعيين مباشر)`;
     }
 
     if (sampleText) {
@@ -351,7 +314,7 @@ function updatePrice(input, field) {
 
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
-    toggleUpdateType();
+    updatePreview();
 
     const searchInput = document.getElementById('variantSearch');
     const categoryFilter = document.getElementById('categoryFilter');
@@ -412,6 +375,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('updateValue').addEventListener('input', updatePreview);
+    document.getElementById('updateType').addEventListener('change', updatePreview);
+
+    document.getElementById('priceUpdateForm').addEventListener('submit', function (e) {
+        const checkedVariants = document.querySelectorAll('.variant-checkbox:checked');
+
+        if (checkedVariants.length === 0) {
+            e.preventDefault();
+            alert('يرجى اختيار نسخة واحدة على الأقل');
+            return false;
+        }
+    });
 });
 
 function resetFilters() {

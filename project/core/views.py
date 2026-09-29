@@ -3601,7 +3601,6 @@ def variant_delete(request, pk):
         'has_movements': has_movements,
     })
 
-
 @login_required
 def product_price_update(request):
     if not request.user.is_main_admin():
@@ -3649,16 +3648,6 @@ def product_price_update(request):
                     v.save()
                 messages.success(request, f'تم خصم {value} د.ل من {variants.count()} نسخة')
 
-            elif update_type == 'percent_add':
-                updated = 0
-                for v in variants:
-                    if v.lyd_sell_price > 0:
-                        increase = v.lyd_sell_price * (value / Decimal('100'))
-                        v.lyd_sell_price = v.lyd_sell_price + increase
-                        v.save()
-                        updated += 1
-                messages.success(request, f'تم زيادة {value}% لـ {updated} نسخة')
-
             elif update_type == 'percent_subtract':
                 updated = 0
                 for v in variants:
@@ -3680,12 +3669,6 @@ def product_price_update(request):
                         v.save()
                         updated += 1
                 messages.success(request, f'تم تحديث {updated} نسخة بسعر صرف {value}')
-
-            elif update_type == 'set_direct':
-                for v in variants:
-                    v.lyd_sell_price = value
-                    v.save()
-                messages.success(request, f'تم تعيين السعر {value} د.ل لـ {variants.count()} نسخة')
 
             else:
                 messages.error(request, 'نوع التحديث غير صحيح')
