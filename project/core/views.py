@@ -2278,6 +2278,7 @@ def internal_order_receive(request, pk):
                                variant=item.variant,
                                quantity=-item.quantity,
                                movement_type='sale',
+                               created_by=request.user,
 
                            )
         
@@ -2581,7 +2582,7 @@ def external_order_add(request):
         product_names = request.POST.getlist('product_names[]')
         quantities = request.POST.getlist('quantities[]')
         unit_prices_usd = request.POST.getlist('unit_prices_usd[]')
-        unit_discounts_usd = request.POST.getlist('unit_discounts_usd[]')
+        unit_discounts_usd = request.POST.getlist('unit_discounts_values_usd[]')
         product_links = request.POST.getlist('product_links[]')
 
         if not customer_id:
@@ -2694,7 +2695,7 @@ def external_order_edit(request, pk):
         product_names = request.POST.getlist('product_names[]')
         quantities = request.POST.getlist('quantities[]')
         unit_prices_usd = request.POST.getlist('unit_prices_usd[]')
-        unit_discounts_usd = request.POST.getlist('unit_discounts_usd[]')
+        unit_discounts_usd = request.POST.getlist('unit_discounts_values_usd[]')
         product_links = request.POST.getlist('product_links[]')
         
         if not customer_id:

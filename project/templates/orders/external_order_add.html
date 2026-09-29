@@ -44,7 +44,6 @@
     .external-action.primary:hover { background: #aa216f; }
     .external-action.secondary { border: 1px solid #d59ab9; background: #fff; color: #a04373; }
     .external-action.secondary:hover { background: #fff5f9; }
-    .empty-product-space { display: none; }
 
     .search-box { position: relative; }
     .search-box .material-symbols-outlined { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #c32b86; font-size: 20px; pointer-events: none; }
@@ -172,7 +171,8 @@
                                 <th>الكمية</th>
                                 <th>سعر الوحدة $</th>
                                 <th>سعر الوحدة د.ل</th>
-                                <th>خصم للوحدة $</th>
+                                <th>خصم %</th>
+                                <th>قيمة الخصم $</th>
                                 <th>رابط المنتج</th>
                                 <th>الإجمالي $</th>
                                 <th>الإجمالي د.ل</th>
@@ -201,8 +201,14 @@
                                 </td>
 
                                 <td>
-                                    <input type="number" name="unit_discounts_usd[]" step="0.01" value="0"
-                                           class="discount-input" onchange="calculateTotals()">
+                                    <input type="number" name="unit_discounts_usd[]" step="0.01" min="0" max="100" value="0"
+                                           class="discount-input" onchange="calculateTotals()"
+                                           placeholder="0">
+                                </td>
+
+                                <td>
+                                    <input type="text" class="discount-value-usd" readonly value="0.00">
+                                    <input type="hidden" name="unit_discounts_values_usd[]" class="discount-value-hidden" value="0">
                                 </td>
 
                                 <td>
@@ -350,79 +356,51 @@
         </section>
     </form>
 </div>
-<div
-    id="customerModal"
-    class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center"
->
+
+<div id="customerModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center">
     <div class="bg-white rounded-[24px] p-5 shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-pink-700">
-                إضافة عميل جديد
-            </h3>
-
-            <button
-                type="button"
-                onclick="closeCustomerModal()"
-                class="text-gray-400 hover:bg-pink-50 p-2 rounded-full"
-            >
+            <h3 class="text-lg font-bold text-pink-700">إضافة عميل جديد</h3>
+            <button type="button" onclick="closeCustomerModal()"
+                    class="text-gray-400 hover:bg-pink-50 p-2 rounded-full">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
 
         <div class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-gray-600 mb-1">
-                    الاسم الكامل *
-                </label>
+                <label class="block text-xs font-bold text-gray-600 mb-1">الاسم الكامل *</label>
                 {{ new_customer_form.full_name }}
             </div>
-
             <div>
-                <label class="block text-xs font-bold text-gray-600 mb-1">
-                    رقم الهاتف *
-                </label>
+                <label class="block text-xs font-bold text-gray-600 mb-1">رقم الهاتف *</label>
                 {{ new_customer_form.phone }}
             </div>
-
             <div>
-                <label class="block text-xs font-bold text-gray-600 mb-1">
-                    المدينة
-                </label>
+                <label class="block text-xs font-bold text-gray-600 mb-1">المدينة</label>
                 {{ new_customer_form.city }}
             </div>
-
             <div>
-                <label class="block text-xs font-bold text-gray-600 mb-1">
-                    عرفتنا من
-                </label>
+                <label class="block text-xs font-bold text-gray-600 mb-1">عرفتنا من</label>
                 {{ new_customer_form.known_us_from }}
             </div>
 
-            <div
-                id="customerFormErrors"
-                class="hidden bg-red-50 text-red-700 rounded-xl p-3 text-sm"
-            ></div>
+            <div id="customerFormErrors" class="hidden bg-red-50 text-red-700 rounded-xl p-3 text-sm"></div>
 
             <div class="flex gap-3 pt-3">
-                <button
-                    type="button"
-                    onclick="saveNewCustomer()"
-                    class="flex-1 bg-pink-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-pink-700 transition"
-                >
+                <button type="button" onclick="saveNewCustomer()"
+                        class="flex-1 bg-pink-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-pink-700 transition">
                     إضافة العميل
                 </button>
-
-                <button
-                    type="button"
-                    onclick="closeCustomerModal()"
-                    class="border border-pink-300 text-pink-700 px-6 py-2 rounded-xl font-bold hover:bg-pink-50 transition"
-                >
+                <button type="button" onclick="closeCustomerModal()"
+                        class="border border-pink-300 text-pink-700 px-6 py-2 rounded-xl font-bold hover:bg-pink-50 transition">
                     إلغاء
                 </button>
             </div>
         </div>
     </div>
 </div>
+
 <script>
 const ALL_CUSTOMERS = [
     {% for c in customers %}
@@ -489,9 +467,9 @@ function closeCustomerModal() {
     m.classList.add('hidden');
     m.classList.remove('flex');
 }
+
 function saveNewCustomer() {
     const errorsBox = document.getElementById('customerFormErrors');
-
     errorsBox.classList.add('hidden');
     errorsBox.innerHTML = '';
 
@@ -522,18 +500,13 @@ function saveNewCustomer() {
     .then(res => {
         if (res.success) {
             const select = document.getElementById('customerSelect');
-
             const opt = new Option(
                 `${res.customer.full_name} - ${res.customer.city || ''}`,
-                res.customer.id,
-                true,
-                true
+                res.customer.id, true, true
             );
-
             opt.dataset.name  = res.customer.full_name;
             opt.dataset.phone = res.customer.phone || '';
             opt.dataset.city  = res.customer.city  || '';
-
             select.add(opt);
             select.dispatchEvent(new Event('change'));
 
@@ -550,7 +523,6 @@ function saveNewCustomer() {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
-
             const knownEl = document.getElementById('id_known_us_from');
             if (knownEl) knownEl.selectedIndex = 0;
         } else {
@@ -570,6 +542,8 @@ function addProductRow() {
         if (el.type !== 'button') el.value = '';
     });
     row.querySelectorAll('.discount-input').forEach(el => el.value = '0');
+    row.querySelectorAll('.discount-value-usd').forEach(el => el.value = '0.00');
+    row.querySelectorAll('.discount-value-hidden').forEach(el => el.value = '0');
     document.getElementById('productRows').appendChild(row);
     calculateTotals();
 }
@@ -590,20 +564,24 @@ function calculateTotals() {
     const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
 
     rows.forEach(row => {
-        const quantity   = parseFloat(row.querySelector('.quantity-input').value) || 0;
-        const unitPrice  = parseFloat(row.querySelector('.unit-price-input').value) || 0;
-        const discount   = parseFloat(row.querySelector('.discount-input').value) || 0;
+        const quantity     = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const unitPrice    = parseFloat(row.querySelector('.unit-price-input').value) || 0;
+        const discountPct  = parseFloat(row.querySelector('.discount-input').value) || 0;
 
-        const unitPriceLyd = unitPrice * exchangeRate;
-        const total = (unitPrice - discount) * quantity;
-        const totalLyd = total * exchangeRate;
+        const discountValueUsd   = unitPrice * (discountPct / 100);
+        const finalUnitPriceUsd  = unitPrice - discountValueUsd;
+        const finalUnitPriceLyd  = finalUnitPriceUsd * exchangeRate;
+        const totalUsd           = finalUnitPriceUsd * quantity;
+        const totalLyd           = totalUsd * exchangeRate;
 
         productCount += quantity;
-        subtotalUsd += total;
+        subtotalUsd += totalUsd;
 
-        row.querySelector('.unit-price-lyd').value = unitPriceLyd.toFixed(2);
-        row.querySelector('.item-total-usd').value = total.toFixed(2);
+        row.querySelector('.unit-price-lyd').value = finalUnitPriceLyd.toFixed(2);
+        row.querySelector('.item-total-usd').value = totalUsd.toFixed(2);
         row.querySelector('.item-total-lyd').value = totalLyd.toFixed(2);
+        row.querySelector('.discount-value-usd').value = discountValueUsd.toFixed(2);
+        row.querySelector('.discount-value-hidden').value = discountValueUsd.toFixed(2);
     });
 
     const discountUsd     = parseFloat(document.getElementById('discount').value) || 0;
