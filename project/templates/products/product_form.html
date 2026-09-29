@@ -112,7 +112,6 @@
               placeholder="اكتب اسم الماركة..."
               class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition"
           >
-          <p class="text-xs text-gray-400 mt-1">اختر من القائمة أو اكتب ماركة جديدة</p>
           {% if form.brand.errors %}<p class="text-red-500 text-xs mt-1">{{ form.brand.errors.0 }}</p>{% endif %}
         </div>
         <div>
@@ -132,9 +131,8 @@
       <div class="flex items-center justify-between mb-5">
         <div>
           <h2 class="text-lg font-bold text-gray-800">نسخ المنتج</h2>
-          <p class="text-xs text-gray-400 mt-0.5">يجب إضافة نسخة واحدة على الأقل</p>
         </div>
-        <button type="button" onclick="addVariant()" class="btn-outline text-sm">+ إضافة نسخة أخرى</button>
+        <button type="button" id="add-variant-btn" class="btn-outline text-sm">+ إضافة نسخة أخرى</button>
       </div>
 
       {{ formset.management_form }}
@@ -147,13 +145,13 @@
       </div>
       {% endif %}
 
-      <div id="variantsContainer" class="space-y-4">
+      <div id="variants-container" class="space-y-4">
         {% for variant_form in formset %}
         <div class="variant-card" data-index="{{ forloop.counter0 }}">
           {{ variant_form.id }}
           <div class="flex items-center justify-between mb-3">
             <span class="text-sm font-semibold text-gray-700 variant-number">نسخة {{ forloop.counter }}</span>
-            <button type="button" onclick="removeVariant(this)" class="text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
+            <button type="button" class="delete-variant text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
               <span class="material-symbols-outlined text-[16px]">delete</span>
               حذف
             </button>
@@ -217,143 +215,145 @@
   </form>
 </div>
 
-<script id="empty-form-template" type="text/template">
-  <div class="variant-card" data-index="__index__">
-    <div class="flex items-center justify-between mb-3">
-      <span class="text-sm font-semibold text-gray-700 variant-number">نسخة __counter__</span>
-      <button type="button" onclick="removeVariant(this)" class="text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
-        <span class="material-symbols-outlined text-[16px]">delete</span>
-        حذف
-      </button>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">اسم النسخة <span class="text-red-500">*</span></label>
-        <input type="text" name="variants-__index__-name" class="variant-input" placeholder="اسم النسخة">
+<div id="empty-variant-form" class="hidden">
+  <div class="variant-card">
+    {% with variant_form=formset.empty_form %}
+      {{ variant_form.id }}
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-semibold text-gray-700 variant-number">نسخة جديدة</span>
+        <button type="button" class="delete-variant text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">delete</span>
+          حذف
+        </button>
       </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">اللون/الدرجة</label>
-        <input type="text" name="variants-__index__-color" class="variant-input" placeholder="اللون/الدرجة">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">اسم النسخة <span class="text-red-500">*</span></label>
+          {{ variant_form.name }}
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">اللون/الدرجة</label>
+          {{ variant_form.color }}
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">الحجم</label>
+          {{ variant_form.size }}
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">الإصدار</label>
+          {{ variant_form.edition }}
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">الباركود</label>
+          {{ variant_form.barcode }}
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">سعر البيع $</label>
+          {{ variant_form.usd_sell_price }}
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">سعر البيع د.ل</label>
+          {{ variant_form.lyd_sell_price }}
+        </div>
+        <div class="flex items-end pb-2">
+          <label class="flex items-center gap-2 text-sm text-gray-600">
+            {{ variant_form.is_active }}
+            نشط
+          </label>
+        </div>
       </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">الحجم</label>
-        <input type="text" name="variants-__index__-size" class="variant-input" placeholder="الحجم">
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">الإصدار</label>
-        <input type="text" name="variants-__index__-edition" class="variant-input" placeholder="الإصدار">
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">الباركود</label>
-        <input type="text" name="variants-__index__-barcode" class="variant-input" placeholder="اتركه فارغاً للتوليد التلقائي">
-        <p class="text-[10px] text-gray-400 mt-0.5">اتركه فارغاً ليتم توليده تلقائياً</p>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">سعر البيع $</label>
-        <input type="number" step="0.01" name="variants-__index__-usd_sell_price" class="variant-input" placeholder="0.00">
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">سعر البيع د.ل</label>
-        <input type="number" step="0.01" name="variants-__index__-lyd_sell_price" class="variant-input" placeholder="0.00">
-      </div>
-      <div class="flex items-end pb-2">
-        <label class="flex items-center gap-2 text-sm text-gray-600">
-          <input type="checkbox" name="variants-__index__-is_active" checked class="w-4 h-4 accent-primary">
-          نشط
-        </label>
-      </div>
-    </div>
-    <input type="hidden" name="variants-__index__-id" value="">
-    <input type="hidden" name="variants-__index__-DELETE" value="">
+
+      <div class="hidden">{{ variant_form.DELETE }}</div>
+    {% endwith %}
   </div>
-</script>
+</div>
 
 <script>
-function addVariant() {
-    const container = document.getElementById('variantsContainer');
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('variants-container');
+    const totalForms = document.getElementById('id_variants-TOTAL_FORMS');
+    const addButton = document.getElementById('add-variant-btn');
+    const emptyForm = document.getElementById('empty-variant-form');
 
-    if (!container) {
-        console.error('variantsContainer غير موجود');
+    if (!container || !totalForms || !addButton || !emptyForm) {
+        console.error('Variant formset elements not found');
         return;
     }
 
-    const totalFormsInput = document.getElementById('id_variants-TOTAL_FORMS');
-    const index = parseInt(totalFormsInput.value, 10);
-    const counter = container.querySelectorAll('.variant-card').length + 1;
-
-    const template = document.getElementById('empty-form-template').innerHTML;
-    const html = template.replace(/__index__/g, index).replace(/__counter__/g, counter);
-
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    container.appendChild(div.firstElementChild);
-
-    totalFormsInput.value = index + 1;
-
-    updateVariantNumbers();
-}
-
-function removeVariant(button) {
-    const container = document.getElementById('variantsContainer');
-    const cards = container.querySelectorAll('.variant-card:not([style*="display: none"])');
-
-    if (cards.length <= 1) {
-        alert('يجب أن يحتوي المنتج على نسخة واحدة على الأقل');
-        return;
+    function updateVariantNumbers() {
+        const cards = container.querySelectorAll('.variant-card');
+        cards.forEach((card, index) => {
+            const title = card.querySelector('.variant-number');
+            if (title) {
+                title.textContent = 'نسخة ' + (index + 1);
+            }
+        });
     }
 
-    const card = button.closest('.variant-card');
-    const deleteInput = card.querySelector('input[name$="-DELETE"]');
+    addButton.addEventListener('click', function () {
+        const formCount = parseInt(totalForms.value, 10);
 
-    if (deleteInput) {
-        deleteInput.checked = true;
-        card.style.display = 'none';
-    } else {
-        card.remove();
+        let html = emptyForm.innerHTML.replace(/__prefix__/g, formCount);
 
-        const totalFormsInput = document.getElementById('id_variants-TOTAL_FORMS');
-        totalFormsInput.value = parseInt(totalFormsInput.value, 10) - 1;
-    }
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
 
-    updateVariantNumbers();
-}
+        const card = wrapper.firstElementChild;
+        container.appendChild(card);
 
-function updateVariantNumbers() {
-    const container = document.getElementById('variantsContainer');
-    const cards = container.querySelectorAll('.variant-card:not([style*="display: none"])');
+        totalForms.value = formCount + 1;
 
-    cards.forEach((card, index) => {
-        const number = card.querySelector('.variant-number');
-        if (number) {
-            number.textContent = 'نسخة ' + (index + 1);
-        }
+        updateVariantNumbers();
     });
-}
 
-document.getElementById('productForm').addEventListener('submit', function(e) {
-    const visibleCards = document.querySelectorAll('#variantsContainer .variant-card:not([style*="display: none"])');
-    if (visibleCards.length === 0) {
-        e.preventDefault();
-        alert('يجب إضافة نسخة واحدة على الأقل');
-        return false;
-    }
+    container.addEventListener('click', function (e) {
+        const deleteButton = e.target.closest('.delete-variant');
+        if (!deleteButton) return;
 
-    const forms = document.querySelectorAll('#variantsContainer .variant-card:not([style*="display: none"])');
-    for (const card of forms) {
-        const nameInput = card.querySelector('input[name$="-name"]');
-        const barcodeInput = card.querySelector('input[name$="-barcode"]');
+        const card = deleteButton.closest('.variant-card');
+        if (!card) return;
 
-        if (nameInput && !nameInput.value.trim()) {
+        const visibleCards = container.querySelectorAll('.variant-card:not([style*="display: none"])');
+        if (visibleCards.length <= 1) {
+            alert('يجب أن يحتوي المنتج على نسخة واحدة على الأقل');
+            return;
+        }
+
+        const deleteInput = card.querySelector('input[name$="-DELETE"]');
+
+        if (deleteInput) {
+            deleteInput.checked = true;
+            card.style.display = 'none';
+        } else {
+            card.remove();
+
+            const currentTotal = parseInt(totalForms.value, 10);
+            totalForms.value = currentTotal - 1;
+        }
+
+        updateVariantNumbers();
+    });
+
+    document.getElementById('productForm').addEventListener('submit', function (e) {
+        const visibleCards = container.querySelectorAll('.variant-card:not([style*="display: none"])');
+
+        if (visibleCards.length === 0) {
             e.preventDefault();
-            alert('يجب إدخال اسم لكل نسخة');
-            nameInput.focus();
+            alert('يجب إضافة نسخة واحدة على الأقل');
             return false;
         }
 
-        if (barcodeInput && !barcodeInput.value.trim()) {
-            barcodeInput.removeAttribute('required');
+        for (const card of visibleCards) {
+            const nameInput = card.querySelector('input[name$="-name"]');
+            if (nameInput && !nameInput.value.trim()) {
+                e.preventDefault();
+                alert('يجب إدخال اسم لكل نسخة');
+                nameInput.focus();
+                return false;
+            }
         }
-    }
+    });
 });
 </script>
 
