@@ -399,28 +399,29 @@ class ProductVariant(models.Model):
 class Inventory(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='المنتج', related_name='inventory')
     variant = models.ForeignKey(
-      ProductVariant,
-    on_delete=models.CASCADE,
-    null=True,
-    blank=True,
-    related_name='inventory_records',
-    verbose_name='الخيار'
-    )   
+        ProductVariant,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='inventory_records',
+        verbose_name='الخيار'
+    )
     quantity = models.PositiveIntegerField(default=0, verbose_name='الكمية')
 
     exchange_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='سعر الصرف')
 
     lyd_buy_coast_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='تكلفة الشراء بالدينار')
     lyd_shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='تكلفة الشحن بالدينار')
+    lyd_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='العمولة بالدينار')
     lyd_total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='التكلفة الإجمالية بالدينار')
 
     usd_buy_coast_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='تكلفة الشراء بالدولار')
     usd_shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='تكلفة الشحن بالدولار')
+    usd_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='العمولة بالدولار')
     usd_total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='التكلفة الإجمالية بالدولار')
 
     usd_sell_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='سعر البيع بالدولار')
     lyd_sell_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='سعر البيع بالدينار')
-
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -430,6 +431,16 @@ class Inventory(models.Model):
         verbose_name_plural = 'المخزون'
         ordering = ['product']
 
+    def save(self, *args, **kwargs):
+        if self.variant:
+            self.lyd_sell_price = self.variant.lyd_sell_price
+            self.usd_sell_price = self.variant.usd_sell_price
+        self.lyd_total_cost = self.lyd_buy_coast_price + self.lyd_shipping_cost + self.lyd_commission
+        self.usd_total_cost = self.usd_buy_coast_price + self.usd_shipping_cost + self.usd_commission
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.quantity}"
 
     def get_movement_status(self):
       movements = InventoryMovement.objects.filter(
@@ -522,16 +533,7 @@ class Inventory(models.Model):
         )['total'] or 0
         return abs(total_sold)
     
-    def save(self, *args, **kwargs):
-      if self.variant:
-        self.lyd_sell_price = self.variant.lyd_sell_price
-        self.usd_sell_price = self.variant.usd_sell_price
-         
-      super().save(*args, **kwargs)
-    def __str__(self):
-        return f"{self.product.name} - {self.quantity}"
-
-
+   
 
 class InventoryMovement(models.Model):
     MOVEMENT_TYPES = [
@@ -672,6 +674,7 @@ class PurchaseInvoice(models.Model):
 
     exchange_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='سعر الصرف')
 
+    commission = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='العمولة')
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
 
@@ -730,10 +733,16 @@ class PurchaseInvoiceItem(models.Model):
     quantity = models.IntegerField()
     unit_lyd = models.DecimalField(max_digits=12, decimal_places=2)
     unit_usd = models.DecimalField(max_digits=12, decimal_places=2)
+
     unit_shipping_cost_lyd = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     unit_shipping_cost_usd = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
     total_lyd_price = models.DecimalField(max_digits=12, decimal_places=2)
     total_usd_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+    unit_commission_lyd = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='عمولة الوحدة بالدينار')
+    unit_commission_usd = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='عمولة الوحدة بالدولار')
+
     exchange_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='سعر الصرف')
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:

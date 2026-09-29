@@ -28,7 +28,6 @@
   .paid-input-wrap label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 6px; font-weight: 500; }
   .paid-input-wrap input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 15px; font-weight: 600; color: #1f2937; background: #fff; }
   .paid-input-wrap input:focus { outline: none; border-color: #d51f86; box-shadow: 0 0 0 3px rgba(213,31,134,.12); }
-  .shipping-cell { background:#fff8f0; }
   .search-box { position: relative; }
   .search-box .material-symbols-outlined { position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#d51f86; font-size:20px; pointer-events:none; }
   .suggestions { position:absolute; top:100%; right:0; left:0; background:#fff; border:1px solid #fce4ef; border-radius:12px; max-height:220px; overflow-y:auto; z-index:60; box-shadow:0 8px 20px rgba(0,0,0,0.08); margin-top:4px; }
@@ -99,10 +98,19 @@
                  id="shippingCost" class="field-input">
         </div>
         <div>
-          <label class="field-label">تكلفة الشحن الإجمالية (دينار)</label>
-          <input type="text" id="shippingCostLydDisplay" readonly
+          <label class="field-label">العمولة الإجمالية (دولار)</label>
+          <input type="number" name="commission" step="0.01"
+                 value="{{ invoice.commission }}"
+                 id="commissionCost" class="field-input">
+        </div>
+        <div>
+          <label class="field-label">الشحن + العمولة (دينار)</label>
+          <input type="text" id="shippingCommissionLydDisplay" readonly
                  class="field-input font-semibold text-pink-600">
         </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
           <label class="field-label">إجمالي عدد القطع</label>
           <input type="text" id="totalQuantityDisplay" readonly
@@ -121,7 +129,7 @@
       <h3 class="section-title">منتجات الفاتورة</h3>
       <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
         <div class="search-box flex-1 sm:w-64">
-          <input type="text" id="productSearch" placeholder="ابحث باسم المنتج أو الباركود..."
+          <input type="text" id="productSearch" placeholder="ابحث باسم المنتج / النسخة / الباركود..."
                  class="field-input" style="padding-right:38px;" autocomplete="off">
           <span class="material-symbols-outlined">search</span>
           <ul id="productSuggestions" class="suggestions hidden"></ul>
@@ -132,7 +140,7 @@
         </button>
         <button type="button" onclick="addProductRow()" class="btn-outline flex items-center justify-center gap-1">
           <span class="material-symbols-outlined text-[18px]">add</span>
-          إضافة منتج
+          إضافة صف
         </button>
       </div>
     </div>
@@ -142,15 +150,19 @@
         <table class="w-full text-xs">
           <thead class="bg-pink-50/60">
             <tr class="text-gray-600">
-              <th class="text-right py-3 px-2 font-semibold">المنتج</th>
+              <th class="text-right py-3 px-2 font-semibold min-w-[200px]">المنتج / النسخة</th>
               <th class="text-right py-3 px-2 font-semibold">الكمية</th>
               <th class="text-right py-3 px-2 font-semibold">سعر الوحدة $</th>
               <th class="text-right py-3 px-2 font-semibold">سعر الوحدة د.ل</th>
               <th class="text-right py-3 px-2 font-semibold">خصم $</th>
               <th class="text-right py-3 px-2 font-semibold">شحن/قطعة $</th>
               <th class="text-right py-3 px-2 font-semibold">شحن/قطعة د.ل</th>
+              <th class="text-right py-3 px-2 font-semibold">عمولة/قطعة $</th>
+              <th class="text-right py-3 px-2 font-semibold">عمولة/قطعة د.ل</th>
               <th class="text-right py-3 px-2 font-semibold">تكلفة/قطعة $</th>
               <th class="text-right py-3 px-2 font-semibold">تكلفة/قطعة د.ل</th>
+              <th class="text-right py-3 px-2 font-semibold">بيع جديد $</th>
+              <th class="text-right py-3 px-2 font-semibold">بيع جديد د.ل</th>
               <th class="text-right py-3 px-2 font-semibold">إجمالي $</th>
               <th class="text-right py-3 px-2 font-semibold"></th>
             </tr>
@@ -159,16 +171,26 @@
             {% for item in invoice.items.all %}
             <tr class="product-row border-b border-gray-100">
               <td class="py-2 px-2">
-                <select name="product_ids[]" required class="product-select field-input" onchange="fillProductPrice(this)">
-                  <option value="">اختر المنتج</option>
-                  {% for product in products %}
-                  <option value="{{ product.id }}" {% if item.product.id == product.id %}selected{% endif %}
-                          data-price="{{ product.usd_sell_price|default:0 }}"
-                          data-name="{{ product.name }}"
-                          data-color="{{ product.color|default:'' }}"
-                          data-barcode="{{ product.barcode|default:'' }}">{{ product.name }}</option>
+                <select name="variant_ids[]" required class="variant-select field-input" onchange="fillProductPrice(this)">
+                  <option value="">اختر المنتج / النسخة</option>
+                  {% for p in products %}
+                    {% for v in p.variants.all %}
+                      {% if v.is_active %}
+                      <option value="{{ v.id }}"
+                              data-product-id="{{ p.id }}"
+                              data-usd-price="{{ v.usd_sell_price|default:0 }}"
+                              data-lyd-price="{{ v.lyd_sell_price|default:0 }}"
+                              data-name="{{ p.name }}"
+                              data-variant-name="{{ v.name }}"
+                              data-color="{{ v.color|default:'' }}"
+                              data-size="{{ v.size|default:'' }}"
+                              data-barcode="{{ v.barcode|default:'' }}"
+                              {% if item.variant.id == v.id %}selected{% endif %}>{{ p.name }}{% if v.name %} - {{ v.name }}{% endif %}{% if v.color %} ({{ v.color }}){% endif %}</option>
+                      {% endif %}
+                    {% endfor %}
                   {% endfor %}
                 </select>
+                <input type="hidden" name="product_ids[]" class="product-id-hidden" value="{{ item.product.id }}">
               </td>
               <td class="py-2 px-2">
                 <input type="number" name="quantities[]" min="1" required
@@ -200,10 +222,26 @@
                        value="{{ item.unit_shipping_cost_lyd|floatformat:2 }}">
               </td>
               <td class="py-2 px-2">
+                <input type="text" class="commission-per-unit-usd field-input w-20" readonly
+                       value="{{ item.unit_commission_usd|floatformat:2 }}">
+              </td>
+              <td class="py-2 px-2">
+                <input type="text" class="commission-per-unit-lyd field-input w-20" readonly
+                       value="{{ item.unit_commission_lyd|floatformat:2 }}">
+              </td>
+              <td class="py-2 px-2">
                 <input type="text" class="cost-per-unit-usd field-input w-20 bg-pink-50/50 font-semibold" readonly value="0.00">
               </td>
               <td class="py-2 px-2">
                 <input type="text" class="cost-per-unit-lyd field-input w-20 bg-pink-50/50 font-semibold" readonly value="0.00">
+              </td>
+              <td class="py-2 px-2">
+                <input type="number" name="new_usd_sell_prices[]" step="0.01"
+                       class="new-usd-sell-input field-input w-20" placeholder="اختياري">
+              </td>
+              <td class="py-2 px-2">
+                <input type="number" name="new_lyd_sell_prices[]" step="0.01"
+                       class="new-lyd-sell-input field-input w-20" placeholder="اختياري">
               </td>
               <td class="py-2 px-2">
                 <input type="text" class="row-total field-input w-20" readonly
@@ -243,7 +281,7 @@
           <span id="summarySubtotalLyd" class="font-semibold text-gray-800">0.00 د.ل</span>
         </div>
 
-        <div class="summary-section-title mt-4">الشحن</div>
+        <div class="summary-section-title mt-4">الشحن والعمولة</div>
         <div class="flex justify-between py-2 text-sm">
           <span class="text-gray-600">إجمالي الشحن ($)</span>
           <span id="summaryShippingUsd" class="font-semibold text-amber-700">0.00 $</span>
@@ -252,13 +290,21 @@
           <span class="text-gray-600">إجمالي الشحن (د.ل)</span>
           <span id="summaryShippingLyd" class="font-semibold text-amber-700">0.00 د.ل</span>
         </div>
+        <div class="flex justify-between py-2 text-sm">
+          <span class="text-gray-600">إجمالي العمولة ($)</span>
+          <span id="summaryCommissionUsd" class="font-semibold text-amber-700">0.00 $</span>
+        </div>
+        <div class="flex justify-between py-2 text-sm">
+          <span class="text-gray-600">إجمالي العمولة (د.ل)</span>
+          <span id="summaryCommissionLyd" class="font-semibold text-amber-700">0.00 د.ل</span>
+        </div>
         <div class="flex justify-between py-1.5 text-xs text-gray-500 pr-3">
           <span>شحن/قطعة ($)</span>
           <span id="summaryShippingPerUnitUsd">0.00 $</span>
         </div>
         <div class="flex justify-between py-1.5 text-xs text-gray-500 pr-3">
-          <span>شحن/قطعة (د.ل)</span>
-          <span id="summaryShippingPerUnitLyd">0.00 د.ل</span>
+          <span>عمولة/قطعة ($)</span>
+          <span id="summaryCommissionPerUnitUsd">0.00 $</span>
         </div>
 
         <div class="total-box">
@@ -321,10 +367,15 @@
         <input type="text" id="np_name" class="field-input" required>
       </div>
 
+      <div>
+        <label class="field-label">اسم النسخة *</label>
+        <input type="text" id="np_variant_name" class="field-input" value="افتراضي" required>
+      </div>
+
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="field-label">الباركود</label>
-          <input type="text" id="np_barcode" class="field-input">
+          <input type="text" id="np_barcode" class="field-input" placeholder="اتركه فارغاً للتوليد">
         </div>
         <div>
           <label class="field-label">اللون</label>
@@ -334,15 +385,26 @@
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-  <label class="field-label">البراند</label>
-  <div style="position:relative;">
-    <input type="text" id="np_brand" class="field-input" autocomplete="off"
-           placeholder="اكتب اسم البراند">
-    <ul id="np-brand-suggestions"
-        class="hidden absolute z-50 bg-white border border-secondary-container rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1">
-    </ul>
-  </div>
-</div>
+          <label class="field-label">الحجم</label>
+          <input type="text" id="np_size" class="field-input">
+        </div>
+        <div>
+          <label class="field-label">الإصدار</label>
+          <input type="text" id="np_edition" class="field-input">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label">البراند</label>
+          <div style="position:relative;">
+            <input type="text" id="np_brand" class="field-input" autocomplete="off"
+                   placeholder="اكتب اسم البراند">
+            <ul id="np-brand-suggestions"
+                class="hidden absolute z-50 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1">
+            </ul>
+          </div>
+        </div>
         <div>
           <label class="field-label">بلد المنشأ</label>
           <input type="text" id="np_made_in" class="field-input">
@@ -382,8 +444,10 @@
     </div>
   </div>
 </div>
+
 {{ brand_choices|json_script:"brand-data" }}
 {{ products_json|json_script:"products-data" }}
+
 <script>
 const ALL_PRODUCTS = JSON.parse(document.getElementById('products-data').textContent);
 
@@ -409,29 +473,49 @@ function convertCurrency(input, type) {
     calculateTotals();
 }
 
+function fillProductPrice(select) {
+    const opt = select.options[select.selectedIndex];
+    const row = select.closest('.product-row');
+    const productIdHidden = row.querySelector('.product-id-hidden');
+
+    if (opt && opt.value) {
+        productIdHidden.value = opt.getAttribute('data-product-id') || '';
+    } else {
+        productIdHidden.value = '';
+    }
+}
+
 function addProductRow() {
     const firstRow = document.querySelector('.product-row');
     if (!firstRow) return;
     const row = firstRow.cloneNode(true);
+
     row.querySelectorAll('input, select').forEach(el => {
         if (el.tagName === 'SELECT') {
             el.selectedIndex = 0;
+        } else if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = false;
         } else if (el.type !== 'button') {
             if (el.classList.contains('discount-input')) {
                 el.value = '0';
             } else if (el.classList.contains('shipping-per-unit-usd') ||
                        el.classList.contains('shipping-per-unit-lyd') ||
+                       el.classList.contains('commission-per-unit-usd') ||
+                       el.classList.contains('commission-per-unit-lyd') ||
                        el.classList.contains('cost-per-unit-usd') ||
                        el.classList.contains('cost-per-unit-lyd') ||
                        el.classList.contains('row-total')) {
                 el.value = '0.00';
             } else if (el.classList.contains('quantity-input')) {
                 el.value = '1';
+            } else if (el.classList.contains('product-id-hidden')) {
+                el.value = '';
             } else {
                 el.value = '';
             }
         }
     });
+
     document.getElementById('productRows').appendChild(row);
     calculateTotals();
 }
@@ -443,23 +527,15 @@ function removeRow(btn) {
     }
 }
 
-function fillProductPrice(select) {
-    const opt = select.options[select.selectedIndex];
-    const price = opt.getAttribute('data-price');
-    if (price) {
-        const row = select.closest('.product-row');
-        row.querySelector('.unit-usd-input').value = price;
-        convertCurrency(row.querySelector('.unit-usd-input'), 'usd');
-    }
-}
-
 function calculateTotals() {
     const rateEl = document.getElementById('exchangeRate');
     const shippingEl = document.getElementById('shippingCost');
+    const commissionEl = document.getElementById('commissionCost');
     if (!rateEl || !shippingEl) return;
 
     const rate = parseFloat(rateEl.value) || 1;
     const shippingUsd = parseFloat(shippingEl.value) || 0;
+    const commissionUsd = parseFloat(commissionEl ? commissionEl.value : 0) || 0;
 
     const rows = document.querySelectorAll('.product-row');
     let totalQuantity = 0;
@@ -472,6 +548,10 @@ function calculateTotals() {
     const shippingPerUnitUsd = totalQuantity > 0 ? shippingUsd / totalQuantity : 0;
     const shippingPerUnitLyd = shippingPerUnitUsd * rate;
     const shippingLyd = shippingUsd * rate;
+
+    const commissionPerUnitUsd = totalQuantity > 0 ? commissionUsd / totalQuantity : 0;
+    const commissionPerUnitLyd = commissionPerUnitUsd * rate;
+    const commissionLyd = commissionUsd * rate;
 
     let subtotalUsd = 0;
     let subtotalLyd = 0;
@@ -487,8 +567,8 @@ function calculateTotals() {
         const lyd  = parseFloat(lydEl  ? lydEl.value  : 0) || 0;
         const disc = parseFloat(discEl ? discEl.value : 0) || 0;
 
-        const costPerUnitUsd = usd + shippingPerUnitUsd - disc;
-        const costPerUnitLyd = lyd + shippingPerUnitLyd - (disc * rate);
+        const costPerUnitUsd = usd + shippingPerUnitUsd + commissionPerUnitUsd - disc;
+        const costPerUnitLyd = lyd + shippingPerUnitLyd + commissionPerUnitLyd - (disc * rate);
         const itemTotalUsd   = costPerUnitUsd * qty;
 
         subtotalUsd += itemTotalUsd;
@@ -496,12 +576,16 @@ function calculateTotals() {
 
         const elSPU = row.querySelector('.shipping-per-unit-usd');
         const elSPL = row.querySelector('.shipping-per-unit-lyd');
+        const elCMU = row.querySelector('.commission-per-unit-usd');
+        const elCML = row.querySelector('.commission-per-unit-lyd');
         const elCPU = row.querySelector('.cost-per-unit-usd');
         const elCPL = row.querySelector('.cost-per-unit-lyd');
         const elTot = row.querySelector('.row-total');
 
         if (elSPU) elSPU.value = shippingPerUnitUsd.toFixed(2);
         if (elSPL) elSPL.value = shippingPerUnitLyd.toFixed(2);
+        if (elCMU) elCMU.value = commissionPerUnitUsd.toFixed(2);
+        if (elCML) elCML.value = commissionPerUnitLyd.toFixed(2);
         if (elCPU) elCPU.value = costPerUnitUsd.toFixed(2);
         if (elCPL) elCPL.value = costPerUnitLyd.toFixed(2);
         if (elTot) elTot.value = itemTotalUsd.toFixed(2);
@@ -511,8 +595,8 @@ function calculateTotals() {
     const paidUsd = parseFloat(paidEl ? paidEl.value : 0) || 0;
     const paidLyd = paidUsd * rate;
 
-    const totalLyd = subtotalLyd + shippingLyd;
-    const totalUsd = subtotalUsd + shippingUsd;
+    const totalLyd = subtotalLyd + shippingLyd + commissionLyd;
+    const totalUsd = subtotalUsd + shippingUsd + commissionUsd;
     const debtLyd  = totalLyd - paidLyd;
 
     const setText = (id, val) => {
@@ -524,7 +608,7 @@ function calculateTotals() {
         if (el) el.value = val;
     };
 
-    setVal('shippingCostLydDisplay', shippingLyd.toFixed(2) + ' د.ل');
+    setVal('shippingCommissionLydDisplay', (shippingLyd + commissionLyd).toFixed(2) + ' د.ل');
     setVal('totalQuantityDisplay', totalQuantity);
 
     setText('summarySubtotalUsd', subtotalUsd.toFixed(2) + ' $');
@@ -532,8 +616,10 @@ function calculateTotals() {
 
     setText('summaryShippingUsd', shippingUsd.toFixed(2) + ' $');
     setText('summaryShippingLyd', shippingLyd.toFixed(2) + ' د.ل');
+    setText('summaryCommissionUsd', commissionUsd.toFixed(2) + ' $');
+    setText('summaryCommissionLyd', commissionLyd.toFixed(2) + ' د.ل');
     setText('summaryShippingPerUnitUsd', shippingPerUnitUsd.toFixed(2) + ' $');
-    setText('summaryShippingPerUnitLyd', shippingPerUnitLyd.toFixed(2) + ' د.ل');
+    setText('summaryCommissionPerUnitUsd', commissionPerUnitUsd.toFixed(2) + ' $');
 
     setText('summaryTotalLyd', totalLyd.toFixed(2));
     setText('summaryTotalUsd', totalUsd.toFixed(2));
@@ -571,33 +657,39 @@ productSearch.addEventListener('input', function () {
 
     const matches = ALL_PRODUCTS.filter(p =>
         normalize(p.name).includes(q) ||
+        normalize(p.variant_name).includes(q) ||
         normalize(p.barcode).includes(q) ||
-        normalize(p.color).includes(q)
-    ).slice(0, 8);
+        normalize(p.color).includes(q) ||
+        normalize(p.size).includes(q)
+    ).slice(0, 10);
 
     if (!matches.length) { productSug.classList.add('hidden'); return; }
 
-    productSug.innerHTML = matches.map(p =>
-        `<li data-id="${p.id}">${p.name}${p.color ? ' — ' + p.color : ''}${p.barcode ? ' — ' + p.barcode : ''}</li>`
-    ).join('');
+    productSug.innerHTML = matches.map(p => {
+        const parts = [p.name];
+        if (p.variant_name) parts.push(p.variant_name);
+        if (p.color) parts.push(p.color);
+        if (p.barcode) parts.push(p.barcode);
+        return `<li data-variant-id="${p.variant_id}">${parts.join(' — ')}</li>`;
+    }).join('');
     productSug.classList.remove('hidden');
 });
 
 productSug.addEventListener('click', function (e) {
     const li = e.target.closest('li');
     if (!li) return;
-    const productId = li.dataset.id;
+    const variantId = li.dataset.variantId;
 
     let targetSelect = null;
-    document.querySelectorAll('.product-select').forEach(sel => {
+    document.querySelectorAll('.variant-select').forEach(sel => {
         if (!sel.value && !targetSelect) targetSelect = sel;
     });
     if (!targetSelect) {
         addProductRow();
-        const sels = document.querySelectorAll('.product-select');
+        const sels = document.querySelectorAll('.variant-select');
         targetSelect = sels[sels.length - 1];
     }
-    targetSelect.value = productId;
+    targetSelect.value = variantId;
     targetSelect.dispatchEvent(new Event('change'));
 
     productSearch.value = '';
@@ -627,12 +719,15 @@ function saveNewProduct() {
     errorsBox.innerHTML = '';
 
     const data = {
-        name:        document.getElementById('np_name').value.trim(),
-        barcode:     document.getElementById('np_barcode').value.trim(),
-        color:       document.getElementById('np_color').value.trim(),
-        brand:       document.getElementById('np_brand').value.trim(),
-        made_in:     document.getElementById('np_made_in').value.trim(),
-        category:    document.getElementById('np_category').value,
+        name:          document.getElementById('np_name').value.trim(),
+        variant_name:  document.getElementById('np_variant_name').value.trim() || 'افتراضي',
+        barcode:       document.getElementById('np_barcode').value.trim(),
+        color:         document.getElementById('np_color').value.trim(),
+        size:          document.getElementById('np_size').value.trim(),
+        edition:       document.getElementById('np_edition').value.trim(),
+        brand:         document.getElementById('np_brand').value.trim(),
+        made_in:       document.getElementById('np_made_in').value.trim(),
+        category:      document.getElementById('np_category').value,
         usd_sell_price: document.getElementById('np_usd_sell_price').value,
         lyd_sell_price: document.getElementById('np_lyd_sell_price').value,
     };
@@ -657,43 +752,47 @@ function saveNewProduct() {
     .then(res => {
         if (res.success) {
             const product = res.product;
+            const optLabel = `${product.name}${product.variant_name ? ' - ' + product.variant_name : ''}${product.color ? ' (' + product.color + ')' : ''}`;
 
-            document.querySelectorAll('.product-select').forEach(sel => {
-                const opt = new Option(
-                    `${product.name}${product.color ? '-' + product.color : ''}`,
-                    product.id,
-                    false, false
-                );
-                opt.dataset.price = product.usd_price || 0;
-                opt.dataset.name  = product.name;
+            document.querySelectorAll('.variant-select').forEach(sel => {
+                const opt = new Option(optLabel, product.variant_id, false, false);
+                opt.dataset.productId = product.id;
+                opt.dataset.usdPrice = product.usd_price || 0;
+                opt.dataset.lydPrice = product.lyd_price || 0;
+                opt.dataset.name = product.name;
+                opt.dataset.variantName = product.variant_name;
                 opt.dataset.color = product.color;
-                opt.dataset.image = product.image;
+                opt.dataset.size = product.size || '';
+                opt.dataset.barcode = product.barcode;
                 sel.add(opt);
             });
 
             let targetSelect = null;
-            document.querySelectorAll('.product-select').forEach(sel => {
+            document.querySelectorAll('.variant-select').forEach(sel => {
                 if (!sel.value && !targetSelect) targetSelect = sel;
             });
             if (!targetSelect) {
                 addProductRow();
-                const sels = document.querySelectorAll('.product-select');
+                const sels = document.querySelectorAll('.variant-select');
                 targetSelect = sels[sels.length - 1];
             }
-            targetSelect.value = product.id;
+            targetSelect.value = product.variant_id;
             targetSelect.dispatchEvent(new Event('change'));
 
             ALL_PRODUCTS.push({
                 id: product.id,
+                variant_id: product.variant_id,
                 name: product.name,
+                variant_name: product.variant_name,
                 color: product.color,
+                size: product.size || '',
                 barcode: product.barcode,
-                price: product.usd_price,
             });
 
             closeProductModal();
-            ['np_name','np_barcode','np_color','np_brand','np_made_in']
+            ['np_name','np_barcode','np_color','np_size','np_edition','np_brand','np_made_in']
                 .forEach(id => document.getElementById(id).value = '');
+            document.getElementById('np_variant_name').value = 'افتراضي';
             document.getElementById('np_category').selectedIndex = 0;
             document.getElementById('np_usd_sell_price').value = '0';
             document.getElementById('np_lyd_sell_price').value = '0';
@@ -720,6 +819,7 @@ document.addEventListener('change', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     calculateTotals();
 });
+
 (function () {
     const brandDataEl = document.getElementById('brand-data');
     if (!brandDataEl) return;

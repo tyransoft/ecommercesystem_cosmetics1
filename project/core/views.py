@@ -1480,109 +1480,144 @@ def purchase_invoice_add(request):
     if not request.user.is_main_admin():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
         return redirect('home')
+
     if request.method == 'POST':
         supplier_id = request.POST.get('supplier')
-        subtotal = float(request.POST.get('subtotal', 0))
-        discount = float(request.POST.get('discount', 0))
-        shipping_cost = float(request.POST.get('shipping_cost', 0))
-        exchange_rate = float(request.POST.get('exchange_rate', 1))
-        paid_amount = float(request.POST.get('paid_amount', 0))
+        subtotal = Decimal(request.POST.get('subtotal', '0') or '0')
+        discount = Decimal(request.POST.get('discount', '0') or '0')
+        shipping_cost = Decimal(request.POST.get('shipping_cost', '0') or '0')
+        commission = Decimal(request.POST.get('commission', '0') or '0')
+        exchange_rate = Decimal(request.POST.get('exchange_rate', '1') or '1')
+        paid_amount = Decimal(request.POST.get('paid_amount', '0') or '0')
         receive_date = (
-          request.POST.get('receive_date')
-          or request.POST.get('expected_delivery_date')
-          or None
+            request.POST.get('receive_date')
+            or request.POST.get('expected_delivery_date')
+            or None
         )
         notes = request.POST.get('notes', '')
         status = request.POST.get('status', 'draft')
-        
+
         product_ids = request.POST.getlist('product_ids[]')
+        variant_ids = request.POST.getlist('variant_ids[]')
         quantities = request.POST.getlist('quantities[]')
         unit_usd_prices = request.POST.getlist('unit_usd_prices[]')
         unit_lyd_prices = request.POST.getlist('unit_lyd_prices[]')
-        
+        new_usd_sell_prices = request.POST.getlist('new_usd_sell_prices[]')
+        new_lyd_sell_prices = request.POST.getlist('new_lyd_sell_prices[]')
+
         if not supplier_id:
             messages.error(request, 'يرجى اختيار المورد')
             return redirect('purchase_invoice_add')
-        
+
         if not product_ids:
             messages.error(request, 'يرجى إضافة منتج واحد على الأقل')
             return redirect('purchase_invoice_add')
-        
+
         with transaction.atomic():
-            total_quantity = sum(int(q) for q in quantities)
-            shipping_per_unit_usd = shipping_cost / total_quantity if total_quantity > 0 else 0
-            
+            total_quantity = sum(int(q) for q in quantities if q)
+            shipping_per_unit_usd = shipping_cost / total_quantity if total_quantity > 0 else Decimal('0')
+            commission_per_unit_usd = commission / total_quantity if total_quantity > 0 else Decimal('0')
+
             invoice = PurchaseInvoice.objects.create(
                 supplier=Supplier.objects.get(id=supplier_id),
                 subtotal=subtotal,
                 discount=discount,
-                total=subtotal - discount + shipping_cost,
+                total=subtotal - discount + shipping_cost + commission,
                 paid_amount=paid_amount,
-                debt_amount=subtotal - discount + shipping_cost - paid_amount,
+                debt_amount=subtotal - discount + shipping_cost + commission - paid_amount,
                 shipping_cost=shipping_cost,
+                commission=commission,
                 exchange_rate=exchange_rate,
                 receive_date=receive_date,
                 notes=notes,
                 status=status,
                 created_by=request.user
             )
-            
+
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
+                variant_id = variant_ids[i] if i < len(variant_ids) else ''
                 quantity = int(quantities[i])
-                unit_usd = float(unit_usd_prices[i]) if unit_usd_prices[i] else 0
-                unit_lyd = float(unit_lyd_prices[i]) if unit_lyd_prices[i] else 0
-                
+                unit_usd = Decimal(unit_usd_prices[i]) if unit_usd_prices[i] else Decimal('0')
+                unit_lyd = Decimal(unit_lyd_prices[i]) if unit_lyd_prices[i] else Decimal('0')
+
                 if unit_lyd > 0 and exchange_rate > 0:
                     unit_usd = unit_lyd / exchange_rate
                 elif unit_usd > 0:
                     unit_lyd = unit_usd * exchange_rate
-                
+
                 unit_shipping_usd = shipping_per_unit_usd
                 unit_shipping_lyd = unit_shipping_usd * exchange_rate
-                
-                total_usd_price = (unit_usd * quantity) + (unit_shipping_usd * quantity)
-                total_lyd_price = (unit_lyd * quantity) + (unit_shipping_lyd * quantity)
-                
+
+                unit_commission_usd = commission_per_unit_usd
+                unit_commission_lyd = unit_commission_usd * exchange_rate
+
+                total_usd_price = (unit_usd * quantity) + (unit_shipping_usd * quantity) + (unit_commission_usd * quantity)
+                total_lyd_price = (unit_lyd * quantity) + (unit_shipping_lyd * quantity) + (unit_commission_lyd * quantity)
+
                 PurchaseInvoiceItem.objects.create(
                     invoice=invoice,
                     product_id=product_id,
+                    variant_id=variant_id if variant_id else None,
                     quantity=quantity,
                     unit_lyd=unit_lyd,
                     unit_usd=unit_usd,
                     unit_shipping_cost_lyd=unit_shipping_lyd,
                     unit_shipping_cost_usd=unit_shipping_usd,
+                    unit_commission_lyd=unit_commission_lyd,
+                    unit_commission_usd=unit_commission_usd,
                     total_lyd_price=total_lyd_price,
                     total_usd_price=total_usd_price,
                     exchange_rate=exchange_rate
                 )
-            
+
+                if variant_id:
+                    try:
+                        variant = ProductVariant.objects.get(id=variant_id)
+                        new_usd = new_usd_sell_prices[i] if i < len(new_usd_sell_prices) else ''
+                        new_lyd = new_lyd_sell_prices[i] if i < len(new_lyd_sell_prices) else ''
+
+                        changed = False
+                        if new_usd:
+                            variant.usd_sell_price = Decimal(new_usd)
+                            changed = True
+                        if new_lyd:
+                            variant.lyd_sell_price = Decimal(new_lyd)
+                            changed = True
+                        if changed:
+                            variant.save()
+                    except ProductVariant.DoesNotExist:
+                        pass
+
             if status == 'confirmed':
                 confirm_invoice(invoice)
-            
+
             messages.success(request, f'تم إنشاء الفاتورة رقم {invoice.invoice_number} بنجاح')
             return redirect('purchase_invoice_list')
-    
+
     suppliers = Supplier.objects.all().order_by('name')
-    products = Product.objects.all().order_by('name')
-    products_json = [
-        {
-            'id': p.id,
-            'name': p.name,
-            'color': p.color or '',
-            'barcode': p.barcode or '',
-            'price': float(p.usd_sell_price or 0),
-            'image': p.image.url if p.image else '',
-        }
-        for p in products
-    ]
+    products = Product.objects.all().order_by('name').prefetch_related('variants')
+    products_json = []
+    for p in products:
+        for v in p.variants.filter(is_active=True):
+            products_json.append({
+                'id': p.id,
+                'variant_id': v.id,
+                'name': p.name,
+                'variant_name': v.name,
+                'color': v.color or '',
+                'size': v.size or '',
+                'barcode': v.barcode or '',
+                'usd_sell_price': float(v.usd_sell_price or 0),
+                'lyd_sell_price': float(v.lyd_sell_price or 0),
+                'image': p.image.url if p.image else '',
+            })
 
     return render(request, 'dashboard/purchase_invoice_add.html', {
         'suppliers': suppliers,
         'products': products,
         'products_json': products_json,
-    'brand_choices': ProductForm.BRAND_CHOICES,
-
+        'brand_choices': ProductForm.BRAND_CHOICES,
         'categories': Category.objects.all(),
     })
 
@@ -1591,120 +1626,154 @@ def purchase_invoice_edit(request, pk):
     if not request.user.is_main_admin():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
         return redirect('home')
+
     invoice = get_object_or_404(PurchaseInvoice, pk=pk)
     if invoice.status != 'draft':
         messages.error(request, 'لا يمكن تعديل فاتورة غير مسودة')
         return redirect('purchase_invoice_detail', pk=pk)
-    
+
     if request.method == 'POST':
         supplier_id = request.POST.get('supplier')
-        subtotal = float(request.POST.get('subtotal', 0))
-        discount = float(request.POST.get('discount', 0))
-        shipping_cost = float(request.POST.get('shipping_cost', 0))
-        exchange_rate = float(request.POST.get('exchange_rate', 1))
-        paid_amount = float(request.POST.get('paid_amount', 0))
+        subtotal = Decimal(request.POST.get('subtotal', '0') or '0')
+        discount = Decimal(request.POST.get('discount', '0') or '0')
+        shipping_cost = Decimal(request.POST.get('shipping_cost', '0') or '0')
+        commission = Decimal(request.POST.get('commission', '0') or '0')
+        exchange_rate = Decimal(request.POST.get('exchange_rate', '1') or '1')
+        paid_amount = Decimal(request.POST.get('paid_amount', '0') or '0')
         receive_date = (
-          request.POST.get('receive_date')
-          or request.POST.get('expected_delivery_date')
-          or None
+            request.POST.get('receive_date')
+            or request.POST.get('expected_delivery_date')
+            or None
         )
         notes = request.POST.get('notes', '')
         status = request.POST.get('status', 'draft')
-        
+
         product_ids = request.POST.getlist('product_ids[]')
+        variant_ids = request.POST.getlist('variant_ids[]')
         quantities = request.POST.getlist('quantities[]')
         unit_usd_prices = request.POST.getlist('unit_usd_prices[]')
         unit_lyd_prices = request.POST.getlist('unit_lyd_prices[]')
-        
+        new_usd_sell_prices = request.POST.getlist('new_usd_sell_prices[]')
+        new_lyd_sell_prices = request.POST.getlist('new_lyd_sell_prices[]')
+
         if not supplier_id:
             messages.error(request, 'يرجى اختيار المورد')
             return redirect('purchase_invoice_edit', pk=pk)
-        
+
         if not product_ids:
             messages.error(request, 'يرجى إضافة منتج واحد على الأقل')
             return redirect('purchase_invoice_edit', pk=pk)
-        
+
         with transaction.atomic():
-            total_quantity = sum(int(q) for q in quantities)
-            shipping_per_unit_usd = shipping_cost / total_quantity if total_quantity > 0 else 0
-            
+            total_quantity = sum(int(q) for q in quantities if q)
+            shipping_per_unit_usd = shipping_cost / total_quantity if total_quantity > 0 else Decimal('0')
+            commission_per_unit_usd = commission / total_quantity if total_quantity > 0 else Decimal('0')
+
             invoice.supplier = Supplier.objects.get(id=supplier_id)
             invoice.subtotal = subtotal
             invoice.discount = discount
-            invoice.total = subtotal - discount + shipping_cost
+            invoice.total = subtotal - discount + shipping_cost + commission
             invoice.paid_amount = paid_amount
-            invoice.debt_amount = subtotal - discount + shipping_cost - paid_amount
+            invoice.debt_amount = subtotal - discount + shipping_cost + commission - paid_amount
             invoice.shipping_cost = shipping_cost
+            invoice.commission = commission
             invoice.exchange_rate = exchange_rate
             invoice.receive_date = receive_date
             invoice.notes = notes
             invoice.status = status
             invoice.save()
-            
+
             invoice.items.all().delete()
-            
+
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
+                variant_id = variant_ids[i] if i < len(variant_ids) else ''
                 quantity = int(quantities[i])
-                unit_usd = float(unit_usd_prices[i]) if unit_usd_prices[i] else 0
-                unit_lyd = float(unit_lyd_prices[i]) if unit_lyd_prices[i] else 0
-                
+                unit_usd = Decimal(unit_usd_prices[i]) if unit_usd_prices[i] else Decimal('0')
+                unit_lyd = Decimal(unit_lyd_prices[i]) if unit_lyd_prices[i] else Decimal('0')
+
                 if unit_lyd > 0 and exchange_rate > 0:
                     unit_usd = unit_lyd / exchange_rate
                 elif unit_usd > 0:
                     unit_lyd = unit_usd * exchange_rate
-                
+
                 unit_shipping_usd = shipping_per_unit_usd
                 unit_shipping_lyd = unit_shipping_usd * exchange_rate
-                
-                total_usd_price = (unit_usd * quantity) + (unit_shipping_usd * quantity)
-                total_lyd_price = (unit_lyd * quantity) + (unit_shipping_lyd * quantity)
-                
+
+                unit_commission_usd = commission_per_unit_usd
+                unit_commission_lyd = unit_commission_usd * exchange_rate
+
+                total_usd_price = (unit_usd * quantity) + (unit_shipping_usd * quantity) + (unit_commission_usd * quantity)
+                total_lyd_price = (unit_lyd * quantity) + (unit_shipping_lyd * quantity) + (unit_commission_lyd * quantity)
+
                 PurchaseInvoiceItem.objects.create(
                     invoice=invoice,
                     product_id=product_id,
+                    variant_id=variant_id if variant_id else None,
                     quantity=quantity,
                     unit_lyd=unit_lyd,
                     unit_usd=unit_usd,
                     unit_shipping_cost_lyd=unit_shipping_lyd,
                     unit_shipping_cost_usd=unit_shipping_usd,
+                    unit_commission_lyd=unit_commission_lyd,
+                    unit_commission_usd=unit_commission_usd,
                     total_lyd_price=total_lyd_price,
                     total_usd_price=total_usd_price,
                     exchange_rate=exchange_rate
                 )
-            
+
+                if variant_id:
+                    try:
+                        variant = ProductVariant.objects.get(id=variant_id)
+                        new_usd = new_usd_sell_prices[i] if i < len(new_usd_sell_prices) else ''
+                        new_lyd = new_lyd_sell_prices[i] if i < len(new_lyd_sell_prices) else ''
+
+                        changed = False
+                        if new_usd:
+                            variant.usd_sell_price = Decimal(new_usd)
+                            changed = True
+                        if new_lyd:
+                            variant.lyd_sell_price = Decimal(new_lyd)
+                            changed = True
+                        if changed:
+                            variant.save()
+                    except ProductVariant.DoesNotExist:
+                        pass
+
             if status == 'confirmed':
                 confirm_invoice(invoice)
             elif status == 'cancelled':
                 invoice.debt_amount = 0
                 invoice.save()
-            
+
             messages.success(request, f'تم تحديث الفاتورة رقم {invoice.invoice_number} بنجاح')
             return redirect('purchase_invoice_list')
-    
+
     suppliers = Supplier.objects.all().order_by('name')
-    products = Product.objects.all().order_by('name')
-    products_json = [
-            {
+    products = Product.objects.all().order_by('name').prefetch_related('variants')
+    products_json = []
+    for p in products:
+        for v in p.variants.filter(is_active=True):
+            products_json.append({
                 'id': p.id,
+                'variant_id': v.id,
                 'name': p.name,
-                'color': p.color or '',
-                'barcode': p.barcode or '',
-                'price': float(p.usd_sell_price or 0),
+                'variant_name': v.name,
+                'color': v.color or '',
+                'size': v.size or '',
+                'barcode': v.barcode or '',
+                'usd_sell_price': float(v.usd_sell_price or 0),
+                'lyd_sell_price': float(v.lyd_sell_price or 0),
                 'image': p.image.url if p.image else '',
-            }
-            for p in products
-        ]
-    
+            })
+
     return render(request, 'dashboard/purchase_invoice_edit.html', {
         'invoice': invoice,
         'suppliers': suppliers,
-        'products_json': products_json,
-    'brand_choices': ProductForm.BRAND_CHOICES,
-
         'products': products,
+        'products_json': products_json,
+        'brand_choices': ProductForm.BRAND_CHOICES,
         'categories': Category.objects.all(),
-
     })
 
 @login_required
@@ -1771,43 +1840,46 @@ def purchase_invoice_delete(request, pk):
 def confirm_invoice(invoice):
     with transaction.atomic():
         for item in invoice.items.all():
-            inventory, created = Inventory.objects.get_or_create(product=item.product)
-            
-            if created:
-                inventory.quantity = item.quantity
-                inventory.lyd_buy_coast_price = item.unit_lyd
-                inventory.lyd_shipping_cost = item.unit_shipping_cost_lyd
-                inventory.lyd_total_cost = item.unit_lyd + item.unit_shipping_cost_lyd
-                inventory.usd_buy_coast_price = item.unit_usd
-                inventory.usd_shipping_cost = item.unit_shipping_cost_usd
-                inventory.usd_total_cost = item.unit_usd + item.unit_shipping_cost_usd
-                inventory.exchange_rate = item.exchange_rate
-            else:
-                avg_lyd_cost = ((inventory.quantity * inventory.lyd_total_cost) + (item.quantity * (item.unit_lyd + item.unit_shipping_cost_lyd))) / (inventory.quantity + item.quantity)
-                avg_usd_cost = ((inventory.quantity * inventory.usd_total_cost) + (item.quantity * (item.unit_usd + item.unit_shipping_cost_usd))) / (inventory.quantity + item.quantity)
-                avg_shipping_lyd = ((inventory.quantity * inventory.lyd_shipping_cost) + (item.quantity * item.unit_shipping_cost_lyd)) / (inventory.quantity + item.quantity)
-                avg_shipping_usd = ((inventory.quantity * inventory.usd_shipping_cost) + (item.quantity * item.unit_shipping_cost_usd)) / (inventory.quantity + item.quantity)
-                
-                inventory.quantity += item.quantity
-                inventory.lyd_total_cost = avg_lyd_cost
-                inventory.usd_total_cost = avg_usd_cost
-                inventory.lyd_shipping_cost = avg_shipping_lyd
-                inventory.usd_shipping_cost = avg_shipping_usd
-                inventory.exchange_rate = item.exchange_rate
-            
-            inventory.save()
-            
+            if not item.variant:
+                continue
+
+            inv, created = Inventory.objects.get_or_create(
+                product=item.product,
+                variant=item.variant,
+                defaults={
+                    'quantity': 0,
+                    'exchange_rate': invoice.exchange_rate,
+                }
+            )
+
+            inv.quantity += item.quantity
+            inv.exchange_rate = invoice.exchange_rate
+            inv.lyd_buy_coast_price = item.unit_lyd
+            inv.usd_buy_coast_price = item.unit_usd
+            inv.lyd_shipping_cost = item.unit_shipping_cost_lyd
+            inv.usd_shipping_cost = item.unit_shipping_cost_usd
+            inv.lyd_commission = item.unit_commission_lyd
+            inv.usd_commission = item.unit_commission_usd
+            inv.lyd_total_cost = item.unit_lyd + item.unit_shipping_cost_lyd + item.unit_commission_lyd
+            inv.usd_total_cost = item.unit_usd + item.unit_shipping_cost_usd + item.unit_commission_usd
+            inv.save()
+
             InventoryMovement.objects.create(
                 product=item.product,
-                movement_type='purchase',
+                variant=item.variant,
                 quantity=item.quantity,
-                notes=f'فاتورة شراء {invoice.invoice_number}',
-                created_by=invoice.created_by
+                movement_type='purchase',
+                reference=invoice.invoice_number,
+                created_by=invoice.created_by,
             )
-        
-        invoice.supplier.update_debt_balance()
+
         invoice.status = 'confirmed'
         invoice.save()
+
+        if invoice.supplier:
+            invoice.supplier.update_debt_balance()
+
+
 @login_required
 def get_product_details(request, product_id):
     product = get_object_or_404(Product, pk=product_id)
@@ -3290,7 +3362,6 @@ def customer_quick_add(request):
         return JsonResponse({'success': False, 'errors': errors}, status=400)
 
 
-
 @require_POST
 def product_quick_add(request):
     try:
@@ -3298,23 +3369,50 @@ def product_quick_add(request):
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'errors': ['بيانات غير صحيحة']}, status=400)
 
-    form = ProductForm(data)
-    if form.is_valid():
-        product = form.save()
+    name = (data.get('name') or '').strip()
+    if not name:
         return JsonResponse({
-            'success': True,
-            'product': {
-                'id': product.id,
-                'name': product.name,
-                'color': product.color or '',
-                'barcode': product.barcode or '',
-                'price': str(product.lyd_sell_price or 0),
-                'usd_price': str(product.usd_sell_price or 0),
-                'image': product.image.url if product.image else '',
-            }
-        })
-    return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)        
+            'success': False,
+            'errors': {'name': [{'message': 'اسم المنتج مطلوب'}]}
+        }, status=400)
 
+    with transaction.atomic():
+        product = Product.objects.create(
+            name=name,
+            category_id=data.get('category') or None,
+            brand=(data.get('brand') or '').strip() or None,
+            made_in=(data.get('made_in') or '').strip() or None,
+        )
+
+        variant_name = (data.get('variant_name') or 'افتراضي').strip()
+        barcode = (data.get('barcode') or '').strip() or None
+
+        variant = ProductVariant.objects.create(
+            product=product,
+            name=variant_name,
+            color=(data.get('color') or '').strip() or None,
+            size=(data.get('size') or '').strip() or None,
+            edition=(data.get('edition') or '').strip() or None,
+            barcode=barcode,
+            usd_sell_price=Decimal(str(data.get('usd_sell_price') or 0)),
+            lyd_sell_price=Decimal(str(data.get('lyd_sell_price') or 0)),
+        )
+
+    return JsonResponse({
+        'success': True,
+        'product': {
+            'id': product.id,
+            'variant_id': variant.id,
+            'name': product.name,
+            'variant_name': variant.name,
+            'color': variant.color or '',
+            'size': variant.size or '',
+            'barcode': variant.barcode or '',
+            'usd_price': str(variant.usd_sell_price),
+            'lyd_price': str(variant.lyd_sell_price),
+            'image': product.image.url if product.image else '',
+        }
+    })
 
 @login_required
 def product_list(request):
