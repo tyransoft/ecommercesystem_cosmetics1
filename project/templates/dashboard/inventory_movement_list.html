@@ -82,7 +82,7 @@
                         {{ movement.quantity }}
                     </td>
                     <td class="py-3 px-4 font-body-md">{{ movement.created_at|date:"Y-m-d H:i" }}</td>
-                    <td class="py-3 px-4 font-body-md">{{ movement.created_by.get_full_name|default:"-" }}</td>
+                    <td class="py-3 px-4 font-body-md">{{ movement.created_by.username|default:"-" }}</td>
                     <td class="py-3 px-4">
                         <a href="{% url 'inventory_movement_delete' movement.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
                             <span class="material-symbols-outlined text-[20px]">delete</span>
@@ -128,7 +128,7 @@
                 </div>
                 <div>
                     <p class="font-label-sm text-secondary">تم بواسطة</p>
-                    <p class="font-body-md">{{ movement.created_by.get_full_name|default:"-" }}</p>
+                    <p class="font-body-md">{{ movement.created_by.username|default:"-" }}</p>
                 </div>
                 {% if movement.notes %}
                 <div class="col-span-2">
