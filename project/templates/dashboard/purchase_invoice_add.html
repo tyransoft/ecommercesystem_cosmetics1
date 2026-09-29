@@ -35,6 +35,7 @@
   .suggestions li:hover { background:#fce4ef; }
   .cost-field { width:100%; padding:9px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:14px; background:#fff; }
   .cost-field:focus { outline:none; border-color:#d51f86; box-shadow: 0 0 0 3px rgba(213,31,134,.12); }
+  .products-table th, .products-table td { padding: 8px 6px; }
 </style>
 
 <form method="post" id="invoiceForm" class="space-y-5">
@@ -163,29 +164,27 @@
 
     <div class="p-5">
       <div class="overflow-x-auto rounded-xl border border-gray-100">
-        <table class="w-full text-xs">
+        <table class="w-full text-sm products-table">
           <thead class="bg-pink-50/60">
             <tr class="text-gray-600">
-              <th class="text-right py-3 px-2 font-semibold min-w-[220px]">المنتج / النسخة</th>
-              <th class="text-right py-3 px-2 font-semibold">الكمية</th>
-              <th class="text-right py-3 px-2 font-semibold">سعر الوحدة $</th>
-              <th class="text-right py-3 px-2 font-semibold">سعر الوحدة د.ل</th>
-              <th class="text-right py-3 px-2 font-semibold">خصم $</th>
-              <th class="text-right py-3 px-2 font-semibold">شحن/قطعة $</th>
-              <th class="text-right py-3 px-2 font-semibold">شحن/قطعة د.ل</th>
-              <th class="text-right py-3 px-2 font-semibold">عمولة/قطعة $</th>
-              <th class="text-right py-3 px-2 font-semibold">عمولة/قطعة د.ل</th>
-              <th class="text-right py-3 px-2 font-semibold">تكلفة/قطعة $</th>
-              <th class="text-right py-3 px-2 font-semibold">تكلفة/قطعة د.ل</th>
-              <th class="text-right py-3 px-2 font-semibold">بيع جديد $</th>
-              <th class="text-right py-3 px-2 font-semibold">بيع جديد د.ل</th>
-              <th class="text-right py-3 px-2 font-semibold">إجمالي $</th>
-              <th class="text-right py-3 px-2 font-semibold"></th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[260px]">المنتج / النسخة</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[80px]">الكمية</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[110px]">سعر الوحدة $</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[110px]">سعر الوحدة د.ل</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[100px]">خصم $</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[130px]">تكاليف/قطعة $</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[130px]">تكاليف/قطعة د.ل</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[120px]">تكلفة/قطعة $</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[120px]">تكلفة/قطعة د.ل</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[110px]">بيع جديد $</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[110px]">بيع جديد د.ل</th>
+              <th class="text-right py-3 px-3 font-semibold min-w-[110px]">إجمالي $</th>
+              <th class="text-right py-3 px-3 font-semibold w-12"></th>
             </tr>
           </thead>
           <tbody id="productRows">
             <tr class="product-row border-b border-gray-100">
-              <td class="py-2 px-2">
+              <td class="py-2 px-3">
                 <select name="variant_ids[]" required class="variant-select field-input" onchange="fillProductPrice(this)">
                   <option value="">اختر المنتج / النسخة</option>
                   {% for p in products %}
@@ -206,54 +205,48 @@
                 </select>
                 <input type="hidden" name="product_ids[]" class="product-id-hidden">
               </td>
-              <td class="py-2 px-2">
+              <td class="py-2 px-3">
                 <input type="number" name="quantities[]" min="1" required
-                       class="quantity-input field-input w-16" value="1">
+                       class="quantity-input field-input" value="1">
               </td>
-              <td class="py-2 px-2">
+              <td class="py-2 px-3">
                 <input type="number" name="unit_usd_prices[]" step="0.01"
-                       class="unit-usd-input field-input w-20"
+                       class="unit-usd-input field-input"
                        oninput="onUsdPriceChange(this)">
               </td>
-              <td class="py-2 px-2">
+              <td class="py-2 px-3">
                 <input type="number" name="unit_lyd_prices[]" step="0.01"
-                       class="unit-lyd-input field-input w-20 bg-gray-50"
+                       class="unit-lyd-input field-input bg-gray-50"
                        readonly tabindex="-1">
               </td>
-              <td class="py-2 px-2">
+              <td class="py-2 px-3">
                 <input type="number" name="unit_discounts[]" step="0.01" value="0"
-                       class="discount-input field-input w-16">
+                       class="discount-input field-input">
               </td>
-              <td class="py-2 px-2">
-                <input type="text" class="shipping-per-unit-usd field-input w-20" readonly value="0.00">
+              <td class="py-2 px-3">
+                <input type="text" class="extra-costs-per-unit-usd field-input font-semibold text-amber-700" readonly value="0.00">
               </td>
-              <td class="py-2 px-2">
-                <input type="text" class="shipping-per-unit-lyd field-input w-20" readonly value="0.00">
+              <td class="py-2 px-3">
+                <input type="text" class="extra-costs-per-unit-lyd field-input font-semibold text-amber-700" readonly value="0.00">
               </td>
-              <td class="py-2 px-2">
-                <input type="text" class="commission-per-unit-usd field-input w-20" readonly value="0.00">
+              <td class="py-2 px-3">
+                <input type="text" class="cost-per-unit-usd field-input bg-pink-50/50 font-bold text-pink-700" readonly value="0.00">
               </td>
-              <td class="py-2 px-2">
-                <input type="text" class="commission-per-unit-lyd field-input w-20" readonly value="0.00">
+              <td class="py-2 px-3">
+                <input type="text" class="cost-per-unit-lyd field-input bg-pink-50/50 font-bold text-pink-700" readonly value="0.00">
               </td>
-              <td class="py-2 px-2">
-                <input type="text" class="cost-per-unit-usd field-input w-20 bg-pink-50/50 font-semibold" readonly value="0.00">
-              </td>
-              <td class="py-2 px-2">
-                <input type="text" class="cost-per-unit-lyd field-input w-20 bg-pink-50/50 font-semibold" readonly value="0.00">
-              </td>
-              <td class="py-2 px-2">
+              <td class="py-2 px-3">
                 <input type="number" name="new_usd_sell_prices[]" step="0.01"
-                       class="new-usd-sell-input field-input w-20" placeholder="اختياري">
+                       class="new-usd-sell-input field-input" placeholder="اختياري">
               </td>
-              <td class="py-2 px-2">
+              <td class="py-2 px-3">
                 <input type="number" name="new_lyd_sell_prices[]" step="0.01"
-                       class="new-lyd-sell-input field-input w-20" placeholder="اختياري">
+                       class="new-lyd-sell-input field-input" placeholder="اختياري">
               </td>
-              <td class="py-2 px-2">
-                <input type="text" class="row-total field-input w-20" readonly value="0.00">
+              <td class="py-2 px-3">
+                <input type="text" class="row-total field-input font-bold text-pink-700" readonly value="0.00">
               </td>
-              <td class="py-2 px-2">
+              <td class="py-2 px-3">
                 <button type="button" onclick="removeRow(this)"
                         class="text-red-500 hover:bg-red-50 p-1.5 rounded-full">
                   <span class="material-symbols-outlined text-[18px]">delete</span>
@@ -304,12 +297,12 @@
           <span id="summaryCommissionLyd" class="font-semibold text-amber-700">0.00 د.ل</span>
         </div>
         <div class="flex justify-between py-1.5 text-xs text-gray-500 pr-3">
-          <span>شحن/قطعة ($)</span>
-          <span id="summaryShippingPerUnitUsd">0.00 $</span>
+          <span>تكاليف/قطعة (شحن + عمولة) $</span>
+          <span id="summaryExtraPerUnitUsd">0.00 $</span>
         </div>
         <div class="flex justify-between py-1.5 text-xs text-gray-500 pr-3">
-          <span>عمولة/قطعة ($)</span>
-          <span id="summaryCommissionPerUnitUsd">0.00 $</span>
+          <span>تكاليف/قطعة (شحن + عمولة) د.ل</span>
+          <span id="summaryExtraPerUnitLyd">0.00 د.ل</span>
         </div>
 
         <div class="total-box">
@@ -519,10 +512,8 @@ function addProductRow() {
         } else if (el.type !== 'button') {
             if (el.classList.contains('discount-input')) {
                 el.value = '0';
-            } else if (el.classList.contains('shipping-per-unit-usd') ||
-                       el.classList.contains('shipping-per-unit-lyd') ||
-                       el.classList.contains('commission-per-unit-usd') ||
-                       el.classList.contains('commission-per-unit-lyd') ||
+            } else if (el.classList.contains('extra-costs-per-unit-usd') ||
+                       el.classList.contains('extra-costs-per-unit-lyd') ||
                        el.classList.contains('cost-per-unit-usd') ||
                        el.classList.contains('cost-per-unit-lyd') ||
                        el.classList.contains('row-total')) {
@@ -575,6 +566,9 @@ function calculateTotals() {
     const commissionPerUnitUsd = totalQuantity > 0 ? commissionUsd / totalQuantity : 0;
     const commissionPerUnitLyd = commissionPerUnitUsd * rate;
 
+    const extraCostPerUnitUsd = shippingPerUnitUsd + commissionPerUnitUsd;
+    const extraCostPerUnitLyd = shippingPerUnitLyd + commissionPerUnitLyd;
+
     let subtotalUsd = 0;
     let subtotalLyd = 0;
 
@@ -589,25 +583,21 @@ function calculateTotals() {
         const lyd  = parseFloat(lydEl  ? lydEl.value  : 0) || 0;
         const disc = parseFloat(discEl ? discEl.value : 0) || 0;
 
-        const costPerUnitUsd = usd + shippingPerUnitUsd + commissionPerUnitUsd - disc;
-        const costPerUnitLyd = lyd + shippingPerUnitLyd + commissionPerUnitLyd - (disc * rate);
+        const costPerUnitUsd = usd + extraCostPerUnitUsd - disc;
+        const costPerUnitLyd = lyd + extraCostPerUnitLyd - (disc * rate);
         const itemTotalUsd   = costPerUnitUsd * qty;
 
         subtotalUsd += itemTotalUsd;
         subtotalLyd += costPerUnitLyd * qty;
 
-        const elSPU = row.querySelector('.shipping-per-unit-usd');
-        const elSPL = row.querySelector('.shipping-per-unit-lyd');
-        const elCMU = row.querySelector('.commission-per-unit-usd');
-        const elCML = row.querySelector('.commission-per-unit-lyd');
+        const elExtraU = row.querySelector('.extra-costs-per-unit-usd');
+        const elExtraL = row.querySelector('.extra-costs-per-unit-lyd');
         const elCPU = row.querySelector('.cost-per-unit-usd');
         const elCPL = row.querySelector('.cost-per-unit-lyd');
         const elTot = row.querySelector('.row-total');
 
-        if (elSPU) elSPU.value = shippingPerUnitUsd.toFixed(2);
-        if (elSPL) elSPL.value = shippingPerUnitLyd.toFixed(2);
-        if (elCMU) elCMU.value = commissionPerUnitUsd.toFixed(2);
-        if (elCML) elCML.value = commissionPerUnitLyd.toFixed(2);
+        if (elExtraU) elExtraU.value = extraCostPerUnitUsd.toFixed(2);
+        if (elExtraL) elExtraL.value = extraCostPerUnitLyd.toFixed(2);
         if (elCPU) elCPU.value = costPerUnitUsd.toFixed(2);
         if (elCPL) elCPL.value = costPerUnitLyd.toFixed(2);
         if (elTot) elTot.value = itemTotalUsd.toFixed(2);
@@ -643,8 +633,8 @@ function calculateTotals() {
     setText('summaryShippingLyd', shippingLyd.toFixed(2) + ' د.ل');
     setText('summaryCommissionUsd', commissionUsd.toFixed(2) + ' $');
     setText('summaryCommissionLyd', commissionLyd.toFixed(2) + ' د.ل');
-    setText('summaryShippingPerUnitUsd', shippingPerUnitUsd.toFixed(2) + ' $');
-    setText('summaryCommissionPerUnitUsd', commissionPerUnitUsd.toFixed(2) + ' $');
+    setText('summaryExtraPerUnitUsd', extraCostPerUnitUsd.toFixed(2) + ' $');
+    setText('summaryExtraPerUnitLyd', extraCostPerUnitLyd.toFixed(2) + ' د.ل');
 
     setText('summaryTotalLyd', totalLyd.toFixed(2));
     setText('summaryTotalUsd', totalUsd.toFixed(2));
