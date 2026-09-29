@@ -297,15 +297,14 @@
     </div>
   </div>
 
-  <!-- Pagination -->
-  {% if page_obj.has_other_pages %}
+{% if page_obj.has_other_pages %}
   <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
     <p class="text-sm text-gray-500">
-      عرض {{ page_obj.start_index }}–{{ page_obj.end_index }} من {{ page_obj.paginator.count }} منتج
+      عرض {{ page_obj.start_index }}–{{ page_obj.end_index }} من {{ page_obj.paginator.count }} نسخة
     </p>
     <div class="flex gap-1">
       {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_variant %}&variant={{ selected_variant }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+      <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_variant %}&variant={{ selected_variant }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
          class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
         <span class="material-symbols-outlined text-[18px]">chevron_right</span>
       </a>
@@ -315,7 +314,7 @@
         {% if num == page_obj.number %}
           <span class="w-9 h-9 flex items-center justify-center rounded-lg bg-pink-600 text-white font-semibold">{{ num }}</span>
         {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
-          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_variant %}&variant={{ selected_variant }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_variant %}&variant={{ selected_variant }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
              class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
             {{ num }}
           </a>
@@ -323,14 +322,14 @@
       {% endfor %}
 
       {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_variant %}&variant={{ selected_variant }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+      <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_variant %}&variant={{ selected_variant }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
          class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
         <span class="material-symbols-outlined text-[18px]">chevron_left</span>
       </a>
       {% endif %}
     </div>
   </div>
-  {% endif %}
+{% endif %}
 
 </div>
 
