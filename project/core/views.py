@@ -1869,7 +1869,6 @@ def confirm_invoice(invoice):
                 variant=item.variant,
                 quantity=item.quantity,
                 movement_type='purchase',
-                reference=invoice.invoice_number,
                 created_by=invoice.created_by,
             )
 
