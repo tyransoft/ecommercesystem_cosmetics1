@@ -10,7 +10,77 @@
   .btn-outline { background:#fff; color:#d51f86; border:1px solid #d51f86; padding:8px 16px; border-radius:10px; font-weight:600; cursor:pointer; font-size:13px; transition:.2s; display:inline-block; }
   .btn-outline:hover { background:#fdf2f6; }
   .variant-card { background:#fafafa; border:1px solid #e5e7eb; border-radius:12px; padding:16px; position:relative; }
+  .variant-input { width:100%; padding:8px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:13px; background:#fff; transition:.2s; }
+  .variant-input:focus { outline:none; border-color:#d51f86; box-shadow: 0 0 0 3px rgba(213,31,134,.12); }
 </style>
+
+<datalist id="brandSuggestions">
+    <option value="Anastasia Beverly Hills">
+    <option value="Beauty of Joseon">
+    <option value="Benefit Cosmetics">
+    <option value="Biodance">
+    <option value="BYOMA">
+    <option value="Caudalie">
+    <option value="Chanel">
+    <option value="Charlotte Tilbury">
+    <option value="Clinique">
+    <option value="Color Wow">
+    <option value="Danessa Myricks Beauty">
+    <option value="Dior">
+    <option value="Dolce & Gabbana">
+    <option value="e.l.f. Cosmetics">
+    <option value="Estée Lauder">
+    <option value="Fable & Mane">
+    <option value="Fenty Beauty">
+    <option value="Gisou">
+    <option value="Givenchy">
+    <option value="Glow Recipe">
+    <option value="Grande Cosmetics">
+    <option value="Gucci">
+    <option value="Haus Labs">
+    <option value="Hourglass Cosmetics">
+    <option value="Huda Beauty">
+    <option value="ICONIC London">
+    <option value="ILIA Beauty">
+    <option value="IT Cosmetics">
+    <option value="K18 Hair">
+    <option value="Kérastase">
+    <option value="Kiehl’s">
+    <option value="Kosas">
+    <option value="Lancôme">
+    <option value="LANEIGE">
+    <option value="Laura Geller Beauty">
+    <option value="Laura Mercier">
+    <option value="L’Occitane en Provence">
+    <option value="L’Oréal Paris">
+    <option value="LYS Beauty">
+    <option value="MAC Cosmetics">
+    <option value="MAKE UP FOR EVER">
+    <option value="Makeup by Mario">
+    <option value="MERIT Beauty">
+    <option value="Milk Makeup">
+    <option value="NARS Cosmetics">
+    <option value="Natasha Denona">
+    <option value="OLAPLEX">
+    <option value="ONE/SIZE by Patrick Starrr">
+    <option value="Patrick Ta Beauty">
+    <option value="Paula’s Choice">
+    <option value="Prada Beauty">
+    <option value="Rare Beauty">
+    <option value="REFY">
+    <option value="Rhode">
+    <option value="Saie">
+    <option value="SEPHORA COLLECTION">
+    <option value="Sol de Janeiro">
+    <option value="Supergoop!">
+    <option value="Tarte Cosmetics">
+    <option value="The INKEY List">
+    <option value="The Ordinary">
+    <option value="Too Faced">
+    <option value="Tower 28 Beauty">
+    <option value="Urban Decay">
+    <option value="YSL Beauty">
+</datalist>
 
 <div class="max-w-4xl mx-auto">
   <form method="post" enctype="multipart/form-data" class="space-y-6" id="productForm">
@@ -18,8 +88,6 @@
 
     <div class="bg-white rounded-2xl border border-gray-100 p-6">
       <h2 class="text-lg font-bold text-gray-800 mb-5">بيانات المنتج</h2>
-
-      {{ form.brand_choices }}
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -34,10 +102,17 @@
         </div>
         <div>
           <label for="{{ form.brand.id_for_label }}" class="block text-sm text-gray-600 mb-1">{{ form.brand.label }}</label>
-          <div class="relative">
-            {{ form.brand }}
-            <ul id="brand-suggestions" class="hidden absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto w-full mt-1"></ul>
-          </div>
+          <input
+              type="text"
+              name="brand"
+              id="id_brand"
+              list="brandSuggestions"
+              autocomplete="off"
+              value="{{ form.brand.value|default:'' }}"
+              placeholder="اكتب اسم الماركة..."
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition"
+          >
+          <p class="text-xs text-gray-400 mt-1">اختر من القائمة أو اكتب ماركة جديدة</p>
           {% if form.brand.errors %}<p class="text-red-500 text-xs mt-1">{{ form.brand.errors.0 }}</p>{% endif %}
         </div>
         <div>
@@ -77,7 +152,7 @@
         <div class="variant-card" data-index="{{ forloop.counter0 }}">
           {{ variant_form.id }}
           <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-semibold text-gray-700">نسخة {{ forloop.counter }}</span>
+            <span class="text-sm font-semibold text-gray-700 variant-number">نسخة {{ forloop.counter }}</span>
             <button type="button" onclick="removeVariant(this)" class="text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
               <span class="material-symbols-outlined text-[16px]">delete</span>
               حذف
@@ -108,6 +183,7 @@
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ variant_form.barcode.label }}</label>
               {{ variant_form.barcode }}
+              <p class="text-[10px] text-gray-400 mt-0.5">اتركه فارغاً ليتم توليده تلقائياً</p>
               {% if variant_form.barcode.errors %}<p class="text-red-500 text-xs mt-1">{{ variant_form.barcode.errors.0 }}</p>{% endif %}
             </div>
             <div>
@@ -144,7 +220,7 @@
 <script id="empty-form-template" type="text/template">
   <div class="variant-card" data-index="__index__">
     <div class="flex items-center justify-between mb-3">
-      <span class="text-sm font-semibold text-gray-700">نسخة __counter__</span>
+      <span class="text-sm font-semibold text-gray-700 variant-number">نسخة __counter__</span>
       <button type="button" onclick="removeVariant(this)" class="text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
         <span class="material-symbols-outlined text-[16px]">delete</span>
         حذف
@@ -152,32 +228,33 @@
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <div>
-        <label class="block text-xs text-gray-500 mb-1">اسم النسخة</label>
-        <input type="text" name="variants-__index__-name" class="variant-field w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20" placeholder="اسم النسخة">
+        <label class="block text-xs text-gray-500 mb-1">اسم النسخة <span class="text-red-500">*</span></label>
+        <input type="text" name="variants-__index__-name" class="variant-input" placeholder="اسم النسخة">
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">اللون/الدرجة</label>
-        <input type="text" name="variants-__index__-color" class="variant-field w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20" placeholder="اللون/الدرجة">
+        <input type="text" name="variants-__index__-color" class="variant-input" placeholder="اللون/الدرجة">
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">الحجم</label>
-        <input type="text" name="variants-__index__-size" class="variant-field w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20" placeholder="الحجم">
+        <input type="text" name="variants-__index__-size" class="variant-input" placeholder="الحجم">
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">الإصدار</label>
-        <input type="text" name="variants-__index__-edition" class="variant-field w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20" placeholder="الإصدار">
+        <input type="text" name="variants-__index__-edition" class="variant-input" placeholder="الإصدار">
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">الباركود</label>
-        <input type="text" name="variants-__index__-barcode" class="variant-field w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20" placeholder="الباركود">
+        <input type="text" name="variants-__index__-barcode" class="variant-input" placeholder="اتركه فارغاً للتوليد التلقائي">
+        <p class="text-[10px] text-gray-400 mt-0.5">اتركه فارغاً ليتم توليده تلقائياً</p>
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">سعر البيع $</label>
-        <input type="number" step="0.01" name="variants-__index__-usd_sell_price" class="variant-field w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20" placeholder="0.00">
+        <input type="number" step="0.01" name="variants-__index__-usd_sell_price" class="variant-input" placeholder="0.00">
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">سعر البيع د.ل</label>
-        <input type="number" step="0.01" name="variants-__index__-lyd_sell_price" class="variant-field w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20" placeholder="0.00">
+        <input type="number" step="0.01" name="variants-__index__-lyd_sell_price" class="variant-input" placeholder="0.00">
       </div>
       <div class="flex items-end pb-2">
         <label class="flex items-center gap-2 text-sm text-gray-600">
@@ -192,91 +269,65 @@
 </script>
 
 <script>
-(function () {
-    const brands = JSON.parse(document.getElementById('brand-data').textContent);
-    const input = document.getElementById('id_brand');
-    const list = document.getElementById('brand-suggestions');
-
-    function normalize(str) {
-        return str.toLowerCase().replace(/\s+/g, ' ').trim()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-            .replace(/[’'`]/g, "'");
-    }
-
-    function filterBrands(query) {
-        const q = normalize(query);
-        if (!q) return [];
-        const startsWith = [], contains = [];
-        for (const brand of brands) {
-            const nb = normalize(brand);
-            if (nb.startsWith(q)) startsWith.push(brand);
-            else if (nb.includes(q)) contains.push(brand);
-        }
-        return [...startsWith, ...contains].slice(0, 10);
-    }
-
-    function render(items) {
-        if (!items.length) { list.classList.add('hidden'); list.innerHTML = ''; return; }
-        list.innerHTML = items.map(b => `<li class="px-4 py-2 cursor-pointer hover:bg-pink-50 text-sm">${b}</li>`).join('');
-        list.classList.remove('hidden');
-    }
-
-    function positionList() {
-        const rect = input.getBoundingClientRect();
-        list.style.position = 'fixed';
-        list.style.left = rect.left + 'px';
-        list.style.top = rect.bottom + 'px';
-        list.style.width = rect.width + 'px';
-    }
-
-    if (input && list) {
-        input.addEventListener('input', function () {
-            render(filterBrands(this.value));
-            positionList();
-        });
-        input.addEventListener('focus', function () {
-            if (this.value.trim()) { render(filterBrands(this.value)); positionList(); }
-        });
-        list.addEventListener('mousedown', function (e) {
-            if (e.target.tagName === 'LI') {
-                input.value = e.target.textContent;
-                list.classList.add('hidden');
-            }
-        });
-        document.addEventListener('click', function (e) {
-            if (e.target !== input && !list.contains(e.target)) list.classList.add('hidden');
-        });
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') list.classList.add('hidden');
-        });
-    }
-})();
-
-let variantIndex = {{ formset.total_form_count }};
-
 function addVariant() {
     const container = document.getElementById('variantsContainer');
+
+    if (!container) {
+        console.error('variantsContainer غير موجود');
+        return;
+    }
+
+    const totalFormsInput = document.getElementById('id_variants-TOTAL_FORMS');
+    const index = parseInt(totalFormsInput.value, 10);
+    const counter = container.querySelectorAll('.variant-card').length + 1;
+
     const template = document.getElementById('empty-form-template').innerHTML;
-    const counter = container.children.length + 1;
-    const html = template.replace(/__index__/g, variantIndex).replace(/__counter__/g, counter);
+    const html = template.replace(/__index__/g, index).replace(/__counter__/g, counter);
+
     const div = document.createElement('div');
     div.innerHTML = html;
     container.appendChild(div.firstElementChild);
 
-    const totalForms = document.getElementById('id_variants-TOTAL_FORMS');
-    totalForms.value = parseInt(totalForms.value) + 1;
-    variantIndex++;
+    totalFormsInput.value = index + 1;
+
+    updateVariantNumbers();
 }
 
-function removeVariant(btn) {
-    const card = btn.closest('.variant-card');
+function removeVariant(button) {
+    const container = document.getElementById('variantsContainer');
+    const cards = container.querySelectorAll('.variant-card:not([style*="display: none"])');
+
+    if (cards.length <= 1) {
+        alert('يجب أن يحتوي المنتج على نسخة واحدة على الأقل');
+        return;
+    }
+
+    const card = button.closest('.variant-card');
     const deleteInput = card.querySelector('input[name$="-DELETE"]');
+
     if (deleteInput) {
         deleteInput.checked = true;
         card.style.display = 'none';
     } else {
         card.remove();
+
+        const totalFormsInput = document.getElementById('id_variants-TOTAL_FORMS');
+        totalFormsInput.value = parseInt(totalFormsInput.value, 10) - 1;
     }
+
+    updateVariantNumbers();
+}
+
+function updateVariantNumbers() {
+    const container = document.getElementById('variantsContainer');
+    const cards = container.querySelectorAll('.variant-card:not([style*="display: none"])');
+
+    cards.forEach((card, index) => {
+        const number = card.querySelector('.variant-number');
+        if (number) {
+            number.textContent = 'نسخة ' + (index + 1);
+        }
+    });
 }
 
 document.getElementById('productForm').addEventListener('submit', function(e) {
@@ -284,6 +335,24 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     if (visibleCards.length === 0) {
         e.preventDefault();
         alert('يجب إضافة نسخة واحدة على الأقل');
+        return false;
+    }
+
+    const forms = document.querySelectorAll('#variantsContainer .variant-card:not([style*="display: none"])');
+    for (const card of forms) {
+        const nameInput = card.querySelector('input[name$="-name"]');
+        const barcodeInput = card.querySelector('input[name$="-barcode"]');
+
+        if (nameInput && !nameInput.value.trim()) {
+            e.preventDefault();
+            alert('يجب إدخال اسم لكل نسخة');
+            nameInput.focus();
+            return false;
+        }
+
+        if (barcodeInput && !barcodeInput.value.trim()) {
+            barcodeInput.removeAttribute('required');
+        }
     }
 });
 </script>

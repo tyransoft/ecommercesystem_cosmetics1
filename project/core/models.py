@@ -349,7 +349,7 @@ class ProductVariant(models.Model):
       while True:
         barcode = ''.join(
             str(random.randint(0, 9))
-            for _ in range(5)
+            for _ in range(6)
         )
 
         if not ProductVariant.objects.filter(
