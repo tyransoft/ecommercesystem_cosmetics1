@@ -3424,8 +3424,8 @@ def product_detail(request, pk):
             'variant': variant,
             'stock': inv.quantity if inv else 0,
             'stock_status': variant.stock_status,
-            'profit_margin_lyd': variant.profit_margin_lyd,
-            'profit_margin_percent': variant.profit_margin_percent,
+            'profit_margin_lyd': variant.get_profit_margin_lyd,
+            'profit_margin_percent': variant.get_profit_margin_percent,
         })
 
     context = {
