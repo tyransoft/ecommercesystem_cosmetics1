@@ -1961,11 +1961,10 @@ def internal_order_list(request):
         'stats_total_debt': stats_total_debt,
     })
 
-
 @login_required
 def internal_order_add(request):
     if request.method == 'POST':
-        customer_mode = request.POST.get('customer_mode', 'existing')  
+        customer_mode = request.POST.get('customer_mode', 'existing')
         customer_id = request.POST.get('customer')
         new_customer_form = CustomerForm()
 
@@ -1973,7 +1972,9 @@ def internal_order_add(request):
             new_customer_form = CustomerForm(request.POST)
             if not new_customer_form.is_valid():
                 customers = Customer.objects.all().order_by('full_name')
-                products = Product.objects.all().order_by('name')
+                products = ProductVariant.objects.select_related('product').filter(
+                    is_active=True
+                ).order_by('product__name', 'name')
                 messages.error(request, 'يرجى تصحيح بيانات العميل الجديد')
                 return render(request, 'orders/internal_order_add.html', {
                     'customers': customers,
@@ -1995,12 +1996,12 @@ def internal_order_add(request):
         delivery_address = request.POST.get('delivery_address', '')
         status = request.POST.get('status', 'draft')
 
-        product_ids = request.POST.getlist('product_ids[]')
+        variant_ids = request.POST.getlist('variant_ids[]')
         quantities = request.POST.getlist('quantities[]')
         unit_prices = request.POST.getlist('unit_prices[]')
         unit_discounts = request.POST.getlist('unit_discounts[]')
 
-        if not product_ids:
+        if not variant_ids:
             messages.error(request, 'يرجى إضافة منتج واحد على الأقل')
             return redirect('internal_order_add')
 
@@ -2024,14 +2025,23 @@ def internal_order_add(request):
 
             total_profit = Decimal('0')
 
-            for i in range(len(product_ids)):
-                product_id = product_ids[i]
+            for i in range(len(variant_ids)):
+                variant_id = variant_ids[i]
+                if not variant_id:
+                    continue
+
+                try:
+                    variant = ProductVariant.objects.select_related('product').get(id=variant_id)
+                except ProductVariant.DoesNotExist:
+                    continue
+
                 quantity = int(quantities[i])
                 unit_price = Decimal(unit_prices[i]) if unit_prices[i] else Decimal('0')
                 unit_discount = Decimal(unit_discounts[i]) if unit_discounts[i] else Decimal('0')
 
-                inventory = Inventory.objects.filter(product_id=product_id).first()
+                inventory = Inventory.objects.filter(variant=variant).first()
                 unit_cost = inventory.lyd_total_cost if inventory else Decimal('0')
+
                 unit_profit = unit_price - unit_discount - unit_cost
                 total_price = (unit_price - unit_discount) * quantity
                 item_total_profit = unit_profit * quantity
@@ -2039,7 +2049,8 @@ def internal_order_add(request):
 
                 InternalOrderItem.objects.create(
                     order=order,
-                    product_id=product_id,
+                    product=variant.product,
+                    variant=variant,
                     quantity=quantity,
                     unit_discount=unit_discount,
                     unit_price=unit_price,
@@ -2058,7 +2069,10 @@ def internal_order_add(request):
             return redirect('internal_order_list')
 
     customers = Customer.objects.all().order_by('full_name')
-    products = Product.objects.all().order_by('name')
+    products = ProductVariant.objects.select_related('product').filter(
+        is_active=True
+    ).order_by('product__name', 'name')
+
     return render(request, 'orders/internal_order_add.html', {
         'customers': customers,
         'products': products,
@@ -2069,37 +2083,38 @@ def internal_order_add(request):
 @login_required
 def internal_order_edit(request, pk):
     order = get_object_or_404(InternalOrder, pk=pk)
+
     if order.status not in ['draft', 'cancelled']:
         messages.error(request, 'لا يمكن تعديل طلبية غير مسودة أو ملغاة')
         return redirect('internal_order_detail', pk=pk)
-    
+
     if request.method == 'POST':
         customer_id = request.POST.get('customer')
-        subtotal = Decimal(request.POST.get('subtotal', 0))
-        discount = Decimal(request.POST.get('discount', 0))
-        paid_amount = Decimal(request.POST.get('paid_amount', 0))
+        subtotal = Decimal(request.POST.get('subtotal', 0) or 0)
+        discount = Decimal(request.POST.get('discount', 0) or 0)
+        paid_amount = Decimal(request.POST.get('paid_amount', 0) or 0)
         delivery_address = request.POST.get('delivery_address', '')
         status = request.POST.get('status', 'draft')
-        
-        product_ids = request.POST.getlist('product_ids[]')
+
+        variant_ids = request.POST.getlist('variant_ids[]')
         quantities = request.POST.getlist('quantities[]')
         unit_prices = request.POST.getlist('unit_prices[]')
         unit_discounts = request.POST.getlist('unit_discounts[]')
-        
+
         if not customer_id:
             messages.error(request, 'يرجى اختيار العميل')
             return redirect('internal_order_edit', pk=pk)
-        
-        if not product_ids:
+
+        if not variant_ids:
             messages.error(request, 'يرجى إضافة منتج واحد على الأقل')
             return redirect('internal_order_edit', pk=pk)
-        
+
         with transaction.atomic():
             sales_total = subtotal - discount
             debt_amount = sales_total - paid_amount
             if debt_amount < 0:
                 debt_amount = Decimal('0')
-            
+
             order.customer = Customer.objects.get(id=customer_id)
             order.subtotal = subtotal
             order.discount = discount
@@ -2109,80 +2124,78 @@ def internal_order_edit(request, pk):
             order.delivery_address = delivery_address
             order.status = status
             order.save()
-            
+
             order.items.all().delete()
-            
+
             total_profit = Decimal('0')
-            
-            for i in range(len(product_ids)):
-                product_id = product_ids[i]
+
+            for i in range(len(variant_ids)):
+                variant_id = variant_ids[i]
+                if not variant_id:
+                    continue
+
+                try:
+                    variant = ProductVariant.objects.select_related('product').get(id=variant_id)
+                except ProductVariant.DoesNotExist:
+                    continue
+
                 quantity = int(quantities[i])
                 unit_price = Decimal(unit_prices[i]) if unit_prices[i] else Decimal('0')
                 unit_discount = Decimal(unit_discounts[i]) if unit_discounts[i] else Decimal('0')
-                
-                inventory = Inventory.objects.filter(product_id=product_id).first()
+
+                inventory = Inventory.objects.filter(variant=variant).first()
                 unit_cost = inventory.lyd_total_cost if inventory else Decimal('0')
+
                 unit_profit = unit_price - unit_discount - unit_cost
                 total_price = (unit_price - unit_discount) * quantity
                 item_total_profit = unit_profit * quantity
                 total_profit += item_total_profit
-                
+
                 InternalOrderItem.objects.create(
                     order=order,
-                    product_id=product_id,
+                    product=variant.product,
+                    variant=variant,
                     quantity=quantity,
                     unit_discount=unit_discount,
                     unit_price=unit_price,
                     total_price=total_price,
                     unit_profit=unit_profit,
-                    total_profit=item_total_profit
+                    total_profit=item_total_profit,
                 )
-            
+
             order.total_profit = total_profit
             order.save()
-            
+
             if status == 'confirmed':
                 confirm_internal_order(order)
             elif status == 'cancelled':
                 order.debt_amount = Decimal('0')
                 order.save()
-            
+
             messages.success(request, f'تم تحديث الطلبية رقم {order.order_number} بنجاح')
             return redirect('internal_order_list')
-    
+
     customers = Customer.objects.all().order_by('full_name')
-    products = Product.objects.all().order_by('name')
+    products = ProductVariant.objects.select_related('product').filter(
+        is_active=True
+    ).order_by('product__name', 'name')
+
     return render(request, 'orders/internal_order_edit.html', {
         'order': order,
         'customers': customers,
         'products': products
     })
 
+
+
+
+
+
 @login_required
 def internal_order_detail(request, pk):
     order = get_object_or_404(InternalOrder, pk=pk)
     return render(request, 'orders/internal_order_detail.html', {'order': order})
 
-@login_required
-def internal_order_confirm(request, pk):
-    order = get_object_or_404(InternalOrder, pk=pk)
-    if order.status != 'draft':
-        messages.error(request, 'لا يمكن تأكيد طلبية غير مسودة')
-        return redirect('internal_order_detail', pk=pk)
-    with transaction.atomic():
-        for item in order.items.all():
-            inventory = Inventory.objects.filter(product=item.product).first()
-            if not inventory or inventory.quantity < item.quantity:
-                raise ValueError(f'الكمية غير متوفرة للمنتج {item.product.name}')
-
-        order.status = 'confirmed'
-        order.save()
-    if order.customer:
-        customer=order.customer
-        customer.debt_balance += order.debt_amount
-        customer.save()
-    messages.success(request, f'تم تأكيد الطلبية رقم {order.order_number} بنجاح')
-    return redirect('internal_order_list')
 
 @login_required
 def internal_order_deliver(request, pk):
@@ -2272,7 +2285,60 @@ def internal_order_delete(request, pk):
         return redirect('internal_order_list')
     
     return render(request, 'orders/internal_order_confirm_delete.html', {'order': order})
+@login_required
+def internal_order_confirm(request, pk):
+    order = get_object_or_404(InternalOrder, pk=pk)
 
+    if order.status != 'draft':
+        messages.error(request, 'لا يمكن تأكيد طلبية غير مسودة')
+        return redirect('internal_order_detail', pk=pk)
+
+    with transaction.atomic():
+        for item in order.items.all():
+            if item.variant:
+                inventory = Inventory.objects.filter(variant=item.variant).first()
+            else:
+                inventory = Inventory.objects.filter(
+                    product=item.product,
+                    variant__isnull=True
+                ).first()
+
+            if not inventory or inventory.quantity < item.quantity:
+                variant_label = item.variant.name if item.variant else item.product.name
+                raise ValueError(f'الكمية غير متوفرة للنسخة {variant_label}')
+
+        for item in order.items.all():
+            if item.variant:
+                inventory = Inventory.objects.filter(variant=item.variant).first()
+            else:
+                inventory = Inventory.objects.filter(
+                    product=item.product,
+                    variant__isnull=True
+                ).first()
+
+            inventory.quantity -= item.quantity
+            if inventory.quantity < 0:
+                inventory.quantity = 0
+            inventory.save()
+
+            InventoryMovement.objects.create(
+                product=item.product,
+                variant=item.variant,
+                quantity=-item.quantity,
+                movement_type='sale',
+                reference=order.order_number,
+            )
+
+        order.status = 'confirmed'
+        order.save()
+
+    if order.customer:
+        customer = order.customer
+        customer.debt_balance += order.debt_amount
+        customer.save()
+
+    messages.success(request, f'تم تأكيد الطلبية رقم {order.order_number} بنجاح')
+    return redirect('internal_order_list')
 def confirm_internal_order(order):
     with transaction.atomic():
         for item in order.items.all():
@@ -2285,19 +2351,30 @@ def confirm_internal_order(order):
 
 @login_required
 def get_product_inventory(request, product_id):
-    inventory = Inventory.objects.filter(product_id=product_id).first()
+    try:
+        variant = ProductVariant.objects.get(id=product_id)
+    except ProductVariant.DoesNotExist:
+        return JsonResponse({
+            'quantity': 0,
+            'cost': 0,
+            'sell_price': 0,
+        })
+
+    inventory = Inventory.objects.filter(variant=variant).first()
+
     if inventory:
         data = {
             'quantity': inventory.quantity,
-            'cost': inventory.lyd_total_cost,
-            'sell_price': inventory.lyd_sell_price
+            'cost': float(inventory.lyd_total_cost),
+            'sell_price': float(variant.lyd_sell_price),
         }
     else:
         data = {
             'quantity': 0,
             'cost': 0,
-            'sell_price': 0
+            'sell_price': float(variant.lyd_sell_price or 0),
         }
+
     return JsonResponse(data)
 
 @login_required
