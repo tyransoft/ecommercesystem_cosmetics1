@@ -1661,7 +1661,7 @@ def purchase_invoice_edit(request, pk):
             return redirect('purchase_invoice_edit', pk=pk)
 
         if not product_ids:
-            messages.error(request, 'يرجى إضافة منتج واحد على الأقل')
+            messages.error(request, 'يرجى إضافة  على الأقل')
             return redirect('purchase_invoice_edit', pk=pk)
 
         with transaction.atomic():
@@ -1960,7 +1960,6 @@ def internal_order_list(request):
         'stats_total': stats_total,
         'stats_total_debt': stats_total_debt,
     })
-
 @login_required
 def internal_order_add(request):
     if request.method == 'POST':
@@ -2185,9 +2184,6 @@ def internal_order_edit(request, pk):
         'customers': customers,
         'products': products
     })
-
-
-
 
 
 

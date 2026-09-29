@@ -44,7 +44,7 @@
                 <div class="product-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end bg-background rounded-xl p-4">
                     <div>
                         <label class="block font-label-sm text-secondary mb-1">المنتج</label>
-                        <select name="product_ids[]" required class="product-select w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="getProductData(this)">
+                        <select name="variant_ids[][]" required class="product-select w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="getProductData(this)">
                             <option value="">اختر المنتج</option>
                             {% for product in products %}
                             <option value="{{ product.id }}" {% if item.product.id == product.id %}selected{% endif %} data-price="{{ product.lyd_sell_price }}">{{ product.name }}</option>
