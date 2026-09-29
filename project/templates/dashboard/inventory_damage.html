@@ -13,7 +13,9 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <p class="font-label-sm text-secondary">المنتج</p>
-                <p class="font-body-md text-primary">{{ product.name }}</p>
+<p class="font-body-md text-primary">
+  {{ product.name }}{% if variant %} - {{ variant.name }}{% endif %}
+</p>
             </div>
             <div>
                 <p class="font-label-sm text-secondary">الكمية المتوفرة</p>

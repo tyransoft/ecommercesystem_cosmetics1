@@ -1133,20 +1133,22 @@ def expense_detail(request, pk):
         return redirect('home')
     expense = get_object_or_404(Expense, pk=pk)
     return render(request, 'dashboard/expense_detail.html', {'expense': expense})
-
-
 @login_required
 def inventory_list(request):
     from django.db.models import F, Sum, Q
-    
+
+    variant_id = request.GET.get('variant', '')
     product_id = request.GET.get('product', '')
     category_id = request.GET.get('category', '')
     stock_filter = request.GET.get('stock', '')
-    movement_filter = request.GET.get('movement', '')
     search_query = request.GET.get('search', '').strip()
-    
-    inventory_items = Inventory.objects.select_related('product', 'product__category').all()
-    
+
+    inventory_items = Inventory.objects.select_related(
+        'product', 'variant', 'product__category'
+    ).filter(variant__isnull=False)
+
+    if variant_id:
+        inventory_items = inventory_items.filter(variant_id=variant_id)
     if product_id:
         inventory_items = inventory_items.filter(product_id=product_id)
     if category_id:
@@ -1154,7 +1156,9 @@ def inventory_list(request):
     if search_query:
         inventory_items = inventory_items.filter(
             Q(product__name__icontains=search_query) |
-            Q(product__barcode__icontains=search_query)
+            Q(variant__name__icontains=search_query) |
+            Q(variant__barcode__icontains=search_query) |
+            Q(variant__color__icontains=search_query)
         )
     if stock_filter == 'available':
         inventory_items = inventory_items.filter(quantity__gt=5)
@@ -1162,141 +1166,167 @@ def inventory_list(request):
         inventory_items = inventory_items.filter(quantity__gt=0, quantity__lte=5)
     elif stock_filter == 'out':
         inventory_items = inventory_items.filter(quantity=0)
-    
-    all_items = inventory_items  
+
+    all_items = inventory_items
+
     total_buy_value = all_items.aggregate(
         total=Sum(F('quantity') * F('lyd_total_cost'))
     )['total'] or 0
+
     total_sell_value = all_items.aggregate(
         total=Sum(F('quantity') * F('lyd_sell_price'))
     )['total'] or 0
+
     total_profit = total_sell_value - total_buy_value
-    
-    low_stock_count = Inventory.objects.filter(quantity__gt=0, quantity__lte=5).count()
-    
+
+    low_stock_count = Inventory.objects.filter(
+        variant__isnull=False,
+        quantity__gt=0,
+        quantity__lte=5
+    ).count()
+
     paginator = Paginator(inventory_items, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
-    
+
     products = Product.objects.all().order_by('name')
     categories = Category.objects.all().order_by('name')
-    
+    variants = ProductVariant.objects.select_related('product').filter(
+        is_active=True
+    ).order_by('product__name', 'name')
+
     return render(request, 'dashboard/inventory_list.html', {
         'page_obj': page_obj,
         'total_buy_value': total_buy_value,
         'total_sell_value': total_sell_value,
         'total_profit': total_profit,
         'low_stock_count': low_stock_count,
+        'selected_variant': variant_id,
         'selected_product': product_id,
         'selected_category': category_id,
         'stock_filter': stock_filter,
-        'movement_filter': movement_filter,
         'search_query': search_query,
         'products': products,
+        'variants': variants,
         'categories': categories,
     })
-
 @login_required
-def inventory_damage(request, product_pk):
+def inventory_damage(request, variant_pk):
     if not request.user.is_main_admin():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
         return redirect('home')
-    product = get_object_or_404(Product, pk=product_pk)
-    inventory = get_object_or_404(Inventory, product=product)
-    
+
+    variant = get_object_or_404(
+        ProductVariant.objects.select_related('product'),
+        pk=variant_pk
+    )
+    inventory = get_object_or_404(Inventory, variant=variant)
+
     if request.method == 'POST':
         quantity = int(request.POST.get('quantity', 0))
         notes = request.POST.get('notes', '')
-        
+
         if quantity <= 0:
             messages.error(request, 'يجب أن تكون الكمية أكبر من صفر')
             return redirect('inventory_list')
-        
+
         if quantity > inventory.quantity:
             messages.error(request, f'الكمية المطلوبة ({quantity}) أكبر من الكمية المتوفرة ({inventory.quantity})')
             return redirect('inventory_list')
-        
-        movement = InventoryMovement.objects.create(
-            product=product,
+
+        InventoryMovement.objects.create(
+            product=variant.product,
+            variant=variant,
             movement_type='damage',
             quantity=-quantity,
-            notes=notes or f'اتلاف {quantity} وحدة من {product.name}',
+            notes=notes or f'إتلاف {quantity} وحدة من {variant.product.name} - {variant.name}',
             created_by=request.user
         )
-        
+
         inventory.quantity -= quantity
         inventory.save()
-        
-        messages.success(request, f'تم اتلاف {quantity} وحدة من {product.name} بنجاح')
-        return redirect('inventory_list')
-    
-    return render(request, 'dashboard/inventory_damage.html', {
-        'product': product,
-        'inventory': inventory,
-        'title': 'اتلاف منتج'
-    })
 
+        messages.success(request, f'تم إتلاف {quantity} وحدة من {variant.product.name} - {variant.name} بنجاح')
+        return redirect('inventory_list')
+
+    return render(request, 'dashboard/inventory_damage.html', {
+        'product': variant.product,
+        'variant': variant,
+        'inventory': inventory,
+        'title': 'إتلاف منتج'
+    })
 @login_required
-def inventory_gift(request, product_pk):
+def inventory_gift(request, variant_pk):
     if not request.user.is_main_admin():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
         return redirect('home')
-    product = get_object_or_404(Product, pk=product_pk)
-    inventory = get_object_or_404(Inventory, product=product)
-    
+
+    variant = get_object_or_404(
+        ProductVariant.objects.select_related('product'),
+        pk=variant_pk
+    )
+    inventory = get_object_or_404(Inventory, variant=variant)
+
     if request.method == 'POST':
         quantity = int(request.POST.get('quantity', 0))
         notes = request.POST.get('notes', '')
-        
+
         if quantity <= 0:
             messages.error(request, 'يجب أن تكون الكمية أكبر من صفر')
             return redirect('inventory_list')
-        
+
         if quantity > inventory.quantity:
             messages.error(request, f'الكمية المطلوبة ({quantity}) أكبر من الكمية المتوفرة ({inventory.quantity})')
             return redirect('inventory_list')
-        
-        movement = InventoryMovement.objects.create(
-            product=product,
+
+        InventoryMovement.objects.create(
+            product=variant.product,
+            variant=variant,
             movement_type='gift',
             quantity=-quantity,
-            notes=notes or f'هدية {quantity} وحدة من {product.name}',
+            notes=notes or f'هدية {quantity} وحدة من {variant.product.name} - {variant.name}',
             created_by=request.user
         )
-        
+
         inventory.quantity -= quantity
         inventory.save()
-        
-        messages.success(request, f'تم تسجيل {quantity} وحدة كهدية من {product.name} بنجاح')
+
+        messages.success(request, f'تم تسجيل {quantity} وحدة كهدية من {variant.product.name} - {variant.name} بنجاح')
         return redirect('inventory_list')
-    
+
     return render(request, 'dashboard/inventory_gift.html', {
-        'product': product,
+        'product': variant.product,
+        'variant': variant,
         'inventory': inventory,
         'title': 'تسجيل هدية'
     })
 
 @login_required
-def inventory_stock_adjustment(request, product_pk):
+def inventory_stock_adjustment(request, variant_pk):
     if not request.user.is_main_admin():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
         return redirect('home')
-    product = get_object_or_404(Product, pk=product_pk)
-    inventory = get_object_or_404(Inventory, product=product)
-    
+
+    variant = get_object_or_404(
+        ProductVariant.objects.select_related('product'),
+        pk=variant_pk
+    )
+    inventory = get_object_or_404(Inventory, variant=variant)
+
     if request.method == 'POST':
         quantity = int(request.POST.get('quantity', 0))
         adjustment_type = request.POST.get('adjustment_type')
         notes = request.POST.get('notes', '')
-        
+
         if quantity <= 0:
             messages.error(request, 'يجب أن تكون الكمية أكبر من صفر')
             return redirect('inventory_list')
-        
+
         if adjustment_type == 'stock_addition':
             movement_type = 'stock_addition'
             movement_quantity = quantity
             inventory.quantity += quantity
-            message = f'تم إضافة {quantity} وحدة إلى مخزون {product.name} بنجاح'
+            message = f'تم إضافة {quantity} وحدة إلى مخزون {variant.product.name} - {variant.name} بنجاح'
+
         elif adjustment_type == 'stock_deduction':
             if quantity > inventory.quantity:
                 messages.error(request, f'الكمية المطلوبة ({quantity}) أكبر من الكمية المتوفرة ({inventory.quantity})')
@@ -1304,26 +1334,29 @@ def inventory_stock_adjustment(request, product_pk):
             movement_type = 'stock_deduction'
             movement_quantity = -quantity
             inventory.quantity -= quantity
-            message = f'تم خصم {quantity} وحدة من مخزون {product.name} بنجاح'
+            message = f'تم خصم {quantity} وحدة من مخزون {variant.product.name} - {variant.name} بنجاح'
+
         else:
             messages.error(request, 'نوع الجرد غير صحيح')
             return redirect('inventory_list')
-        
-        movement = InventoryMovement.objects.create(
-            product=product,
+
+        InventoryMovement.objects.create(
+            product=variant.product,
+            variant=variant,
             movement_type=movement_type,
             quantity=movement_quantity,
-            notes=notes or f'جرد {quantity} وحدة من {product.name}',
+            notes=notes or f'جرد {quantity} وحدة من {variant.product.name} - {variant.name}',
             created_by=request.user
         )
-        
+
         inventory.save()
-        
+
         messages.success(request, message)
         return redirect('inventory_list')
-    
+
     return render(request, 'dashboard/inventory_stock_adjustment.html', {
-        'product': product,
+        'product': variant.product,
+        'variant': variant,
         'inventory': inventory,
         'title': 'جرد المخزون'
     })
@@ -1333,29 +1366,42 @@ def inventory_movement_list(request):
     if not request.user.is_main_admin():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
         return redirect('home')
-    movements = InventoryMovement.objects.select_related('product', 'created_by').all().order_by('-created_at')
-    
+
+    movements = InventoryMovement.objects.select_related(
+        'product', 'variant', 'created_by'
+    ).all().order_by('-created_at')
+
     movement_type = request.GET.get('movement_type')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     product_id = request.GET.get('product')
-    
+    variant_id = request.GET.get('variant')
+
     if movement_type:
         movements = movements.filter(movement_type=movement_type)
     if date_from:
-        movements = movements.filter(created_at__date__gte=datetime.strptime(date_from, '%Y-%m-%d').date())
+        movements = movements.filter(
+            created_at__date__gte=datetime.strptime(date_from, '%Y-%m-%d').date()
+        )
     if date_to:
-        movements = movements.filter(created_at__date__lte=datetime.strptime(date_to, '%Y-%m-%d').date())
+        movements = movements.filter(
+            created_at__date__lte=datetime.strptime(date_to, '%Y-%m-%d').date()
+        )
     if product_id:
         movements = movements.filter(product_id=product_id)
-    
+    if variant_id:
+        movements = movements.filter(variant_id=variant_id)
+
     paginator = Paginator(movements, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     movement_types = InventoryMovement.MOVEMENT_TYPES
     products = Product.objects.all().order_by('name')
-    
+    variants = ProductVariant.objects.select_related('product').filter(
+        is_active=True
+    ).order_by('product__name', 'name')
+
     return render(request, 'dashboard/inventory_movement_list.html', {
         'page_obj': page_obj,
         'movement_types': movement_types,
@@ -1363,9 +1409,10 @@ def inventory_movement_list(request):
         'date_from': date_from,
         'date_to': date_to,
         'selected_product': product_id,
+        'selected_variant': variant_id,
         'products': products,
+        'variants': variants,
     })
-
 @login_required
 def inventory_movement_delete(request, pk):
     if not request.user.is_main_admin():
@@ -2227,12 +2274,12 @@ def internal_order_receive(request, pk):
                 inventory.save()
                 
                 InventoryMovement.objects.create(
-                    product=item.product,
-                    movement_type='sale',
-                    quantity=-item.quantity,
-                    notes=f'طلبية بيع {order.order_number}',
-                    created_by=request.user
-                )
+                               product=item.product,
+                               variant=item.variant,
+                               quantity=-item.quantity,
+                               movement_type='sale',
+
+                           )
         
         order.status = 'received'
         order.save()
@@ -2317,13 +2364,7 @@ def internal_order_confirm(request, pk):
                 inventory.quantity = 0
             inventory.save()
 
-            InventoryMovement.objects.create(
-                product=item.product,
-                variant=item.variant,
-                quantity=-item.quantity,
-                movement_type='sale',
-                reference=order.order_number,
-            )
+            
 
         order.status = 'confirmed'
         order.save()

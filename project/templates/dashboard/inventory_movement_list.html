@@ -20,14 +20,25 @@
             </select>
         </div>
         <div>
-            <label class="block font-label-sm text-secondary mb-1">المنتج</label>
-            <select name="product" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
-                <option value="">الكل</option>
-                {% for product in products %}
-                <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <label class="block font-label-sm text-secondary mb-1">المنتج</label>
+    <select name="product" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+        <option value="">الكل</option>
+        {% for product in products %}
+        <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div>
+    <label class="block font-label-sm text-secondary mb-1">النسخة</label>
+    <select name="variant" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+        <option value="">الكل</option>
+        {% for v in variants %}
+        <option value="{{ v.id }}" {% if selected_variant == v.id|stringformat:"s" %}selected{% endif %}>
+          {{ v.product.name }}{% if v.name %} - {{ v.name }}{% endif %}{% if v.color %} ({{ v.color }}){% endif %}
+        </option>
+        {% endfor %}
+    </select>
+</div>
         <div>
             <label class="block font-label-sm text-secondary mb-1">من تاريخ</label>
             <input type="date" name="date_from" value="{{ date_from }}" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
@@ -59,7 +70,9 @@
                 {% for movement in page_obj %}
                 <tr class="border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
                     <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
-                    <td class="py-3 px-4 font-body-md">{{ movement.product.name }}</td>
+<td class="py-3 px-4 font-body-md">
+    {{ movement.product.name }}{% if movement.variant %} - {{ movement.variant.name }}{% endif %}
+</td>
                     <td class="py-3 px-4 font-body-md">
                         <span class="px-2 py-1 rounded-lg text-xs {% if movement.quantity > 0 %}bg-success/10 text-success{% else %}bg-error/10 text-error{% endif %}">
                             {{ movement.get_movement_type_display }}
@@ -89,7 +102,9 @@
         {% for movement in page_obj %}
         <div class="bg-background rounded-xl p-4 border border-secondary-container/50">
             <div class="flex justify-between items-start mb-2">
-                <span class="font-headline-md text-headline-md text-on-background">{{ movement.product.name }}</span>
+<span class="font-headline-md text-headline-md text-on-background">
+  {{ movement.product.name }}{% if movement.variant %} - {{ movement.variant.name }}{% endif %}
+</span>
                 <a href="{% url 'inventory_movement_delete' movement.pk %}" class="text-error hover:bg-error/10 p-2 rounded-full transition-colors duration-200">
                     <span class="material-symbols-outlined text-[20px]">delete</span>
                 </a>
@@ -131,11 +146,11 @@
     {% if page_obj.has_other_pages %}
     <div class="flex justify-center gap-2 mt-stack-lg">
         {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&movement_type={{ selected_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">السابق</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&movement_type={{ selected_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_variant %}&variant={{ selected_variant }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">السابق</a>
         {% endif %}
         <span class="px-4 py-2 rounded-xl bg-primary text-on-primary">{{ page_obj.number }}</span>
         {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if selected_type %}&movement_type={{ selected_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">التالي</a>
+        <a href="?page={{ page_obj.next_page_number }}{% if selected_type %}&movement_type={{ selected_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_variant %}&variant={{ selected_variant }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}" class="px-4 py-2 rounded-xl border border-secondary-container hover:border-primary transition-colors duration-200">التالي</a>
         {% endif %}
     </div>
     {% endif %}

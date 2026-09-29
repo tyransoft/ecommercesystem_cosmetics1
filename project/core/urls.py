@@ -60,14 +60,14 @@ urlpatterns = [
     path('expenses/<int:pk>/edit/', expense_edit, name='expense_edit'),
     path('expenses/<int:pk>/delete/', expense_delete, name='expense_delete'),
     path('expenses/<int:pk>/detail/', expense_detail, name='expense_detail'),
-  
-    path('inventory/', inventory_list, name='inventory_list'),
-    path('inventory/<int:product_pk>/damage/', inventory_damage, name='inventory_damage'),
-    path('inventory/<int:product_pk>/gift/', inventory_gift, name='inventory_gift'),
-    path('inventory/<int:product_pk>/adjustment/', inventory_stock_adjustment, name='inventory_stock_adjustment'),
-    path('inventory/movements/', inventory_movement_list, name='inventory_movement_list'),
-    path('inventory/movements/<int:pk>/delete/', inventory_movement_delete, name='inventory_movement_delete'),
-    
+
+    path('inventory/',inventory_list, name='inventory_list'),
+    path('inventory/damage/<int:variant_pk>/',inventory_damage, name='inventory_damage'),
+    path('inventory/gift/<int:variant_pk>/',inventory_gift, name='inventory_gift'),
+    path('inventory/stock-adjustment/<int:variant_pk>/',inventory_stock_adjustment, name='inventory_stock_adjustment'),
+    path('inventory/movements/',inventory_movement_list, name='inventory_movement_list'),
+    path('inventory/movements/<int:pk>/delete/',inventory_movement_delete, name='inventory_movement_delete'),
+
     path('internal-orders/', internal_order_list, name='internal_order_list'),
     path('internal-orders/add/', internal_order_add, name='internal_order_add'),
     path('internal-orders/<int:pk>/edit/', internal_order_edit, name='internal_order_edit'),
