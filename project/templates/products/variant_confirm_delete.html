@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}حذف نسخة - Glamour{% endblock %}
+{% block content %}
+
+<div class="max-w-lg mx-auto">
+  <div class="bg-white rounded-2xl border border-gray-100 p-6 text-center">
+    <span class="material-symbols-outlined text-[48px] text-red-500 mb-3">warning</span>
+    <h2 class="text-lg font-bold text-gray-800 mb-2">تأكيد الحذف</h2>
+
+    {% if has_movements %}
+    <p class="text-gray-600 mb-6">
+      النسخة <strong>{{ variant.name }}</strong> مرتبطة بحركات مخزون، لا يمكن حذفها نهائياً.
+      سيتم تعطيلها بدلاً من ذلك.
+    </p>
+    {% else %}
+    <p class="text-gray-600 mb-6">
+      هل أنت متأكد من حذف النسخة <strong>{{ variant.name }}</strong>؟
+    </p>
+    {% endif %}
+
+    <form method="post" class="flex justify-center gap-3">
+      {% csrf_token %}
+      <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-xl hover:bg-red-700 transition font-semibold text-sm">
+        {% if has_movements %}تعطيل النسخة{% else %}حذف{% endif %}
+      </button>
+      <a href="{% url 'product_detail' variant.product.pk %}" class="border border-gray-300 text-gray-600 px-6 py-2 rounded-xl hover:bg-gray-50 transition font-semibold text-sm">إلغاء</a>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

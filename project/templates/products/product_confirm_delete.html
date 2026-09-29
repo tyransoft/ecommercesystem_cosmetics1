@@ -1,16 +1,20 @@
 {% extends 'base.html' %}
 {% block title %}حذف منتج - Glamour{% endblock %}
 {% block content %}
-<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)] max-w-md mx-auto text-center">
-    <div class="w-20 h-20 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-stack-md">
-        <span class="material-symbols-outlined text-[40px] text-error">warning</span>
-    </div>
-    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-sm">تأكيد الحذف</h2>
-    <p class="font-body-lg text-secondary mb-stack-lg">هل أنت متأكد من حذف المنتج "{{ product.name }}"؟</p>
-    <form method="post" class="flex gap-stack-md justify-center">
-        {% csrf_token %}
-        <button type="submit" class="bg-error text-on-error px-6 py-2 rounded-xl hover:bg-error/90 transition-all duration-200 font-label-md">نعم، حذف</button>
-        <a href="{% url 'product_list' %}" class="border border-secondary-container px-6 py-2 rounded-xl hover:bg-secondary-container/50 transition-all duration-200 font-label-md">إلغاء</a>
+
+<div class="max-w-lg mx-auto">
+  <div class="bg-white rounded-2xl border border-gray-100 p-6 text-center">
+    <span class="material-symbols-outlined text-[48px] text-red-500 mb-3">warning</span>
+    <h2 class="text-lg font-bold text-gray-800 mb-2">تأكيد الحذف</h2>
+    <p class="text-gray-600 mb-6">
+      هل أنت متأكد من حذف المنتج <strong>{{ product.name }}</strong> وجميع نسخه؟
+    </p>
+    <form method="post" class="flex justify-center gap-3">
+      {% csrf_token %}
+      <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-xl hover:bg-red-700 transition font-semibold text-sm">حذف</button>
+      <a href="{% url 'product_list' %}" class="border border-gray-300 text-gray-600 px-6 py-2 rounded-xl hover:bg-gray-50 transition font-semibold text-sm">إلغاء</a>
     </form>
+  </div>
 </div>
+
 {% endblock %}

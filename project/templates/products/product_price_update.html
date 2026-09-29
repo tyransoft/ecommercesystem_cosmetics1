@@ -1,184 +1,431 @@
 {% extends 'base.html' %}
 {% block title %}تحديث أسعار البيع - Glamour{% endblock %}
 {% block content %}
-<div class="bg-surface-container-lowest rounded-[24px] p-gutter shadow-[0_4px_20px_rgba(213,31,134,0.04)]">
-    <h2 class="font-headline-md text-headline-md text-on-background mb-stack-lg">تحديث أسعار البيع</h2>
-    
-    <form method="post" id="priceUpdateForm" class="space-y-stack-lg">
-        {% csrf_token %}
-        
-        <div class="bg-background rounded-xl p-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">نوع التحديث</label>
-                    <select name="update_type" id="updateType" class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" onchange="toggleUpdateType()">
-                        <option value="fixed">إضافة قيمة ثابتة (دينار)</option>
-                        <option value="exchange_rate">تحديد سعر الصرف (دولار × سعر الصرف)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-label-md text-secondary mb-stack-sm">القيمة</label>
-                    <input type="number" name="value" step="0.01" id="updateValue" required class="w-full px-4 py-2 rounded-xl border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" placeholder="أدخل القيمة">
-                </div>
-                <div class="flex items-end">
-                    <button type="submit" class="bg-primary text-on-primary px-6 py-2 rounded-xl hover:bg-primary/90 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(213,31,134,0.3)] font-label-md w-full" onclick="return confirm('هل أنت متأكد من تحديث أسعار المنتجات المحددة؟')">
-                        تحديث الأسعار
-                    </button>
-                </div>
-            </div>
-            <div id="infoMessage" class="mt-3 text-sm text-secondary">
-                <span id="updateInfo">سيتم إضافة القيمة المدخلة إلى سعر البيع بالدينار للمنتجات المحددة</span>
-            </div>
+
+<style>
+  .field-input { width:100%; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; background:#fff; }
+  .field-input:focus { outline:none; border-color:#d51f86; box-shadow: 0 0 0 3px rgba(213,31,134,.12); }
+  .btn-primary { background:#d51f86; color:#fff; padding:8px 16px; border-radius:10px; font-weight:600; border:none; cursor:pointer; font-size:13px; transition:.2s; }
+  .btn-primary:hover { background:#b0175c; }
+  .btn-outline { background:#fff; color:#d51f86; border:1px solid #d51f86; padding:6px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:12px; transition:.2s; }
+  .btn-outline:hover { background:#fdf2f6; }
+  .price-input { width:90px; padding:4px 8px; border:1px solid #e5e7eb; border-radius:6px; font-size:13px; text-align:center; }
+  .price-input:focus { outline:none; border-color:#d51f86; box-shadow:0 0 0 2px rgba(213,31,134,.12); }
+  .saved-badge { font-size:10px; color:#16a34a; opacity:0; transition:opacity .3s; margin-right:4px; }
+  .saved-badge.show { opacity:1; }
+  .badge { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-block; }
+  .quick-btn { font-size:11px; background:#f3f4f6; hover:bg:#e5e7eb; padding:3px 8px; border-radius:6px; cursor:pointer; border:none; transition:.2s; }
+  .quick-btn:hover { background:#e5e7eb; }
+</style>
+
+<div class="space-y-5">
+
+  <div class="flex items-center gap-2 text-sm text-gray-400">
+    <a href="{% url 'product_list' %}" class="hover:text-pink-600">المنتجات</a>
+    <span>›</span>
+    <span class="text-gray-700">تحديث الأسعار</span>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 p-5">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">تحديث أسعار البيع</h2>
+
+    <form method="post" id="priceUpdateForm">
+      {% csrf_token %}
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">نوع التعديل</label>
+          <select name="update_type" id="updateType" class="field-input" onchange="toggleUpdateType()">
+            <option value="fixed_add">إضافة مبلغ ثابت (د.ل)</option>
+            <option value="fixed_subtract">خصم مبلغ ثابت (د.ل)</option>
+            <option value="percent_subtract">خصم بنسبة %</option>
+            <option value="exchange_rate">تحديد سعر الصرف (دولار × سعر الصرف)</option>
+          </select>
         </div>
-        
-        <div class="border-t border-secondary-container pt-stack-lg">
-            <div class="flex justify-between items-center mb-stack-md">
-                <div class="flex items-center gap-3">
-                    <h3 class="font-headline-md text-headline-md text-on-background">المنتجات</h3>
-                    <span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm" id="selectedCount">0</span>
-                </div>
-                <div class="flex gap-2">
-                    <button type="button" onclick="selectAll()" class="bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary/20 transition-all duration-200 font-label-md text-sm">
-                        تحديد الكل
-                    </button>
-                    <button type="button" onclick="deselectAll()" class="bg-secondary/10 text-secondary px-4 py-2 rounded-xl hover:bg-secondary/20 transition-all duration-200 font-label-md text-sm">
-                        إلغاء الكل
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-secondary-container">
-                            <th class="text-right py-3 px-4 font-label-sm text-secondary">
-                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes(this)" class="w-4 h-4 accent-primary">
-                            </th>
-                            <th class="text-right py-3 px-4 font-label-sm text-secondary">#</th>
-                            <th class="text-right py-3 px-4 font-label-sm text-secondary">المنتج</th>
-                            <th class="text-right py-3 px-4 font-label-sm text-secondary">الباركود</th>
-                            <th class="text-right py-3 px-4 font-label-sm text-secondary">سعر البيع (دولار)</th>
-                            <th class="text-right py-3 px-4 font-label-sm text-secondary">سعر البيع (دينار)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for product in products %}
-                        <tr class="product-row border-b border-secondary-container/50 hover:bg-primary/5 transition-colors duration-200">
-                            <td class="py-3 px-4">
-                                <input type="checkbox" name="product_ids[]" value="{{ product.id }}" class="product-checkbox w-4 h-4 accent-primary" onchange="updateSelectedCount()">
-                            </td>
-                            <td class="py-3 px-4 font-body-md">{{ forloop.counter }}</td>
-                            <td class="py-3 px-4 font-body-md">
-                                <div class="flex items-center gap-3">
-                                    {% if product.image %}
-                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-10 h-10 rounded-lg object-cover">
-                                    {% else %}
-                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-primary">inventory</span>
-                                    </div>
-                                    {% endif %}
-                                    {{ product.name }}
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 font-body-md">{{ product.barcode }}</td>
-                            <td class="py-3 px-4 font-body-md">
-                                <input type="number" step="0.01" value="{{ product.usd_sell_price }}" class="usd-price-input w-24 px-2 py-1 rounded-lg border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" data-product-id="{{ product.id }}" onchange="updatePrice(this, 'usd_sell_price')">
-                            </td>
-                            <td class="py-3 px-4 font-body-md">
-                                <input type="number" step="0.01" value="{{ product.lyd_sell_price }}" class="lyd-price-input w-24 px-2 py-1 rounded-lg border border-secondary-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" data-product-id="{{ product.id }}" onchange="updatePrice(this, 'lyd_sell_price')">
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-8 text-secondary font-body-lg">لا توجد منتجات</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">القيمة</label>
+          <input type="number" name="value" step="0.01" id="updateValue" required class="field-input" placeholder="أدخل القيمة">
         </div>
+        <div class="flex items-end">
+          <button type="submit" class="btn-primary w-full" onclick="return confirm('هل أنت متأكد من تحديث أسعار النسخ المحددة؟')">
+            تطبيق التعديل
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 mb-3">
+        <span class="text-xs text-gray-400 self-center">اختصارات:</span>
+        <button type="button" class="quick-btn" onclick="setQuickValue('percent_add', 10)">+10%</button>
+        <button type="button" class="quick-btn" onclick="setQuickValue('percent_add', 20)">+20%</button>
+        <button type="button" class="quick-btn" onclick="setQuickValue('percent_subtract', 10)">-10%</button>
+        <button type="button" class="quick-btn" onclick="setQuickValue('percent_subtract', 20)">-20%</button>
+        <button type="button" class="quick-btn" onclick="setQuickValue('percent_subtract', 50)">-50%</button>
+      </div>
+
+      <div class="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+        <span id="updateInfo">سيتم إضافة المبلغ المدخل إلى سعر البيع بالدينار للنسخ المحددة</span>
+      </div>
+
+      <div id="previewBox" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3 text-xs text-amber-800">
+        <strong>معاينة:</strong> <span id="previewText"></span>
+      </div>
     </form>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 p-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">بحث</label>
+        <input type="text" id="variantSearch" placeholder="اسم المنتج / النسخة / الباركود" class="field-input">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">الفئة</label>
+        <select id="categoryFilter" class="field-input">
+          <option value="">جميع الفئات</option>
+          {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">الماركة</label>
+        <select id="brandFilter" class="field-input">
+          <option value="">جميع الماركات</option>
+          {% for brand in brands %}
+          <option value="{{ brand }}">{{ brand }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">اللون</label>
+        <select id="colorFilter" class="field-input">
+          <option value="">جميع الألوان</option>
+          {% for color in colors %}
+          <option value="{{ color }}">{{ color }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">الحجم</label>
+        <select id="sizeFilter" class="field-input">
+          <option value="">جميع الأحجام</option>
+          {% for size in sizes %}
+          <option value="{{ size }}">{{ size }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">حالة السعر</label>
+        <select id="priceStatusFilter" class="field-input">
+          <option value="">جميعها</option>
+          <option value="has_usd">لها سعر بالدولار</option>
+          <option value="no_usd">بدون سعر بالدولار</option>
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button type="button" onclick="resetFilters()" class="btn-outline w-full">إعادة تعيين</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-semibold text-gray-700">النسخ</span>
+        <span class="badge" style="background:#fff0f6;color:#d51f86;" id="selectedCount">0</span>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" onclick="selectAll()" class="btn-outline">تحديد الكل</button>
+        <button type="button" onclick="deselectAll()" class="btn-outline">إلغاء الكل</button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-pink-50/60">
+          <tr class="text-gray-600">
+            <th class="text-right py-3 px-3 font-semibold w-10">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes(this)" class="w-4 h-4 accent-primary">
+            </th>
+            <th class="text-right py-3 px-3 font-semibold">المنتج</th>
+            <th class="text-right py-3 px-3 font-semibold">النسخة</th>
+            <th class="text-right py-3 px-3 font-semibold">الباركود</th>
+            <th class="text-right py-3 px-3 font-semibold">شراء $</th>
+            <th class="text-right py-3 px-3 font-semibold">بيع $</th>
+            <th class="text-right py-3 px-3 font-semibold">بيع د.ل</th>
+          </tr>
+        </thead>
+        <tbody id="variantsBody">
+          {% for item in variants_data %}
+          <tr class="variant-row border-b border-gray-100 hover:bg-pink-50/30 transition-colors"
+              data-name="{{ item.variant.product.name|lower }}"
+              data-variant-name="{{ item.variant.name|lower }}"
+              data-barcode="{{ item.variant.barcode|lower }}"
+              data-category="{{ item.variant.product.category.id|default:'' }}"
+              data-brand="{{ item.variant.product.brand|default:''|lower }}"
+              data-color="{{ item.variant.color|default:''|lower }}"
+              data-size="{{ item.variant.size|default:''|lower }}"
+              data-usd-price="{{ item.variant.usd_sell_price }}">
+            <td class="py-3 px-3">
+              <input type="checkbox" name="variant_ids[]" value="{{ item.variant.id }}" class="variant-checkbox w-4 h-4 accent-primary" onchange="updateSelectedCount(); updatePreview();">
+            </td>
+            <td class="py-3 px-3">
+              <div class="flex items-center gap-2">
+                {% if item.variant.product.image %}
+                <img src="{{ item.variant.product.image.url }}" class="w-8 h-8 rounded-lg object-cover">
+                {% else %}
+                <div class="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-pink-500 text-[16px]">inventory</span>
+                </div>
+                {% endif %}
+                <span class="font-semibold text-gray-800">{{ item.variant.product.name }}</span>
+              </div>
+            </td>
+            <td class="py-3 px-3 text-gray-600">
+              {{ item.variant.name }}
+              {% if item.variant.color %}<span class="text-xs text-gray-400">({{ item.variant.color }})</span>{% endif %}
+            </td>
+            <td class="py-3 px-3 text-gray-500 font-mono text-xs">{{ item.variant.barcode }}</td>
+            <td class="py-3 px-3 text-gray-600">{{ item.usd_buy_coast_price|floatformat:2 }}</td>
+            <td class="py-3 px-3">
+              <div class="flex items-center gap-1">
+                <input type="number" step="0.01" value="{{ item.variant.usd_sell_price }}"
+                       class="price-input usd-price-input"
+                       data-variant-id="{{ item.variant.id }}"
+                       onchange="updatePrice(this, 'usd_sell_price')">
+                <span class="saved-badge" id="saved-usd-{{ item.variant.id }}">✓</span>
+              </div>
+            </td>
+            <td class="py-3 px-3">
+              <div class="flex items-center gap-1">
+                <input type="number" step="0.01" value="{{ item.variant.lyd_sell_price }}"
+                       class="price-input lyd-price-input"
+                       data-variant-id="{{ item.variant.id }}"
+                       onchange="updatePrice(this, 'lyd_sell_price')">
+                <span class="saved-badge" id="saved-lyd-{{ item.variant.id }}">✓</span>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center py-10 text-gray-400">
+              <span class="material-symbols-outlined block text-[40px] mb-2 text-gray-300">inventory_2</span>
+              لا توجد نسخ
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="noResults" class="hidden text-center py-8 text-gray-400">لا توجد نتائج تطابق بحثك</div>
+  </div>
+
 </div>
 
 <script>
 function toggleUpdateType() {
-    const updateType = document.getElementById('updateType').value;
+    const type = document.getElementById('updateType').value;
     const info = document.getElementById('updateInfo');
-    if (updateType === 'fixed') {
-        info.textContent = 'سيتم إضافة القيمة المدخلة إلى سعر البيع بالدينار للمنتجات المحددة';
+    const messages = {
+        'fixed_add': 'سيتم إضافة المبلغ المدخل إلى سعر البيع بالدينار للنسخ المحددة',
+        'fixed_subtract': 'سيتم خصم المبلغ المدخل من سعر البيع بالدينار للنسخ المحددة',
+        'percent_add': 'سيتم زيادة سعر البيع بالدينار بنسبة % للنسخ المحددة',
+        'percent_subtract': 'سيتم خصم نسبة % من سعر البيع بالدينار للنسخ المحددة',
+        'exchange_rate': 'سيتم تحديث سعر البيع بالدينار = سعر البيع بالدولار × سعر الصرف',
+        'set_direct': 'سيتم تعيين سعر البيع بالدينار مباشرة للنسخ المحددة'
+    };
+    if (info) info.textContent = messages[type] || '';
+    updatePreview();
+}
+
+function setQuickValue(type, value) {
+    document.getElementById('updateType').value = type;
+    document.getElementById('updateValue').value = value;
+    toggleUpdateType();
+}
+
+function updatePreview() {
+    const type = document.getElementById('updateType').value;
+    const value = parseFloat(document.getElementById('updateValue').value);
+    const previewBox = document.getElementById('previewBox');
+    const previewText = document.getElementById('previewText');
+
+    if (isNaN(value) || value <= 0) {
+        previewBox.classList.add('hidden');
+        return;
+    }
+
+    const checked = document.querySelectorAll('.variant-checkbox:checked');
+    if (checked.length === 0) {
+        previewBox.classList.add('hidden');
+        return;
+    }
+
+    const firstRow = checked[0].closest('.variant-row');
+    const lydInput = firstRow.querySelector('.lyd-price-input');
+    const usdInput = firstRow.querySelector('.usd-price-input');
+    const currentLyd = parseFloat(lydInput.value) || 0;
+    const currentUsd = parseFloat(usdInput.value) || 0;
+
+    let sampleText = '';
+
+    if (type === 'fixed_add') {
+        sampleText = `${currentLyd.toFixed(2)} → ${(currentLyd + value).toFixed(2)} د.ل (+${value} د.ل)`;
+    } else if (type === 'fixed_subtract') {
+        const newPrice = Math.max(0, currentLyd - value);
+        sampleText = `${currentLyd.toFixed(2)} → ${newPrice.toFixed(2)} د.ل (-${value} د.ل)`;
+    } else if (type === 'percent_add') {
+        const newPrice = currentLyd + (currentLyd * value / 100);
+        sampleText = `${currentLyd.toFixed(2)} → ${newPrice.toFixed(2)} د.ل (+${value}%)`;
+    } else if (type === 'percent_subtract') {
+        const newPrice = Math.max(0, currentLyd - (currentLyd * value / 100));
+        sampleText = `${currentLyd.toFixed(2)} → ${newPrice.toFixed(2)} د.ل (-${value}%)`;
+    } else if (type === 'exchange_rate') {
+        const newPrice = currentUsd * value;
+        sampleText = `${currentUsd.toFixed(2)}$ × ${value} = ${newPrice.toFixed(2)} د.ل`;
+    } else if (type === 'set_direct') {
+        sampleText = `${currentLyd.toFixed(2)} → ${value.toFixed(2)} د.ل (تعيين مباشر)`;
+    }
+
+    if (sampleText) {
+        previewText.textContent = sampleText;
+        previewBox.classList.remove('hidden');
     } else {
-        info.textContent = 'سيتم تحديث سعر البيع بالدينار = سعر البيع بالدولار × سعر الصرف (للمنتجات التي لها سعر دولار)';
+        previewBox.classList.add('hidden');
     }
 }
 
 function updateSelectedCount() {
-    const checked = document.querySelectorAll('.product-checkbox:checked').length;
+    const checked = document.querySelectorAll('.variant-checkbox:checked').length;
     document.getElementById('selectedCount').textContent = checked;
 }
 
 function selectAll() {
-    document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = true);
+    document.querySelectorAll('.variant-row:not([style*="display: none"]) .variant-checkbox').forEach(cb => cb.checked = true);
     document.getElementById('selectAllCheckbox').checked = true;
     updateSelectedCount();
+    updatePreview();
 }
 
 function deselectAll() {
-    document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.variant-checkbox').forEach(cb => cb.checked = false);
     document.getElementById('selectAllCheckbox').checked = false;
     updateSelectedCount();
+    updatePreview();
 }
 
 function toggleAllCheckboxes(master) {
-    document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = master.checked);
+    document.querySelectorAll('.variant-row:not([style*="display: none"]) .variant-checkbox').forEach(cb => cb.checked = master.checked);
     updateSelectedCount();
+    updatePreview();
 }
 
 function updatePrice(input, field) {
-    const productId = input.dataset.productId;
+    const variantId = input.dataset.variantId;
     const value = input.value;
-    
-    if (value === '' || isNaN(value) || parseFloat(value) < 0) {
-        return;
-    }
-    
+
+    if (value === '' || isNaN(value) || parseFloat(value) < 0) return;
+
     fetch('{% url "product_price_update_ajax" %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
         },
-        body: `product_id=${productId}&field=${field}&value=${value}`
+        body: `variant_id=${variantId}&field=${field}&value=${value}`
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
-            showToast(data.message, 'success');
+            const badge = document.getElementById(`saved-${field === 'usd_sell_price' ? 'usd' : 'lyd'}-${variantId}`);
+            if (badge) {
+                badge.classList.add('show');
+                setTimeout(() => badge.classList.remove('show'), 1500);
+            }
         } else {
-            showToast(data.error, 'error');
+            alert(data.error || 'حدث خطأ');
         }
     })
-    .catch(error => {
-        showToast('حدث خطأ أثناء التحديث', 'error');
-    });
-}
-
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `fixed top-20 right-4 z-50 px-6 py-3 rounded-xl shadow-lg font-body-md transition-all duration-300 ${
-        type === 'success' ? 'bg-success/90 text-white' : 'bg-error/90 text-white'
-    }`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-20px)';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    .catch(() => alert('حدث خطأ أثناء التحديث'));
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
+    toggleUpdateType();
+
+    const searchInput = document.getElementById('variantSearch');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const brandFilter = document.getElementById('brandFilter');
+    const colorFilter = document.getElementById('colorFilter');
+    const sizeFilter = document.getElementById('sizeFilter');
+    const priceStatusFilter = document.getElementById('priceStatusFilter');
+    const rows = document.querySelectorAll('.variant-row');
+    const noResults = document.getElementById('noResults');
+
+    function filterRows() {
+        const q = (searchInput.value || '').toLowerCase().trim();
+        const cat = categoryFilter.value;
+        const brand = (brandFilter.value || '').toLowerCase();
+        const color = (colorFilter.value || '').toLowerCase();
+        const size = (sizeFilter.value || '').toLowerCase();
+        const priceStatus = priceStatusFilter.value;
+        let visible = 0;
+
+        rows.forEach(row => {
+            const name = row.dataset.name || '';
+            const vname = row.dataset.variantName || '';
+            const barcode = row.dataset.barcode || '';
+            const rowCat = row.dataset.category || '';
+            const rowBrand = (row.dataset.brand || '').toLowerCase();
+            const rowColor = (row.dataset.color || '').toLowerCase();
+            const rowSize = (row.dataset.size || '').toLowerCase();
+            const usdPrice = parseFloat(row.dataset.usdPrice || '0');
+
+            const matchSearch = !q || name.includes(q) || vname.includes(q) || barcode.includes(q);
+            const matchCat = !cat || rowCat === cat;
+            const matchBrand = !brand || rowBrand === brand;
+            const matchColor = !color || rowColor === color;
+            const matchSize = !size || rowSize === size;
+
+            let matchPrice = true;
+            if (priceStatus === 'has_usd') matchPrice = usdPrice > 0;
+            else if (priceStatus === 'no_usd') matchPrice = usdPrice === 0;
+
+            if (matchSearch && matchCat && matchBrand && matchColor && matchSize && matchPrice) {
+                row.style.display = '';
+                visible++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        noResults.classList.toggle('hidden', visible > 0);
+        updateSelectedCount();
+        updatePreview();
+    }
+
+    [searchInput, categoryFilter, brandFilter, colorFilter, sizeFilter, priceStatusFilter].forEach(el => {
+        if (el) {
+            el.addEventListener('input', filterRows);
+            el.addEventListener('change', filterRows);
+        }
+    });
+
+    document.getElementById('updateValue').addEventListener('input', updatePreview);
 });
+
+function resetFilters() {
+    document.getElementById('variantSearch').value = '';
+    document.getElementById('categoryFilter').value = '';
+    document.getElementById('brandFilter').value = '';
+    document.getElementById('colorFilter').value = '';
+    document.getElementById('sizeFilter').value = '';
+    document.getElementById('priceStatusFilter').value = '';
+    document.querySelectorAll('.variant-row').forEach(r => r.style.display = '');
+    document.getElementById('noResults').classList.add('hidden');
+    updateSelectedCount();
+    updatePreview();
+}
 </script>
+
 {% endblock %}

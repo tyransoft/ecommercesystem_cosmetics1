@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} - Glamour{% endblock %}
+{% block content %}
+
+<style>
+  .badge { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-block; }
+  .btn-primary { background:#d51f86; color:#fff; padding:8px 16px; border-radius:10px; font-weight:600; border:none; cursor:pointer; font-size:13px; transition:.2s; display:inline-block; }
+  .btn-primary:hover { background:#b0175c; }
+  .btn-outline { background:#fff; color:#d51f86; border:1px solid #d51f86; padding:8px 16px; border-radius:10px; font-weight:600; cursor:pointer; font-size:13px; transition:.2s; display:inline-block; }
+  .btn-outline:hover { background:#fdf2f6; }
+</style>
+
+<div class="space-y-5">
+
+  <div class="flex items-center gap-2 text-sm text-gray-400">
+    <a href="{% url 'product_list' %}" class="hover:text-pink-600 transition-colors">المنتجات</a>
+    <span>›</span>
+    <span class="text-gray-700">{{ product.name }}</span>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 p-6">
+    <div class="flex flex-col sm:flex-row gap-6">
+      <div class="flex-shrink-0">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-32 h-32 rounded-2xl object-cover">
+        {% else %}
+        <div class="w-32 h-32 rounded-2xl bg-pink-100 flex items-center justify-center">
+          <span class="material-symbols-outlined text-pink-500 text-[48px]">inventory</span>
+        </div>
+        {% endif %}
+      </div>
+      <div class="flex-1">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">{{ product.name }}</h1>
+        <div class="flex flex-wrap gap-3 text-sm text-gray-600">
+          {% if product.brand %}
+          <span class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px] text-gray-400">sell</span>
+            {{ product.brand }}
+          </span>
+          {% endif %}
+          {% if product.category %}
+          <span class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px] text-gray-400">category</span>
+            {{ product.category.name }}
+          </span>
+          {% endif %}
+          {% if product.made_in %}
+          <span class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px] text-gray-400">public</span>
+            صنع في {{ product.made_in }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="flex flex-wrap gap-3 mt-4 text-sm">
+          <span class="badge" style="background:#f3f4f6;color:#374151;">{{ variants_count }} نسخة</span>
+          <span class="badge" style="background:#fff0f6;color:#d51f86;">إجمالي المخزون: {{ total_stock }}</span>
+          <span class="badge" style="background:#f0fdf4;color:#16a34a;">يبدأ من {{ product.min_sell_price|floatformat:2 }} د.ل</span>
+        </div>
+        <div class="flex gap-2 mt-5">
+          <a href="{% url 'product_edit' product.pk %}" class="btn-primary">تعديل المنتج</a>
+          <a href="{% url 'product_delete' product.pk %}" class="btn-outline" style="color:#dc2626;border-color:#dc2626;">حذف</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div class="flex items-center gap-3">
+        <h2 class="text-lg font-bold text-gray-800">نسخ المنتج</h2>
+        <span class="badge" style="background:#fff0f6;color:#d51f86;">{{ variants_count }}</span>
+      </div>
+      <a href="{% url 'variant_add' product.pk %}" class="btn-primary text-sm">+ إضافة نسخة</a>
+    </div>
+
+    <div class="px-5 py-3 border-b border-gray-100">
+      <div class="relative max-w-md">
+        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
+        <input type="text" id="variantSearch" placeholder="البحث في النسخ"
+               class="w-full pr-10 pl-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all">
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm" id="variantsTable">
+        <thead class="bg-pink-50/60">
+          <tr class="text-gray-600">
+            <th class="text-right py-3 px-3 font-semibold">النسخة</th>
+            <th class="text-right py-3 px-3 font-semibold">اللون</th>
+            <th class="text-right py-3 px-3 font-semibold">الحجم</th>
+            <th class="text-right py-3 px-3 font-semibold">الإصدار</th>
+            <th class="text-right py-3 px-3 font-semibold">الباركود</th>
+            <th class="text-right py-3 px-3 font-semibold">المخزون</th>
+            <th class="text-right py-3 px-3 font-semibold">بيع $</th>
+            <th class="text-right py-3 px-3 font-semibold">بيع د.ل</th>
+            <th class="text-right py-3 px-3 font-semibold">هامش الربح</th>
+            <th class="text-right py-3 px-3 font-semibold">الحالة</th>
+            <th class="text-right py-3 px-3 font-semibold">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in variants_data %}
+          <tr class="variant-row border-b border-gray-100 hover:bg-pink-50/30 transition-colors"
+              data-name="{{ item.variant.name|lower }}"
+              data-barcode="{{ item.variant.barcode|lower }}"
+              data-color="{{ item.variant.color|default:''|lower }}"
+              data-size="{{ item.variant.size|default:''|lower }}">
+            <td class="py-3 px-3 font-semibold text-gray-800">{{ item.variant.name }}</td>
+            <td class="py-3 px-3 text-gray-600">{{ item.variant.color|default:"-" }}</td>
+            <td class="py-3 px-3 text-gray-600">{{ item.variant.size|default:"-" }}</td>
+            <td class="py-3 px-3 text-gray-600">{{ item.variant.edition|default:"-" }}</td>
+            <td class="py-3 px-3 text-gray-600 font-mono text-xs">{{ item.variant.barcode }}</td>
+            <td class="py-3 px-3">
+              <span class="font-bold
+                {% if item.stock == 0 %}text-red-600
+                {% elif item.stock <= 5 %}text-amber-600
+                {% else %}text-green-600{% endif %}">
+                {{ item.stock }}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-gray-600">{{ item.variant.usd_sell_price|floatformat:2 }} $</td>
+            <td class="py-3 px-3 font-semibold text-gray-800">{{ item.variant.lyd_sell_price|floatformat:2 }} د.ل</td>
+            <td class="py-3 px-3">
+              <span class="text-gray-800">{{ item.profit_margin_lyd|floatformat:2 }} $</span>
+              <span class="text-[10px] text-gray-400">{{ item.profit_margin_percent }}%</span>
+            </td>
+            <td class="py-3 px-3">
+              {% if item.variant.is_active %}
+                {% if item.stock == 0 %}
+                  <span class="badge" style="background:#fef2f2;color:#dc2626;">نافد</span>
+                {% elif item.stock <= 5 %}
+                  <span class="badge" style="background:#fffbeb;color:#d97706;">منخفض</span>
+                {% else %}
+                  <span class="badge" style="background:#f0fdf4;color:#16a34a;">متوفر</span>
+                {% endif %}
+              {% else %}
+                <span class="badge" style="background:#f3f4f6;color:#6b7280;">معطل</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-3">
+              <div class="flex gap-1">
+                <a href="{% url 'variant_edit' item.variant.pk %}"
+                   class="text-pink-600 hover:bg-pink-50 p-1.5 rounded-full" title="تعديل">
+                  <span class="material-symbols-outlined text-[18px]">edit</span>
+                </a>
+                <a href="{% url 'inventory_movement_list' %}?variant={{ item.variant.pk }}"
+                   class="text-blue-600 hover:bg-blue-50 p-1.5 rounded-full" title="حركة المخزون">
+                  <span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+                </a>
+                <a href="{% url 'variant_delete' item.variant.pk %}"
+                   onclick="return confirm('هل أنت متأكد من حذف/تعطيل {{ item.variant.name }}؟')"
+                   class="text-red-600 hover:bg-red-50 p-1.5 rounded-full" title="حذف">
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="11" class="text-center py-10 text-gray-400">
+              <span class="material-symbols-outlined block text-[40px] mb-2 text-gray-300">inventory_2</span>
+              لا توجد نسخ
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="noVariantResults" class="hidden text-center py-8 text-gray-400">
+      لا توجد نسخ تطابق بحثك
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('variantSearch');
+    const rows = document.querySelectorAll('.variant-row');
+    const noResults = document.getElementById('noVariantResults');
+
+    function filterVariants() {
+        const q = (searchInput.value || '').toLowerCase().trim();
+        let visible = 0;
+
+        rows.forEach(row => {
+            const name = row.dataset.name || '';
+            const barcode = row.dataset.barcode || '';
+            const color = row.dataset.color || '';
+            const size = row.dataset.size || '';
+
+            const match = !q || name.includes(q) || barcode.includes(q) || color.includes(q) || size.includes(q);
+
+            if (match) {
+                row.style.display = '';
+                visible++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        noResults.classList.toggle('hidden', visible > 0);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterVariants);
+    }
+});
+</script>
+
+{% endblock %}

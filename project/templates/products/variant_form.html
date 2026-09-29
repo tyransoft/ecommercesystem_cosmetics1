@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} - Glamour{% endblock %}
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white rounded-2xl border border-gray-100 p-6">
+    <div class="flex items-center gap-2 text-sm text-gray-400 mb-4">
+      <a href="{% url 'product_list' %}" class="hover:text-pink-600">المنتجات</a>
+      <span>›</span>
+      <a href="{% url 'product_detail' product.pk %}" class="hover:text-pink-600">{{ product.name }}</a>
+      <span>›</span>
+      <span class="text-gray-700">{{ title }}</span>
+    </div>
+
+    <h2 class="text-lg font-bold text-gray-800 mb-5">{{ title }} - {{ product.name }}</h2>
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+
+      {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}" class="block text-sm text-gray-600 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>{% endif %}
+      </div>
+      {% endfor %}
+
+      <div class="flex gap-3 pt-3">
+        <button type="submit" class="bg-pink-600 text-white px-6 py-2 rounded-xl hover:bg-pink-700 transition font-semibold text-sm">حفظ</button>
+        <a href="{% url 'product_detail' product.pk %}" class="border border-pink-600 text-pink-600 px-6 py-2 rounded-xl hover:bg-pink-50 transition font-semibold text-sm">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

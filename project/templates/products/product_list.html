@@ -11,10 +11,6 @@
   .btn-primary:hover { background:#b0175c; }
   .btn-outline { background:#fff; color:#d51f86; border:1px solid #d51f86; padding:8px 16px; border-radius:10px; font-weight:600; cursor:pointer; font-size:13px; transition:.2s; display:inline-block; }
   .btn-outline:hover { background:#fdf2f6; }
-  .stock-dot { display:inline-block; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.15); }
-  .dot-red { background:#ef4444; }
-  .dot-yellow { background:#f59e0b; }
-  .dot-green { background:#10b981; }
   .badge { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-block; }
 </style>
 
@@ -27,9 +23,7 @@
     </div>
   </div>
 
-  <!-- بطاقات الإحصائيات -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
     <div class="stat-card">
       <div>
         <p class="text-xs text-gray-500 mb-1">إجمالي المنتجات</p>
@@ -39,59 +33,52 @@
         <span class="material-symbols-outlined text-[24px]">inventory_2</span>
       </div>
     </div>
-
+    <div class="stat-card">
+      <div>
+        <p class="text-xs text-gray-500 mb-1">المتوفر</p>
+        <p class="text-2xl font-bold text-gray-800">{{ available_count }}</p>
+      </div>
+      <div class="stat-icon" style="background:#f0fdf4;color:#16a34a;">
+        <span class="material-symbols-outlined text-[24px]">check_circle</span>
+      </div>
+    </div>
     <div class="stat-card">
       <div>
         <p class="text-xs text-gray-500 mb-1">المخزون المنخفض</p>
         <p class="text-2xl font-bold text-gray-800">{{ low_stock_count }}</p>
       </div>
-      <div class="stat-icon" style="background:#fef2f2;color:#dc2626;">
+      <div class="stat-icon" style="background:#fffbeb;color:#d97706;">
         <span class="material-symbols-outlined text-[24px]">warning</span>
       </div>
     </div>
-
     <div class="stat-card">
       <div>
-        <p class="text-xs text-gray-500 mb-1">المنتجات النافدة</p>
+        <p class="text-xs text-gray-500 mb-1">النافد</p>
         <p class="text-2xl font-bold text-gray-800">{{ out_of_stock_count }}</p>
       </div>
       <div class="stat-icon" style="background:#fef2f2;color:#dc2626;">
         <span class="material-symbols-outlined text-[24px]">remove_shopping_cart</span>
       </div>
     </div>
-
-    <div class="stat-card">
-      <div>
-        <p class="text-xs text-gray-500 mb-1">منتجات في المخزون</p>
-        <p class="text-2xl font-bold text-gray-800">{{ slow_moving_count }}</p>
-      </div>
-      <div class="stat-icon" style="background:#fff0f6;color:#d51f86;">
-        <span class="material-symbols-outlined text-[24px]">local_shipping</span>
-      </div>
-    </div>
-
   </div>
 
-  <!-- الأزرار + البحث -->
   <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
     <div class="flex flex-wrap gap-2">
-      <a href="{% url 'category_list' %}" class="btn-outline">الفئات</a>
-      <a href="{% url 'category_add' %}" class="btn-outline">إضافة فئة</a>
       <a href="{% url 'product_add' %}" class="btn-primary">+ إضافة منتج</a>
       <a href="{% url 'product_price_update' %}" class="btn-outline">تعديل الأسعار</a>
+      <a href="{% url 'category_list' %}" class="btn-outline">الفئات</a>
     </div>
     <div class="flex-1 lg:max-w-md mr-auto">
       <div class="relative">
         <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">search</span>
-        <input type="text" id="productSearch" placeholder="البحث بالاسم أو الباركود"
+        <input type="text" id="productSearch" placeholder="البحث بالاسم أو الباركود أو اسم النسخة"
                class="field-input pr-11">
       </div>
     </div>
   </div>
 
-  <!-- الفلاتر -->
   <div class="bg-white rounded-2xl border border-gray-100 p-4">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <div>
         <label class="block text-xs text-gray-500 mb-1">الفئة</label>
         <select id="categoryFilter" class="field-input">
@@ -119,6 +106,14 @@
           <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>نافد</option>
         </select>
       </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">عدد النسخ</label>
+        <select id="variantsFilter" class="field-input">
+          <option value="">الكل</option>
+          <option value="single" {% if variants_filter == 'single' %}selected{% endif %}>نسخة واحدة</option>
+          <option value="multiple" {% if variants_filter == 'multiple' %}selected{% endif %}>أكثر من نسخة</option>
+        </select>
+      </div>
     </div>
     <div class="mt-3 text-left">
       <button onclick="resetFilters()" class="text-sm text-gray-500 hover:text-pink-600 underline">
@@ -127,130 +122,103 @@
     </div>
   </div>
 
-  <!-- الجدول -->
   <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-sm" id="productsTable">
+      <table class="w-full text-sm">
         <thead class="bg-pink-50/60">
           <tr class="text-gray-600">
             <th class="text-right py-3 px-3 font-semibold">المنتج</th>
-            <th class="text-right py-3 px-3 font-semibold">SKU</th>
             <th class="text-right py-3 px-3 font-semibold">الماركة</th>
-            <th class="text-right py-3 px-3 font-semibold">الدرجة / الحجم</th>
             <th class="text-right py-3 px-3 font-semibold">الفئة</th>
-            <th class="text-right py-3 px-3 font-semibold">الكمية</th>
-            <th class="text-right py-3 px-3 font-semibold">سعر الشراء $</th>
-            <th class="text-right py-3 px-3 font-semibold">سعر البيع د.ل</th>
-            <th class="text-right py-3 px-3 font-semibold">هامش الربح</th>
+            <th class="text-right py-3 px-3 font-semibold">النسخ</th>
+            <th class="text-right py-3 px-3 font-semibold">إجمالي المخزون</th>
+            <th class="text-right py-3 px-3 font-semibold">السعر يبدأ من</th>
             <th class="text-right py-3 px-3 font-semibold">الحالة</th>
             <th class="text-right py-3 px-3 font-semibold">الإجراءات</th>
           </tr>
         </thead>
         <tbody id="productsBody">
-          {% for product in page_obj %}
-            {% with inv=product.inventory.first %}
+          {% for item in page_obj %}
             <tr class="product-row border-b border-gray-100 hover:bg-pink-50/30 transition-colors"
-                data-name="{{ product.name|lower }}"
-                data-barcode="{{ product.barcode|lower }}"
-                data-category="{{ product.category.id|default:'' }}"
-                data-brand="{{ product.brand|default:''|lower }}"
-                data-stock="{% if inv %}{{ inv.quantity }}{% else %}0{% endif %}">
+                data-name="{{ item.product.name|lower }}"
+                data-brand="{{ item.product.brand|default:''|lower }}"
+                data-category="{{ item.product.category.id|default:'' }}"
+                data-stock="{{ item.total_stock }}"
+                data-variants="{{ item.variants_count }}">
 
               <td class="py-3 px-3">
                 <div class="flex items-center gap-3">
                   <div class="relative flex-shrink-0">
-                    {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-12 h-12 rounded-lg object-cover">
+                    {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-12 h-12 rounded-lg object-cover">
                     {% else %}
                     <div class="w-12 h-12 rounded-lg bg-pink-100 flex items-center justify-center">
                       <span class="material-symbols-outlined text-pink-500">inventory</span>
                     </div>
                     {% endif %}
-                    {% if inv %}
-                      {% if inv.quantity == 0 %}
-                        <span class="stock-dot dot-red absolute -top-1 -left-1" title="نفد"></span>
-                      {% elif inv.quantity <= 5 %}
-                        <span class="stock-dot dot-yellow absolute -top-1 -left-1" title="منخفض"></span>
-                      {% else %}
-                        <span class="stock-dot dot-green absolute -top-1 -left-1" title="متوفر"></span>
-                      {% endif %}
-                    {% endif %}
                   </div>
                   <div class="min-w-0">
-                    <p class="font-semibold text-gray-800 truncate">{{ product.name }}</p>
+                    <a href="{% url 'product_detail' item.product.pk %}" class="font-semibold text-gray-800 truncate hover:text-pink-600 transition-colors">
+                      {{ item.product.name }}
+                    </a>
                   </div>
                 </div>
               </td>
 
-              <td class="py-3 px-3 text-gray-600">{{ product.barcode }}</td>
-              <td class="py-3 px-3 text-gray-600">{{ product.brand|default:"-" }}</td>
-              <td class="py-3 px-3 text-gray-600">{{ product.color|default:"-" }}</td>
-              <td class="py-3 px-3 text-gray-600">{{ product.category.name|default:"-" }}</td>
+              <td class="py-3 px-3 text-gray-600">{{ item.product.brand|default:"-" }}</td>
+              <td class="py-3 px-3 text-gray-600">{{ item.product.category.name|default:"-" }}</td>
 
               <td class="py-3 px-3">
-                {% if inv %}
-                  <span class="font-bold
-                    {% if inv.quantity == 0 %}text-red-600
-                    {% elif inv.quantity <= 5 %}text-amber-600
-                    {% else %}text-green-600{% endif %}">
-                    {{ inv.quantity }}
-                  </span>
-                {% else %}
-                  <span class="text-gray-400">-</span>
-                {% endif %}
+                <span class="badge" style="background:#f3f4f6;color:#374151;">
+                  {{ item.variants_count }} نسخة
+                </span>
               </td>
 
               <td class="py-3 px-3">
-                {% if inv %}{{ inv.usd_buy_coast_price|floatformat:2 }} $ {% else %}-{% endif %}
+                <span class="font-bold
+                  {% if item.total_stock == 0 %}text-red-600
+                  {% elif item.total_stock <= 5 %}text-amber-600
+                  {% else %}text-green-600{% endif %}">
+                  {{ item.total_stock }}
+                </span>
               </td>
 
               <td class="py-3 px-3 font-semibold text-gray-800">
-                {{ product.lyd_sell_price|floatformat:2 }} د.ل
+                {{ item.min_price|floatformat:2 }} د.ل
               </td>
-              <td>
-              {{ product.get_profit_margin_lyd|floatformat:2 }} $
-             <span class="text-[10px] text-gray-400">{{ product.get_profit_margin_percent }}%</span>
-              </td>
+
               <td class="py-3 px-3">
-                {% if inv %}
-                  {% if inv.quantity == 0 %}
-                    <span class="badge" style="background:#fef2f2;color:#dc2626;">نافد</span>
-                  {% elif inv.quantity <= 5 %}
-                    <span class="badge" style="background:#fffbeb;color:#d97706;">منخفض</span>
-                  {% else %}
-                    <span class="badge" style="background:#f0fdf4;color:#16a34a;">متوفر</span>
-                  {% endif %}
+                {% if item.stock_status == 'out' %}
+                  <span class="badge" style="background:#fef2f2;color:#dc2626;">نافد</span>
+                {% elif item.stock_status == 'low' %}
+                  <span class="badge" style="background:#fffbeb;color:#d97706;">منخفض</span>
                 {% else %}
-                  <span class="badge" style="background:#f3f4f6;color:#6b7280;">بدون مخزون</span>
+                  <span class="badge" style="background:#f0fdf4;color:#16a34a;">متوفر</span>
                 {% endif %}
               </td>
 
               <td class="py-3 px-3">
                 <div class="flex gap-1">
-                  <a href="{% url 'product_edit' product.pk %}"
-                     class="text-pink-600 hover:bg-pink-50 p-1.5 rounded-full" title="تعديل">
+                  <a href="{% url 'product_detail' item.product.pk %}"
+                     class="text-pink-600 hover:bg-pink-50 p-1.5 rounded-full" title="عرض">
+                    <span class="material-symbols-outlined text-[18px]">visibility</span>
+                  </a>
+                  <a href="{% url 'product_edit' item.product.pk %}"
+                     class="text-amber-600 hover:bg-amber-50 p-1.5 rounded-full" title="تعديل">
                     <span class="material-symbols-outlined text-[18px]">edit</span>
                   </a>
-                  <a href="{% url 'product_duplicate' product.pk %}"
-                     class="text-amber-600 hover:bg-amber-50 p-1.5 rounded-full" title="نسخ المنتج">
-                    <span class="material-symbols-outlined text-[18px]">sell</span>
-                  </a>
-                  <a href="{% url 'inventory_movement_list' %}?product={{ product.pk }}"
-                     class="text-blue-600 hover:bg-blue-50 p-1.5 rounded-full" title="حركة المخزون">
-                    <span class="material-symbols-outlined text-[18px]">swap_horiz</span>
-                  </a>
-                  <a href="{% url 'product_delete' product.pk %}"
-                     onclick="return confirm('هل أنت متأكد من حذف {{ product.name }}؟')"
+                 
+                  <a href="{% url 'product_delete' item.product.pk %}"
+                     onclick="return confirm('هل أنت متأكد من حذف {{ item.product.name }}؟')"
                      class="text-red-600 hover:bg-red-50 p-1.5 rounded-full" title="حذف">
                     <span class="material-symbols-outlined text-[18px]">delete</span>
                   </a>
                 </div>
               </td>
             </tr>
-            {% endwith %}
           {% empty %}
             <tr>
-              <td colspan="11" class="text-center py-10 text-gray-400">
+              <td colspan="8" class="text-center py-10 text-gray-400">
                 <span class="material-symbols-outlined block text-[40px] mb-2 text-gray-300">inventory_2</span>
                 لا توجد منتجات
               </td>
@@ -259,7 +227,6 @@
         </tbody>
       </table>
     </div>
-
     <div id="noResults" class="hidden text-center py-8 text-gray-400">
       لا توجد نتائج تطابق بحثك
     </div>
@@ -272,7 +239,7 @@
     </p>
     <div class="flex gap-1">
       {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if brand_filter %}&brand={{ brand_filter }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+      <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if brand_filter %}&brand={{ brand_filter }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if variants_filter %}&variants_count={{ variants_filter }}{% endif %}"
          class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
         <span class="material-symbols-outlined text-[18px]">chevron_right</span>
       </a>
@@ -282,7 +249,7 @@
         {% if num == page_obj.number %}
           <span class="w-9 h-9 flex items-center justify-center rounded-lg bg-pink-600 text-white font-semibold">{{ num }}</span>
         {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
-          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if brand_filter %}&brand={{ brand_filter }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if brand_filter %}&brand={{ brand_filter }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if variants_filter %}&variants_count={{ variants_filter }}{% endif %}"
              class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
             {{ num }}
           </a>
@@ -290,7 +257,7 @@
       {% endfor %}
 
       {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if brand_filter %}&brand={{ brand_filter }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}"
+      <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if brand_filter %}&brand={{ brand_filter }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if variants_filter %}&variants_count={{ variants_filter }}{% endif %}"
          class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-pink-500 hover:text-pink-600 transition">
         <span class="material-symbols-outlined text-[18px]">chevron_left</span>
       </a>
@@ -307,6 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const categoryFilter = document.getElementById('categoryFilter');
     const brandFilter = document.getElementById('brandFilter');
     const stockFilter = document.getElementById('stockFilter');
+    const variantsFilter = document.getElementById('variantsFilter');
     const rows = document.querySelectorAll('.product-row');
     const noResults = document.getElementById('noResults');
 
@@ -315,24 +283,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const cat = categoryFilter.value;
         const brand = (brandFilter.value || '').toLowerCase();
         const stock = stockFilter.value;
+        const variants = variantsFilter.value;
         let visible = 0;
 
         rows.forEach(row => {
             const name = row.dataset.name || '';
-            const barcode = row.dataset.barcode || '';
-            const rowCat = row.dataset.category || '';
             const rowBrand = (row.dataset.brand || '').toLowerCase();
-            const qty = parseInt(row.dataset.stock || '0', 10);
+            const rowCat = row.dataset.category || '';
+            const stockQty = parseInt(row.dataset.stock || '0', 10);
+            const variantsCount = parseInt(row.dataset.variants || '0', 10);
 
-            const matchSearch = !q || name.includes(q) || barcode.includes(q);
+            const matchSearch = !q || name.includes(q);
             const matchCat = !cat || rowCat === cat;
             const matchBrand = !brand || rowBrand === brand;
-            let matchStock = true;
-            if (stock === 'in_stock') matchStock = qty > 5;
-            else if (stock === 'low') matchStock = qty > 0 && qty <= 5;
-            else if (stock === 'out') matchStock = qty === 0;
 
-            if (matchSearch && matchCat && matchBrand && matchStock) {
+            let matchStock = true;
+            if (stock === 'in_stock') matchStock = stockQty > 5;
+            else if (stock === 'low') matchStock = stockQty > 0 && stockQty <= 5;
+            else if (stock === 'out') matchStock = stockQty === 0;
+
+            let matchVariants = true;
+            if (variants === 'single') matchVariants = variantsCount === 1;
+            else if (variants === 'multiple') matchVariants = variantsCount > 1;
+
+            if (matchSearch && matchCat && matchBrand && matchStock && matchVariants) {
                 row.style.display = '';
                 visible++;
             } else {
@@ -343,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         noResults.classList.toggle('hidden', visible > 0);
     }
 
-    [searchInput, categoryFilter, brandFilter, stockFilter].forEach(el => {
+    [searchInput, categoryFilter, brandFilter, stockFilter, variantsFilter].forEach(el => {
         if (el) {
             el.addEventListener('input', filterProducts);
             el.addEventListener('change', filterProducts);
@@ -356,6 +330,7 @@ function resetFilters() {
     document.getElementById('categoryFilter').value = '';
     document.getElementById('brandFilter').value = '';
     document.getElementById('stockFilter').value = '';
+    document.getElementById('variantsFilter').value = '';
     document.querySelectorAll('.product-row').forEach(r => r.style.display = '');
     document.getElementById('noResults').classList.add('hidden');
 }

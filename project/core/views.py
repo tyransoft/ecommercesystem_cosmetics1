@@ -8,7 +8,7 @@ import json
 from .forms import *
 from django.core.paginator import Paginator
 from decimal import Decimal
-from django.db.models import Q ,Sum, Count,F,Value,DecimalField
+from django.db.models import Q ,Sum, Count,F,Value,DecimalField, Min, Prefetch
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta,time
 from django.utils import timezone
@@ -482,195 +482,6 @@ def category_delete(request, pk):
         messages.success(request, 'تم حذف الفئة بنجاح')
         return redirect('category_list')
     return render(request, 'products/category_confirm_delete.html', {'category': category})
-
-@login_required
-def product_list(request):
-    products = Product.objects.select_related('category').prefetch_related('inventory').all()
-    
-    search_query = request.GET.get('search', '').strip()
-    category_id = request.GET.get('category', '')
-    brand_filter = request.GET.get('brand', '')
-    stock_filter = request.GET.get('stock', '')
-    
-    if search_query:
-        products = products.filter(
-            Q(name__icontains=search_query) |
-            Q(barcode__icontains=search_query) |
-            Q(brand__icontains=search_query)
-        )
-    if category_id:
-        products = products.filter(category_id=category_id)
-    if brand_filter:
-        products = products.filter(brand=brand_filter)
-    
-    products = products.order_by('name')
-    
-    paginator = Paginator(products, 20)
-    page_obj = paginator.get_page(request.GET.get('page'))
-    
-    total_products = Product.objects.count()
-    low_stock = Inventory.objects.filter(quantity__gt=0, quantity__lte=5).values('product').distinct().count()
-    out_of_stock = Inventory.objects.filter(quantity=0).values('product').distinct().count()
-    slow_moving = Inventory.objects.filter(quantity__gt=0).values('product').distinct().count()
-    
-    categories = Category.objects.all().order_by('name')
-    brands = Product.objects.exclude(brand__isnull=True).exclude(brand='') \
-        .values_list('brand', flat=True).distinct().order_by('brand')
-    
-    context = {
-        'page_obj': page_obj,
-        'categories': categories,
-        'brands': brands,
-        'search_query': search_query,
-        'selected_category': category_id,
-        'brand_filter': brand_filter,
-        'stock_filter': stock_filter,
-        'total_products': total_products,
-        'low_stock_count': low_stock,
-        'out_of_stock_count': out_of_stock,
-        'slow_moving_count': slow_moving,
-    }    
-   
-    return render(request, 'products/product_list.html', context)
-
-@login_required
-def product_add(request):
-    if not request.user.is_main_admin():
-        messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
-        return redirect('home')
-    if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'تم إضافة المنتج بنجاح')
-            return redirect('product_list')
-    else:
-        form = ProductForm()
-    return render(request, 'products/product_form.html', {'form': form, 'title': 'إضافة منتج'})
-
-@login_required
-def product_edit(request, pk):
-    if not request.user.is_main_admin():
-        messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
-        return redirect('home')    
-    product = get_object_or_404(Product, pk=pk)
-    if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES, instance=product)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'تم تحديث المنتج بنجاح')
-            return redirect('product_list')
-    else:
-        form = ProductForm(instance=product)
-    return render(request, 'products/product_form.html', {'form': form, 'title': 'تعديل منتج'})
-
-@login_required
-def product_delete(request, pk):
-    if not request.user.is_main_admin():
-        messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
-        return redirect('home')    
-    product = get_object_or_404(Product, pk=pk)
-    if request.method == 'POST':
-        product.delete()
-        messages.success(request, 'تم حذف المنتج بنجاح')
-        return redirect('product_list')
-    return render(request, 'products/product_confirm_delete.html', {'product': product})
-
-
-@login_required
-def product_price_update(request):
-    if not request.user.is_main_admin():
-        messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
-        return redirect('home')    
-    if request.method == 'POST':
-        product_ids = request.POST.getlist('product_ids[]')
-        update_type = request.POST.get('update_type')
-        value = request.POST.get('value')
-        
-        if not product_ids:
-            messages.error(request, 'يرجى اختيار منتج واحد على الأقل')
-            return redirect('product_price_update')
-        
-        if not value:
-            messages.error(request, 'يرجى إدخال القيمة')
-            return redirect('product_price_update')
-        
-        try:
-            value = Decimal(str(value))
-        except:
-            messages.error(request, 'القيمة المدخلة غير صحيحة')
-            return redirect('product_price_update')
-        
-        if value <= 0:
-            messages.error(request, 'القيمة يجب أن تكون أكبر من صفر')
-            return redirect('product_price_update')
-        
-        with transaction.atomic():
-            products = Product.objects.filter(id__in=product_ids)
-            
-            if update_type == 'fixed':
-                for product in products:
-                    product.lyd_sell_price = product.lyd_sell_price + value
-                    product.save()
-                messages.success(request, f'تم إضافة {value} دينار لسعر البيع لـ {products.count()} منتج')
-            
-            elif update_type == 'exchange_rate':
-                updated_count = 0
-                for product in products:
-                    if product.usd_sell_price > 0:
-                        product.lyd_sell_price = product.usd_sell_price * value
-                        product.save()
-                        updated_count += 1
-                messages.success(request, f'تم تحديث سعر البيع بالدينار لـ {updated_count} منتج بسعر صرف {value}')
-            
-            else:
-                messages.error(request, 'نوع التحديث غير صحيح')
-                return redirect('product_price_update')
-        
-        return redirect('product_price_update')
-    
-    products = Product.objects.all().order_by('name')
-    return render(request, 'products/product_price_update.html', {'products': products})
-
-@login_required
-def product_price_update_ajax(request):
-    if request.method == 'POST':
-        product_id = request.POST.get('product_id')
-        field = request.POST.get('field')
-        value = request.POST.get('value')
-        
-        if not product_id or not field or not value:
-            return JsonResponse({'error': 'بيانات غير مكتملة'}, status=400)
-        
-        try:
-            product = get_object_or_404(Product, pk=product_id)
-            value = Decimal(str(value))
-            
-            if field == 'lyd_sell_price':
-                product.lyd_sell_price = value
-                product.save()
-                return JsonResponse({
-                    'success': True,
-                    'message': f'تم تحديث سعر المنتج {product.name}',
-                    'new_value': float(product.lyd_sell_price)
-                })
-            elif field == 'usd_sell_price':
-                product.usd_sell_price = value
-                product.save()
-                return JsonResponse({
-                    'success': True,
-                    'message': f'تم تحديث سعر المنتج {product.name}',
-                    'new_value': float(product.usd_sell_price)
-                })
-            else:
-                return JsonResponse({'error': 'حقل غير صحيح'}, status=400)
-                
-        except Product.DoesNotExist:
-            return JsonResponse({'error': 'المنتج غير موجود'}, status=404)
-        except:
-            return JsonResponse({'error': 'القيمة غير صحيحة'}, status=400)
-    
-    return JsonResponse({'error': 'طريقة غير مسموحة'}, status=405)
 
 
 @login_required
@@ -1914,33 +1725,6 @@ def purchase_invoice_confirm(request, pk):
     confirm_invoice(invoice)
     messages.success(request, f'تم تأكيد الفاتورة رقم {invoice.invoice_number} بنجاح')
     return redirect('purchase_invoice_detail', pk=pk)
-@login_required
-def product_duplicate(request, pk):
-    if not request.user.is_main_admin():
-        messages.error(request, 'ليس لديك صلاحية')
-        return redirect('home')
-    original = get_object_or_404(Product, pk=pk)
-    if request.method == 'POST':
-        new_color = request.POST.get('color', '').strip()
-        new_name = request.POST.get('name', f"{original.name} - {new_color}").strip()
-        new_barcode = request.POST.get('barcode', '').strip() or Product.generate_barcode()
-        
-        with transaction.atomic():
-            new_product = Product.objects.create(
-                name=new_name,
-                barcode=new_barcode,
-                category=original.category,
-                image=original.image,
-                brand=original.brand,
-                color=new_color,
-                made_in=original.made_in,
-                usd_sell_price=original.usd_sell_price,
-                lyd_sell_price=original.lyd_sell_price,
-            )
-            
-        messages.success(request, f'تم إنشاء نسخة جديدة: {new_product.name}')
-        return redirect('product_edit', pk=new_product.pk)
-    return render(request, 'dashboard/product_duplicate.html', {'product': original})
 
 @login_required
 def purchase_invoice_cancel(request, pk):
@@ -3530,3 +3314,451 @@ def product_quick_add(request):
             }
         })
     return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)        
+
+
+@login_required
+def product_list(request):
+    products = Product.objects.select_related('category').prefetch_related(
+        Prefetch('variants', queryset=ProductVariant.objects.filter(is_active=True).prefetch_related('inventory_records'))
+    ).annotate(
+        variants_total=Count('variants', filter=Q(variants__is_active=True))
+    )
+
+    search_query = request.GET.get('search', '').strip()
+    category_id = request.GET.get('category', '')
+    brand_filter = request.GET.get('brand', '')
+    stock_filter = request.GET.get('stock', '')
+    variants_filter = request.GET.get('variants_count', '')
+
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query) |
+            Q(brand__icontains=search_query) |
+            Q(variants__barcode__icontains=search_query) |
+            Q(variants__name__icontains=search_query)
+        ).distinct()
+
+    if category_id:
+        products = products.filter(category_id=category_id)
+
+    if brand_filter:
+        products = products.filter(brand=brand_filter)
+
+    if variants_filter == 'single':
+        products = products.filter(variants_total=1)
+    elif variants_filter == 'multiple':
+        products = products.filter(variants_total__gt=1)
+
+    products = products.order_by('name')
+
+    product_list_data = []
+    for product in products:
+        total_stock = product.total_stock
+        if stock_filter:
+            if stock_filter == 'in_stock' and total_stock <= 5:
+                continue
+            elif stock_filter == 'low' and not (0 < total_stock <= 5):
+                continue
+            elif stock_filter == 'out' and total_stock != 0:
+                continue
+
+        product_list_data.append({
+            'product': product,
+            'variants_count': product.variants_total,
+            'total_stock': total_stock,
+            'min_price': product.min_sell_price,
+            'stock_status': product.stock_status,
+        })
+
+    paginator = Paginator(product_list_data, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    total_products = Product.objects.count()
+    low_stock = 0
+    out_of_stock = 0
+    available_products = 0
+
+    for product in Product.objects.prefetch_related('variants__inventory_records'):
+        total = product.total_stock
+        if total == 0:
+            out_of_stock += 1
+        elif total <= 5:
+            low_stock += 1
+        else:
+            available_products += 1
+
+    categories = Category.objects.all().order_by('name')
+    brands = Product.objects.exclude(brand__isnull=True).exclude(brand='') \
+        .values_list('brand', flat=True).distinct().order_by('brand')
+
+    context = {
+        'page_obj': page_obj,
+        'categories': categories,
+        'brands': brands,
+        'search_query': search_query,
+        'selected_category': category_id,
+        'brand_filter': brand_filter,
+        'stock_filter': stock_filter,
+        'variants_filter': variants_filter,
+        'total_products': total_products,
+        'low_stock_count': low_stock,
+        'out_of_stock_count': out_of_stock,
+        'available_count': available_products,
+    }
+    return render(request, 'products/product_list.html', context)
+
+
+@login_required
+def product_detail(request, pk):
+    product = get_object_or_404(
+        Product.objects.select_related('category').prefetch_related(
+            Prefetch('variants', queryset=ProductVariant.objects.prefetch_related('inventory_records').order_by('name'))
+        ),
+        pk=pk
+    )
+    variants = product.variants.all()
+    variants_data = []
+    for variant in variants:
+        inv = variant.inventory_records.first()
+        variants_data.append({
+            'variant': variant,
+            'stock': inv.quantity if inv else 0,
+            'stock_status': variant.stock_status,
+            'profit_margin_lyd': variant.profit_margin_lyd,
+            'profit_margin_percent': variant.profit_margin_percent,
+        })
+
+    context = {
+        'product': product,
+        'variants_data': variants_data,
+        'variants_count': variants.filter(is_active=True).count(),
+        'total_stock': product.total_stock,
+    }
+    return render(request, 'products/product_detail.html', context)
+
+
+@login_required
+def product_add(request):
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        formset = ProductVariantFormSet(request.POST, request.FILES)
+
+        if form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                product = form.save()
+                formset.instance = product
+                formset.save()
+            messages.success(request, 'تم إضافة المنتج بنجاح')
+            return redirect('product_detail', pk=product.pk)
+        else:
+            messages.error(request, 'يرجى تصحيح الأخطاء أدناه')
+    else:
+        form = ProductForm()
+        formset = ProductVariantFormSet()
+
+    brands = Product.objects.exclude(brand__isnull=True).exclude(brand='') \
+        .values_list('brand', flat=True).distinct().order_by('brand')
+
+    context = {
+        'form': form,
+        'formset': formset,
+        'title': 'إضافة منتج',
+        'brands': list(brands),
+    }
+    return render(request, 'products/product_form.html', context)
+
+
+@login_required
+def product_edit(request, pk):
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
+        return redirect('home')
+
+    product = get_object_or_404(Product, pk=pk)
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        formset = ProductVariantFormSet(request.POST, request.FILES, instance=product)
+
+        if form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                form.save()
+                formset.save()
+            messages.success(request, 'تم تحديث المنتج بنجاح')
+            return redirect('product_detail', pk=product.pk)
+        else:
+            messages.error(request, 'يرجى تصحيح الأخطاء أدناه')
+    else:
+        form = ProductForm(instance=product)
+        formset = ProductVariantFormSet(instance=product)
+
+    brands = Product.objects.exclude(brand__isnull=True).exclude(brand='') \
+        .values_list('brand', flat=True).distinct().order_by('brand')
+
+    context = {
+        'form': form,
+        'formset': formset,
+        'product': product,
+        'title': 'تعديل منتج',
+        'brands': list(brands),
+    }
+    return render(request, 'products/product_form.html', context)
+
+
+@login_required
+def product_delete(request, pk):
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
+        return redirect('home')
+
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == 'POST':
+        product.delete()
+        messages.success(request, 'تم حذف المنتج بنجاح')
+        return redirect('product_list')
+    return render(request, 'products/product_confirm_delete.html', {'product': product})
+
+
+
+@login_required
+def variant_add(request, product_id):
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('home')
+
+    product = get_object_or_404(Product, pk=product_id)
+
+    if request.method == 'POST':
+        form = ProductVariantForm(request.POST)
+        if form.is_valid():
+            variant = form.save(commit=False)
+            variant.product = product
+            variant.save()
+            messages.success(request, 'تم إضافة النسخة بنجاح')
+            return redirect('product_detail', pk=product.pk)
+    else:
+        form = ProductVariantForm()
+
+    return render(request, 'products/variant_form.html', {
+        'form': form,
+        'product': product,
+        'title': 'إضافة نسخة',
+    })
+
+
+@login_required
+def variant_edit(request, pk):
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('home')
+
+    variant = get_object_or_404(ProductVariant, pk=pk)
+
+    if request.method == 'POST':
+        form = ProductVariantForm(request.POST, instance=variant)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث النسخة بنجاح')
+            return redirect('product_detail', pk=variant.product.pk)
+    else:
+        form = ProductVariantForm(instance=variant)
+
+    return render(request, 'products/variant_form.html', {
+        'form': form,
+        'product': variant.product,
+        'variant': variant,
+        'title': 'تعديل نسخة',
+    })
+
+
+@login_required
+def variant_delete(request, pk):
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('home')
+
+    variant = get_object_or_404(ProductVariant, pk=pk)
+    product_pk = variant.product.pk
+
+    has_movements = variant.inventory_records.exists()
+
+    if request.method == 'POST':
+        if has_movements:
+            variant.is_active = False
+            variant.save()
+            messages.success(request, 'تم تعطيل النسخة (لا يمكن حذفها لوجود حركات مخزون)')
+        else:
+            variant.delete()
+            messages.success(request, 'تم حذف النسخة بنجاح')
+        return redirect('product_detail', pk=product_pk)
+
+    return render(request, 'products/variant_confirm_delete.html', {
+        'variant': variant,
+        'has_movements': has_movements,
+    })
+
+
+@login_required
+def product_price_update(request):
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
+        return redirect('home')
+
+    if request.method == 'POST':
+        variant_ids = request.POST.getlist('variant_ids[]')
+        update_type = request.POST.get('update_type')
+        value = request.POST.get('value')
+
+        if not variant_ids:
+            messages.error(request, 'يرجى اختيار نسخة واحدة على الأقل')
+            return redirect('product_price_update')
+
+        if not value:
+            messages.error(request, 'يرجى إدخال القيمة')
+            return redirect('product_price_update')
+
+        try:
+            value = Decimal(str(value))
+        except Exception:
+            messages.error(request, 'القيمة المدخلة غير صحيحة')
+            return redirect('product_price_update')
+
+        if value <= 0:
+            messages.error(request, 'القيمة يجب أن تكون أكبر من صفر')
+            return redirect('product_price_update')
+
+        with transaction.atomic():
+            variants = ProductVariant.objects.filter(id__in=variant_ids)
+
+            if update_type == 'fixed_add':
+                for v in variants:
+                    v.lyd_sell_price = v.lyd_sell_price + value
+                    v.save()
+                messages.success(request, f'تم إضافة {value} د.ل لـ {variants.count()} نسخة')
+
+            elif update_type == 'fixed_subtract':
+                for v in variants:
+                    new_price = v.lyd_sell_price - value
+                    if new_price < 0:
+                        new_price = Decimal('0')
+                    v.lyd_sell_price = new_price
+                    v.save()
+                messages.success(request, f'تم خصم {value} د.ل من {variants.count()} نسخة')
+
+            elif update_type == 'percent_add':
+                updated = 0
+                for v in variants:
+                    if v.lyd_sell_price > 0:
+                        increase = v.lyd_sell_price * (value / Decimal('100'))
+                        v.lyd_sell_price = v.lyd_sell_price + increase
+                        v.save()
+                        updated += 1
+                messages.success(request, f'تم زيادة {value}% لـ {updated} نسخة')
+
+            elif update_type == 'percent_subtract':
+                updated = 0
+                for v in variants:
+                    if v.lyd_sell_price > 0:
+                        decrease = v.lyd_sell_price * (value / Decimal('100'))
+                        new_price = v.lyd_sell_price - decrease
+                        if new_price < 0:
+                            new_price = Decimal('0')
+                        v.lyd_sell_price = new_price
+                        v.save()
+                        updated += 1
+                messages.success(request, f'تم خصم {value}% من {updated} نسخة')
+
+            elif update_type == 'exchange_rate':
+                updated = 0
+                for v in variants:
+                    if v.usd_sell_price > 0:
+                        v.lyd_sell_price = v.usd_sell_price * value
+                        v.save()
+                        updated += 1
+                messages.success(request, f'تم تحديث {updated} نسخة بسعر صرف {value}')
+
+            elif update_type == 'set_direct':
+                for v in variants:
+                    v.lyd_sell_price = value
+                    v.save()
+                messages.success(request, f'تم تعيين السعر {value} د.ل لـ {variants.count()} نسخة')
+
+            else:
+                messages.error(request, 'نوع التحديث غير صحيح')
+                return redirect('product_price_update')
+
+        return redirect('product_price_update')
+
+    variants = ProductVariant.objects.select_related('product', 'product__category').filter(
+        is_active=True
+    ).prefetch_related('inventory_records').order_by('product__name', 'name')
+
+    categories = Category.objects.all().order_by('name')
+    brands = Product.objects.exclude(brand__isnull=True).exclude(brand='') \
+        .values_list('brand', flat=True).distinct().order_by('brand')
+    colors = ProductVariant.objects.exclude(color__isnull=True).exclude(color='') \
+        .values_list('color', flat=True).distinct().order_by('color')
+    sizes = ProductVariant.objects.exclude(size__isnull=True).exclude(size='') \
+        .values_list('size', flat=True).distinct().order_by('size')
+
+    variants_data = []
+    for variant in variants:
+        inv = variant.inventory_records.first()
+        variants_data.append({
+            'variant': variant,
+            'stock': inv.quantity if inv else 0,
+            'usd_buy_coast_price': inv.usd_buy_coast_price if inv else 0,
+        })
+
+    context = {
+        'variants_data': variants_data,
+        'categories': categories,
+        'brands': brands,
+        'colors': colors,
+        'sizes': sizes,
+    }
+    return render(request, 'products/product_price_update.html', context)
+
+@login_required
+def product_price_update_ajax(request):
+    if request.method == 'POST':
+        variant_id = request.POST.get('variant_id')
+        field = request.POST.get('field')
+        value = request.POST.get('value')
+
+        if not variant_id or not field or not value:
+            return JsonResponse({'error': 'بيانات غير مكتملة'}, status=400)
+
+        try:
+            variant = get_object_or_404(ProductVariant, pk=variant_id)
+            value = Decimal(str(value))
+
+            if field == 'lyd_sell_price':
+                variant.lyd_sell_price = value
+                variant.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': f'تم تحديث سعر {variant.name}',
+                    'new_value': float(variant.lyd_sell_price)
+                })
+            elif field == 'usd_sell_price':
+                variant.usd_sell_price = value
+                variant.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': f'تم تحديث سعر {variant.name}',
+                    'new_value': float(variant.usd_sell_price)
+                })
+            else:
+                return JsonResponse({'error': 'حقل غير صحيح'}, status=400)
+
+        except ProductVariant.DoesNotExist:
+            return JsonResponse({'error': 'النسخة غير موجودة'}, status=404)
+        except Exception:
+            return JsonResponse({'error': 'القيمة غير صحيحة'}, status=400)
+
+    return JsonResponse({'error': 'طريقة غير مسموحة'}, status=405)

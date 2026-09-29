@@ -235,15 +235,11 @@ class Category(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=200, verbose_name='اسم المنتج')
-    barcode = models.CharField(max_length=100, blank=True, verbose_name='الباركود')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True,verbose_name='الفئة', related_name='products')
     image = models.ImageField(upload_to='product_images/', blank=True, null=True, verbose_name='صورة المنتج')
     brand = models.CharField(max_length=100, blank=True, null=True, verbose_name='الماركة')
-    color = models.CharField(max_length=20,blank=True,null=True , verbose_name='لون/درجة')
     made_in = models.CharField(max_length=100, blank=True, null=True, verbose_name='صنع في')
 
-    usd_sell_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='سعر البيع بالدولار')
-    lyd_sell_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='سعر البيع بالدينار')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -253,12 +249,111 @@ class Product(models.Model):
         verbose_name_plural = 'المنتجات'
         ordering = ['name']
 
+    @property
+    def variants_count(self):
+        return self.variants.filter(is_active=True).count()
+
+    @property
+    def total_stock(self):
+        total = 0
+        for variant in self.variants.filter(is_active=True):
+            inv = variant.inventory_records.first()
+            if inv:
+                total += inv.quantity
+        return total
+
+    @property
+    def min_sell_price(self):
+        prices = [
+            v.lyd_sell_price for v in self.variants.filter(is_active=True)
+            if v.lyd_sell_price and v.lyd_sell_price > 0
+        ]
+        return min(prices) if prices else Decimal('0')
+
+    @property
+    def stock_status(self):
+        total = self.total_stock
+        if total == 0:
+            return 'out'
+        elif total <= 5:
+            return 'low'
+        return 'in_stock'
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='variants',
+        verbose_name='المنتج'
+    )
+
+    name = models.CharField(
+        max_length=200,
+        verbose_name='اسم الخيار'
+    )
+
+    color = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='اللون/الدرجة'
+    )
+
+    size = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='الحجم'
+    )
+
+    edition = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='الإصدار'
+    )
+
+    barcode = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='الباركود'
+    )
+
+    usd_sell_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name='سعر البيع بالدولار'
+    )
+
+    lyd_sell_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name='سعر البيع بالدينار'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'خيار المنتج'
+        verbose_name_plural = 'خيارات المنتجات'
+
+    def __str__(self):
+        return self.name
+    
     @staticmethod
     def generate_barcode():
-        while True:
-            barcode = ''.join(str(random.randint(0, 9)) for _ in range(5))
-            if not Product.objects.filter(barcode=barcode).exists():
-                return barcode
+      while True:
+        barcode = ''.join(
+            str(random.randint(0, 9))
+            for _ in range(5)
+        )
+
+        if not ProductVariant.objects.filter(
+            barcode=barcode
+        ).exists():
+            return barcode
 
     def save(self, *args, **kwargs):
         if not self.barcode:
@@ -267,21 +362,47 @@ class Product(models.Model):
    
 
     def get_profit_margin_lyd(self):
-      inv = self.inventory.first()
-      if not inv:
+     inv = self.inventory_records.first()
+
+     if not inv:
         return Decimal('0')
-      return self.lyd_sell_price - inv.lyd_total_cost
 
-
+     return self.lyd_sell_price - inv.lyd_total_cost
     def get_profit_margin_percent(self):
-      inv = self.inventory.first()
-      if not inv or inv.lyd_total_cost == 0:
-        return 0
-      margin = self.lyd_sell_price - inv.lyd_total_cost
-      return round((margin / inv.lyd_total_cost) * 100, 1)
+     inv = self.inventory_records.first()
 
+     if not inv or inv.lyd_total_cost == 0:
+        return 0
+
+     margin = self.lyd_sell_price - inv.lyd_total_cost
+
+     return round(
+        (margin / inv.lyd_total_cost) * 100,
+        1
+     )
+    @property
+    def current_stock(self):
+        inv = self.inventory_records.first()
+        return inv.quantity if inv else 0
+
+    @property
+    def stock_status(self):
+        qty = self.current_stock
+        if qty == 0:
+            return 'out'
+        elif qty <= 5:
+            return 'low'
+        return 'in_stock'    
 class Inventory(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='المنتج', related_name='inventory')
+    variant = models.ForeignKey(
+      ProductVariant,
+    on_delete=models.CASCADE,
+    null=True,
+    blank=True,
+    related_name='inventory_records',
+    verbose_name='الخيار'
+    )   
     quantity = models.PositiveIntegerField(default=0, verbose_name='الكمية')
 
     exchange_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='سعر الصرف')
@@ -309,9 +430,9 @@ class Inventory(models.Model):
 
     def get_movement_status(self):
       movements = InventoryMovement.objects.filter(
-        product=self.product
+        product=self.product,
+        variant=self.variant
       ).order_by('created_at', 'id')
-
       if not movements.exists():
         return {
             'status': 'لا توجد حركة',
@@ -380,17 +501,29 @@ class Inventory(models.Model):
         }
     def get_sold_quantity_last_90_days(self):
         ninety_days_ago = timezone.now() - timedelta(days=90)
+        filters = {
+          'product': self.product,
+          'movement_type': 'sale',
+          'created_at__gte': ninety_days_ago,
+        }
+
+        if self.variant:
+          filters['variant'] = self.variant
+        else:
+          filters['variant__isnull'] = True
+
         total_sold = InventoryMovement.objects.filter(
-            product=self.product,
-            movement_type='sale',
-            created_at__gte=ninety_days_ago
-        ).aggregate(total=models.Sum('quantity'))['total'] or 0
+         **filters
+        ).aggregate(
+        total=models.Sum('quantity')
+        )['total'] or 0
         return abs(total_sold)
     
     def save(self, *args, **kwargs):
-      self.lyd_sell_price = self.product.lyd_sell_price
-      self.usd_sell_price = self.product.usd_sell_price
-    
+      if self.variant:
+        self.lyd_sell_price = self.variant.lyd_sell_price
+        self.usd_sell_price = self.variant.usd_sell_price
+         
       super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.product.name} - {self.quantity}"
@@ -413,6 +546,14 @@ class InventoryMovement(models.Model):
     ]
     
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey(
+      ProductVariant,
+      on_delete=models.CASCADE,
+      null=True,
+      blank=True,
+      related_name='inventory_movements',
+      verbose_name='الخيار'
+    )
     movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPES)
     quantity = models.IntegerField()
     notes = models.TextField(blank=True)
@@ -575,6 +716,14 @@ class PurchaseInvoice(models.Model):
 class PurchaseInvoiceItem(models.Model):
     invoice = models.ForeignKey(PurchaseInvoice, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey(
+     ProductVariant,
+     on_delete=models.CASCADE,
+     null=True,
+     blank=True,
+     related_name='purchase_items',
+     verbose_name='الخيار'
+    )
     quantity = models.IntegerField()
     unit_lyd = models.DecimalField(max_digits=12, decimal_places=2)
     unit_usd = models.DecimalField(max_digits=12, decimal_places=2)
@@ -700,6 +849,14 @@ class InternalOrder(models.Model):
 class InternalOrderItem(models.Model):
     order = models.ForeignKey(InternalOrder, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey(
+        ProductVariant,
+    on_delete=models.CASCADE,
+    null=True,
+    blank=True,
+    related_name='order_items',
+    verbose_name='الخيار'
+    )
     quantity = models.IntegerField()
     unit_discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)

@@ -17,14 +17,21 @@ urlpatterns = [
     path('categories/<int:pk>/edit/', category_edit, name='category_edit'),
     path('categories/<int:pk>/delete/', category_delete, name='category_delete'),
 
+
     path('products/', product_list, name='product_list'),
     path('products/add/', product_add, name='product_add'),
+    path('products/<int:pk>/', product_detail, name='product_detail'),
     path('products/<int:pk>/edit/', product_edit, name='product_edit'),
     path('products/<int:pk>/delete/', product_delete, name='product_delete'),
-    path('products/price-update/', product_price_update, name='product_price_update'),
-    path('products/price-update-ajax/', product_price_update_ajax, name='product_price_update_ajax'),
-    path('products/<int:pk>/duplicate/', product_duplicate, name='product_duplicate'),
-    
+
+    path('products/<int:product_id>/variants/add/', variant_add, name='variant_add'),
+    path('products/variants/<int:pk>/edit/', variant_edit, name='variant_edit'),
+    path('products/variants/<int:pk>/delete/', variant_delete, name='variant_delete'),
+
+    path('products/prices/', product_price_update, name='product_price_update'),
+    path('products/prices/ajax/', product_price_update_ajax, name='product_price_update_ajax'),
+
+
     path('customers/', customer_list, name='customer_list'),
     path('customers/add/', customer_add, name='customer_add'),
     path('customers/<int:pk>/edit/', customer_edit, name='customer_edit'),
